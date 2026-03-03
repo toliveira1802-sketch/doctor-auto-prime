@@ -16,20 +16,55 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
+  Car,
+  ClipboardList,
+  CalendarClock,
+  Users,
+  DollarSign,
+  BarChart3,
+  Plus,
+  Wrench,
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { trpc } from "@/lib/trpc";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  {
+    group: "Principal",
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+      { icon: Car, label: "Pátio", path: "/patio" },
+    ],
+  },
+  {
+    group: "Operacional",
+    items: [
+      { icon: ClipboardList, label: "Ordens de Serviço", path: "/os" },
+      { icon: CalendarClock, label: "Agenda", path: "/agenda" },
+      { icon: Users, label: "CRM / Clientes", path: "/crm" },
+    ],
+  },
+  {
+    group: "Gestão",
+    items: [
+      { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
+      { icon: BarChart3, label: "Produtividade", path: "/produtividade" },
+    ],
+  },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -112,7 +147,8 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const allItems = menuItems.flatMap(g => g.items);
+  const activeMenuItem = allItems.find(item => item.path === location);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -170,35 +206,59 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                  <Wrench className="h-5 w-5 text-primary shrink-0" />
+                  <span className="font-bold tracking-tight truncate text-foreground">
+                    Doctor Auto
                   </span>
                 </div>
               ) : null}
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0">
-            <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
-                const isActive = location === item.path;
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => setLocation(item.path)}
-                      tooltip={item.label}
-                      className={`h-10 transition-all font-normal`}
-                    >
-                      <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
-                      />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+          <SidebarContent className="gap-0 overflow-y-auto">
+            {menuItems.map((group, gi) => (
+              <div key={group.group}>
+                {gi > 0 && <SidebarSeparator className="mx-2 my-1" />}
+                {!isCollapsed && (
+                  <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                    {group.group}
+                  </p>
+                )}
+                <SidebarMenu className="px-2 pb-1">
+                  {group.items.map(item => {
+                    const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+                    return (
+                      <SidebarMenuItem key={item.path}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          onClick={() => setLocation(item.path)}
+                          tooltip={item.label}
+                          className={`h-9 transition-all font-normal`}
+                        >
+                          <item.icon
+                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                          />
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </div>
+            ))}
+            {/* Quick action */}
+            {!isCollapsed && (
+              <div className="px-3 pt-2 pb-1">
+                <Button
+                  size="sm"
+                  className="w-full gap-2 h-8"
+                  onClick={() => setLocation("/os/nova")}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Nova OS
+                </Button>
+              </div>
+            )}
           </SidebarContent>
 
           <SidebarFooter className="p-3">
