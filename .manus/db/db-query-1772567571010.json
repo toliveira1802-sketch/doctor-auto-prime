@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO `03_mecanicos` (empresaId, nome, grauConhecimento, especialidade, qtdePositivos, qtdeNegativos, ativo) VALUES\n(1, 'Thales Oliveira', 'Especialista', 'Remap / Performance', 42, 1, 1),\n(1, 'Marcos Silva', 'Senior', 'Motor / Transmissão', 38, 2, 1),\n(1, 'Rodrigo Santos', 'Senior', 'Elétrica / Diagnóstico', 35, 3, 1),\n(1, 'Mauricio Costa', 'Pleno', 'Suspensão / Freios', 28, 4, 1),\n(1, 'Elias Ferreira', 'Pleno', 'Motor / Revisão', 24, 5, 1),\n(1, 'Vitor Lima', 'Junior', 'Geral / Revisão', 18, 3, 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute INSERT INTO `03_mecanicos` (empresaId, nome, grauConhecimento, especialidade, qtdePositivos, qtdeNegativos, ativo) VALUES\n(1, 'Thales Oliveira', 'Especialista', 'Remap / Performance', 42, 1, 1),\n(1, 'Marcos Silva', 'Senior', 'Motor / Transmissão', 38, 2, 1),\n(1, 'Rodrigo Santos', 'Senior', 'Elétrica / Diagnóstico', 35, 3, 1),\n(1, 'Mauricio Costa', 'Pleno', 'Suspensão / Freios', 28, 4, 1),\n(1, 'Elias Ferreira', 'Pleno', 'Motor / Revisão', 24, 5, 1),\n(1, 'Vitor Lima', 'Junior', 'Geral / Revisão', 18, 3, 1);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 373
+}

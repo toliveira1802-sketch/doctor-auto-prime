@@ -1,0 +1,112 @@
+{
+  "query": "SELECT id, nome, grauConhecimento, especialidade, ativo FROM `03_mecanicos` LIMIT 20;\nSELECT id, nome, cargo, ativo FROM `01_colaboradores` LIMIT 20;\nSELECT chave, valor FROM system_config LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, nome, grauConhecimento, especialidade, ativo FROM `03_mecanicos` LIMIT 20;\nSELECT id, nome, cargo, ativo FROM `01_colaboradores` LIMIT 20;\nSELECT chave, valor FROM system_config LIMIT 20;",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "Tadeu",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Motor",
+      "ativo": "1"
+    },
+    {
+      "id": "2",
+      "nome": "João",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Elétrica",
+      "ativo": "1"
+    },
+    {
+      "id": "3",
+      "nome": "Pedro",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Suspensão",
+      "ativo": "1"
+    },
+    {
+      "id": "4",
+      "nome": "Aldo",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Freios",
+      "ativo": "1"
+    },
+    {
+      "id": "5",
+      "nome": "Samuel",
+      "grauConhecimento": "Júnior",
+      "especialidade": "Câmbio",
+      "ativo": "1"
+    },
+    {
+      "id": "6",
+      "nome": "Wendel",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Motor",
+      "ativo": "1"
+    },
+    {
+      "id": "7",
+      "nome": "Alexandre",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Injeção",
+      "ativo": "1"
+    },
+    {
+      "id": "8",
+      "nome": "Léo",
+      "grauConhecimento": "Júnior",
+      "especialidade": "Elétrica",
+      "ativo": "1"
+    },
+    {
+      "id": "9",
+      "nome": "Rogério",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Geral",
+      "ativo": "1"
+    },
+    {
+      "id": "10",
+      "nome": "Matheus",
+      "grauConhecimento": "Júnior",
+      "especialidade": "Motor",
+      "ativo": "1"
+    },
+    {
+      "id": "11",
+      "nome": "Gabriel",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Suspensão",
+      "ativo": "1"
+    },
+    {
+      "id": "12",
+      "nome": "Alessandro",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Diagnóstico",
+      "ativo": "1"
+    }
+  ],
+  "messages": [
+    "id\tnome\tcargo\tativo",
+    "1\tThales\tDireção\t1",
+    "2\tSofia\tDireção\t1",
+    "3\tFrancisco\tGestão\t1",
+    "4\tMárcia\tGestão\t1",
+    "5\tPedro\tConsultor Técnico\t1",
+    "6\tJoão\tConsultor Técnico\t1",
+    "7\tRony\tConsultor Técnico\t1",
+    "8\tAntônio\tConsultor Técnico\t1",
+    "chave\tvalor",
+    "meta_mensal_prime\t200000",
+    "meta_mensal_bosch\t150000",
+    "meta_mensal_garage\t80000",
+    "meta_os_semana\t15",
+    "ticket_medio_alvo\t3500",
+    "nome_oficina\tDoctor Auto Prime",
+    "whatsapp_oficina\t11999990001"
+  ],
+  "stdout": "id\tnome\tgrauConhecimento\tespecialidade\tativo\n1\tTadeu\tSênior\tMotor\t1\n2\tJoão\tPleno\tElétrica\t1\n3\tPedro\tSênior\tSuspensão\t1\n4\tAldo\tPleno\tFreios\t1\n5\tSamuel\tJúnior\tCâmbio\t1\n6\tWendel\tPleno\tMotor\t1\n7\tAlexandre\tSênior\tInjeção\t1\n8\tLéo\tJúnior\tElétrica\t1\n9\tRogério\tPleno\tGeral\t1\n10\tMatheus\tJúnior\tMotor\t1\n11\tGabriel\tPleno\tSuspensão\t1\n12\tAlessandro\tSênior\tDiagnóstico\t1\nid\tnome\tcargo\tativo\n1\tThales\tDireção\t1\n2\tSofia\tDireção\t1\n3\tFrancisco\tGestão\t1\n4\tMárcia\tGestão\t1\n5\tPedro\tConsultor Técnico\t1\n6\tJoão\tConsultor Técnico\t1\n7\tRony\tConsultor Técnico\t1\n8\tAntônio\tConsultor Técnico\t1\nchave\tvalor\nmeta_mensal_prime\t200000\nmeta_mensal_bosch\t150000\nmeta_mensal_garage\t80000\nmeta_os_semana\t15\nticket_medio_alvo\t3500\nnome_oficina\tDoctor Auto Prime\nwhatsapp_oficina\t11999990001\n",
+  "stderr": "",
+  "execution_time_ms": 491
+}

@@ -41,6 +41,15 @@
 - [x] App.tsx: rotas /admin/* e /gestao/* completas
 - [x] Dev navigator atualizado com todas as rotas
 
+## Seed de Dados Reais (Concluído)
+
+- [x] Mecânicos reais inseridos: Thales Oliveira (Especialista), Marcos Silva (Senior), Rodrigo Santos (Senior), Mauricio Costa (Pleno), Elias Ferreira (Pleno), Vitor Lima (Junior)
+- [x] Colaboradores atualizados com cargos reais: Thales (Sócio/Diretor), Sofia (Gestão/Admin), Francisco (Gestão/Financeiro), Márcia (Coordenação), Pedro (Consultor Vendas), João (Consultor Vendas), Rony (Consultor Técnico), Antônio (Consultor Técnico), Simone (Coordenação)
+- [x] Metas configuradas: meta_mensal=R$200k, ticket_medio=R$3.500, meta_os_mes=80, meta_os_semana=20, meta_os_dia=4, meta_nps=80, meta_reativacao=30
+- [x] Metas por consultor: Pedro=R$80k, João=R$80k, Rony=R$40k, Antônio=R$40k
+- [x] GestaoMetas: pré-carrega valores do banco nos inputs de metas por colaborador
+- [x] GestaoColaboradores: cores de badge para todos os novos cargos
+
 ## Wave 2: Atendimento Kommo + IA (próxima onda)
 
 - [ ] Integração Kommo CRM via API

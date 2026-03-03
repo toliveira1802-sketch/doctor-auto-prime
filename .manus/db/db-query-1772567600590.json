@@ -1,0 +1,95 @@
+{
+  "query": "-- Insert or update all goals using INSERT ... ON DUPLICATE KEY UPDATE\nINSERT INTO system_config (chave, valor, descricao) VALUES\n  ('meta_mensal',       '200000', 'Meta de faturamento mensal total (R$)'),\n  ('meta_ticket_medio', '3500',   'Meta de ticket médio por OS (R$)'),\n  ('meta_os_mes',       '80',     'Meta de OS concluídas por mês'),\n  ('meta_os_semana',    '20',     'Meta de OS concluídas por semana'),\n  ('meta_os_dia',       '4',      'Meta de OS concluídas por dia'),\n  ('meta_nps',          '80',     'Meta de NPS (0-100)'),\n  ('meta_reativacao',   '30',     'Meta de clientes reativados por mês'),\n  ('meta_colaborador_5', '80000', 'Meta mensal Pedro (Consultor) R$'),\n  ('meta_colaborador_6', '80000', 'Meta mensal João (Consultor) R$'),\n  ('meta_colaborador_7', '40000', 'Meta mensal Rony (Consultor) R$'),\n  ('meta_colaborador_8', '40000', 'Meta mensal Antônio (Consultor) R$')\nON DUPLICATE KEY UPDATE\n  valor = VALUES(valor),\n  descricao = VALUES(descricao);\n\n-- Verify all configs\nSELECT chave, valor, descricao FROM system_config ORDER BY chave;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute -- Insert or update all goals using INSERT ... ON DUPLICATE KEY UPDATE\nINSERT INTO system_config (chave, valor, descricao) VALUES\n  ('meta_mensal',       '200000', 'Meta de faturamento mensal total (R$)'),\n  ('meta_ticket_medio', '3500',   'Meta de ticket médio por OS (R$)'),\n  ('meta_os_mes',       '80',     'Meta de OS concluídas por mês'),\n  ('meta_os_semana',    '20',     'Meta de OS concluídas por semana'),\n  ('meta_os_dia',       '4',      'Meta de OS concluídas por dia'),\n  ('meta_nps',          '80',     'Meta de NPS (0-100)'),\n  ('meta_reativacao',   '30',     'Meta de clientes reativados por mês'),\n  ('meta_colaborador_5', '80000', 'Meta mensal Pedro (Consultor) R$'),\n  ('meta_colaborador_6', '80000', 'Meta mensal João (Consultor) R$'),\n  ('meta_colaborador_7', '40000', 'Meta mensal Rony (Consultor) R$'),\n  ('meta_colaborador_8', '40000', 'Meta mensal Antônio (Consultor) R$')\nON DUPLICATE KEY UPDATE\n  valor = VALUES(valor),\n  descricao = VALUES(descricao);\n\n-- Verify all configs\nSELECT chave, valor, descricao FROM system_config ORDER BY chave;",
+  "rows": [
+    {
+      "chave": "meta_colaborador_5",
+      "valor": "80000",
+      "descricao": "Meta mensal Pedro (Consultor) R$"
+    },
+    {
+      "chave": "meta_colaborador_6",
+      "valor": "80000",
+      "descricao": "Meta mensal João (Consultor) R$"
+    },
+    {
+      "chave": "meta_colaborador_7",
+      "valor": "40000",
+      "descricao": "Meta mensal Rony (Consultor) R$"
+    },
+    {
+      "chave": "meta_colaborador_8",
+      "valor": "40000",
+      "descricao": "Meta mensal Antônio (Consultor) R$"
+    },
+    {
+      "chave": "meta_mensal",
+      "valor": "200000",
+      "descricao": "Meta de faturamento mensal total (R$)"
+    },
+    {
+      "chave": "meta_mensal_bosch",
+      "valor": "150000",
+      "descricao": "Meta mensal Doctor Auto Bosch (R$)"
+    },
+    {
+      "chave": "meta_mensal_garage",
+      "valor": "80000",
+      "descricao": "Meta mensal Garage 347 (R$)"
+    },
+    {
+      "chave": "meta_mensal_prime",
+      "valor": "200000",
+      "descricao": "Meta mensal Doctor Auto Prime (R$)"
+    },
+    {
+      "chave": "meta_nps",
+      "valor": "80",
+      "descricao": "Meta de NPS (0-100)"
+    },
+    {
+      "chave": "meta_os_dia",
+      "valor": "4",
+      "descricao": "Meta de OS concluídas por dia"
+    },
+    {
+      "chave": "meta_os_mes",
+      "valor": "80",
+      "descricao": "Meta de OS concluídas por mês"
+    },
+    {
+      "chave": "meta_os_semana",
+      "valor": "20",
+      "descricao": "Meta de OS concluídas por semana"
+    },
+    {
+      "chave": "meta_reativacao",
+      "valor": "30",
+      "descricao": "Meta de clientes reativados por mês"
+    },
+    {
+      "chave": "meta_ticket_medio",
+      "valor": "3500",
+      "descricao": "Meta de ticket médio por OS (R$)"
+    },
+    {
+      "chave": "nome_oficina",
+      "valor": "Doctor Auto Prime",
+      "descricao": "Nome da oficina principal"
+    },
+    {
+      "chave": "ticket_medio_alvo",
+      "valor": "3500",
+      "descricao": "Ticket médio alvo (R$)"
+    },
+    {
+      "chave": "whatsapp_oficina",
+      "valor": "11999990001",
+      "descricao": "WhatsApp da oficina"
+    }
+  ],
+  "messages": [],
+  "stdout": "chave\tvalor\tdescricao\nmeta_colaborador_5\t80000\tMeta mensal Pedro (Consultor) R$\nmeta_colaborador_6\t80000\tMeta mensal João (Consultor) R$\nmeta_colaborador_7\t40000\tMeta mensal Rony (Consultor) R$\nmeta_colaborador_8\t40000\tMeta mensal Antônio (Consultor) R$\nmeta_mensal\t200000\tMeta de faturamento mensal total (R$)\nmeta_mensal_bosch\t150000\tMeta mensal Doctor Auto Bosch (R$)\nmeta_mensal_garage\t80000\tMeta mensal Garage 347 (R$)\nmeta_mensal_prime\t200000\tMeta mensal Doctor Auto Prime (R$)\nmeta_nps\t80\tMeta de NPS (0-100)\nmeta_os_dia\t4\tMeta de OS concluídas por dia\nmeta_os_mes\t80\tMeta de OS concluídas por mês\nmeta_os_semana\t20\tMeta de OS concluídas por semana\nmeta_reativacao\t30\tMeta de clientes reativados por mês\nmeta_ticket_medio\t3500\tMeta de ticket médio por OS (R$)\nnome_oficina\tDoctor Auto Prime\tNome da oficina principal\nticket_medio_alvo\t3500\tTicket médio alvo (R$)\nwhatsapp_oficina\t11999990001\tWhatsApp da oficina\n",
+  "stderr": "",
+  "execution_time_ms": 419
+}

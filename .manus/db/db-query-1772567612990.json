@@ -1,0 +1,193 @@
+{
+  "query": "-- Verify mecanicos\nSELECT id, nome, grauConhecimento, especialidade, qtdePositivos, qtdeNegativos, ativo FROM `03_mecanicos` ORDER BY id;\n\n-- Verify colaboradores\nSELECT id, nome, cargo, ativo FROM `01_colaboradores` ORDER BY id;\n\n-- Verify key configs\nSELECT chave, valor FROM system_config WHERE chave IN ('meta_mensal','meta_ticket_medio','meta_os_mes','meta_os_semana','meta_os_dia','meta_nps','meta_reativacao','meta_colaborador_5','meta_colaborador_6') ORDER BY chave;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute -- Verify mecanicos\nSELECT id, nome, grauConhecimento, especialidade, qtdePositivos, qtdeNegativos, ativo FROM `03_mecanicos` ORDER BY id;\n\n-- Verify colaboradores\nSELECT id, nome, cargo, ativo FROM `01_colaboradores` ORDER BY id;\n\n-- Verify key configs\nSELECT chave, valor FROM system_config WHERE chave IN ('meta_mensal','meta_ticket_medio','meta_os_mes','meta_os_semana','meta_os_dia','meta_nps','meta_reativacao','meta_colaborador_5','meta_colaborador_6') ORDER BY chave;",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "Tadeu",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Motor",
+      "qtdePositivos": "45",
+      "qtdeNegativos": "2",
+      "ativo": "1"
+    },
+    {
+      "id": "2",
+      "nome": "João",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Elétrica",
+      "qtdePositivos": "38",
+      "qtdeNegativos": "3",
+      "ativo": "1"
+    },
+    {
+      "id": "3",
+      "nome": "Pedro",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Suspensão",
+      "qtdePositivos": "52",
+      "qtdeNegativos": "1",
+      "ativo": "1"
+    },
+    {
+      "id": "4",
+      "nome": "Aldo",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Freios",
+      "qtdePositivos": "30",
+      "qtdeNegativos": "4",
+      "ativo": "1"
+    },
+    {
+      "id": "5",
+      "nome": "Samuel",
+      "grauConhecimento": "Júnior",
+      "especialidade": "Câmbio",
+      "qtdePositivos": "20",
+      "qtdeNegativos": "5",
+      "ativo": "1"
+    },
+    {
+      "id": "6",
+      "nome": "Wendel",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Motor",
+      "qtdePositivos": "35",
+      "qtdeNegativos": "2",
+      "ativo": "1"
+    },
+    {
+      "id": "7",
+      "nome": "Alexandre",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Injeção",
+      "qtdePositivos": "48",
+      "qtdeNegativos": "1",
+      "ativo": "1"
+    },
+    {
+      "id": "8",
+      "nome": "Léo",
+      "grauConhecimento": "Júnior",
+      "especialidade": "Elétrica",
+      "qtdePositivos": "15",
+      "qtdeNegativos": "6",
+      "ativo": "1"
+    },
+    {
+      "id": "9",
+      "nome": "Rogério",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Geral",
+      "qtdePositivos": "40",
+      "qtdeNegativos": "3",
+      "ativo": "1"
+    },
+    {
+      "id": "10",
+      "nome": "Matheus",
+      "grauConhecimento": "Júnior",
+      "especialidade": "Motor",
+      "qtdePositivos": "18",
+      "qtdeNegativos": "4",
+      "ativo": "1"
+    },
+    {
+      "id": "11",
+      "nome": "Gabriel",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Suspensão",
+      "qtdePositivos": "32",
+      "qtdeNegativos": "2",
+      "ativo": "1"
+    },
+    {
+      "id": "12",
+      "nome": "Alessandro",
+      "grauConhecimento": "Sênior",
+      "especialidade": "Diagnóstico",
+      "qtdePositivos": "55",
+      "qtdeNegativos": "0",
+      "ativo": "1"
+    },
+    {
+      "id": "30002",
+      "nome": "Thales Oliveira",
+      "grauConhecimento": "Especialista",
+      "especialidade": "Remap / Performance",
+      "qtdePositivos": "42",
+      "qtdeNegativos": "1",
+      "ativo": "1"
+    },
+    {
+      "id": "30003",
+      "nome": "Marcos Silva",
+      "grauConhecimento": "Senior",
+      "especialidade": "Motor / Transmissão",
+      "qtdePositivos": "38",
+      "qtdeNegativos": "2",
+      "ativo": "1"
+    },
+    {
+      "id": "30004",
+      "nome": "Rodrigo Santos",
+      "grauConhecimento": "Senior",
+      "especialidade": "Elétrica / Diagnóstico",
+      "qtdePositivos": "35",
+      "qtdeNegativos": "3",
+      "ativo": "1"
+    },
+    {
+      "id": "30005",
+      "nome": "Mauricio Costa",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Suspensão / Freios",
+      "qtdePositivos": "28",
+      "qtdeNegativos": "4",
+      "ativo": "1"
+    },
+    {
+      "id": "30006",
+      "nome": "Elias Ferreira",
+      "grauConhecimento": "Pleno",
+      "especialidade": "Motor / Revisão",
+      "qtdePositivos": "24",
+      "qtdeNegativos": "5",
+      "ativo": "1"
+    },
+    {
+      "id": "30007",
+      "nome": "Vitor Lima",
+      "grauConhecimento": "Junior",
+      "especialidade": "Geral / Revisão",
+      "qtdePositivos": "18",
+      "qtdeNegativos": "3",
+      "ativo": "1"
+    }
+  ],
+  "messages": [
+    "id\tnome\tcargo\tativo",
+    "1\tThales\tSócio / Diretor Técnico\t1",
+    "2\tSofia\tGestão / Administração\t1",
+    "3\tFrancisco\tGestão / Financeiro\t1",
+    "4\tMárcia\tCoordenação Interna\t1",
+    "5\tPedro\tConsultor de Vendas\t1",
+    "6\tJoão\tConsultor de Vendas\t1",
+    "7\tRony\tConsultor Técnico\t1",
+    "8\tAntônio\tConsultor Técnico\t1",
+    "30002\tSimone\tCoordenação Interna\t1",
+    "chave\tvalor",
+    "meta_colaborador_5\t80000",
+    "meta_colaborador_6\t80000",
+    "meta_mensal\t200000",
+    "meta_nps\t80",
+    "meta_os_dia\t4",
+    "meta_os_mes\t80",
+    "meta_os_semana\t20",
+    "meta_reativacao\t30",
+    "meta_ticket_medio\t3500"
+  ],
+  "stdout": "id\tnome\tgrauConhecimento\tespecialidade\tqtdePositivos\tqtdeNegativos\tativo\n1\tTadeu\tSênior\tMotor\t45\t2\t1\n2\tJoão\tPleno\tElétrica\t38\t3\t1\n3\tPedro\tSênior\tSuspensão\t52\t1\t1\n4\tAldo\tPleno\tFreios\t30\t4\t1\n5\tSamuel\tJúnior\tCâmbio\t20\t5\t1\n6\tWendel\tPleno\tMotor\t35\t2\t1\n7\tAlexandre\tSênior\tInjeção\t48\t1\t1\n8\tLéo\tJúnior\tElétrica\t15\t6\t1\n9\tRogério\tPleno\tGeral\t40\t3\t1\n10\tMatheus\tJúnior\tMotor\t18\t4\t1\n11\tGabriel\tPleno\tSuspensão\t32\t2\t1\n12\tAlessandro\tSênior\tDiagnóstico\t55\t0\t1\n30002\tThales Oliveira\tEspecialista\tRemap / Performance\t42\t1\t1\n30003\tMarcos Silva\tSenior\tMotor / Transmissão\t38\t2\t1\n30004\tRodrigo Santos\tSenior\tElétrica / Diagnóstico\t35\t3\t1\n30005\tMauricio Costa\tPleno\tSuspensão / Freios\t28\t4\t1\n30006\tElias Ferreira\tPleno\tMotor / Revisão\t24\t5\t1\n30007\tVitor Lima\tJunior\tGeral / Revisão\t18\t3\t1\nid\tnome\tcargo\tativo\n1\tThales\tSócio / Diretor Técnico\t1\n2\tSofia\tGestão / Administração\t1\n3\tFrancisco\tGestão / Financeiro\t1\n4\tMárcia\tCoordenação Interna\t1\n5\tPedro\tConsultor de Vendas\t1\n6\tJoão\tConsultor de Vendas\t1\n7\tRony\tConsultor Técnico\t1\n8\tAntônio\tConsultor Técnico\t1\n30002\tSimone\tCoordenação Interna\t1\nchave\tvalor\nmeta_colaborador_5\t80000\nmeta_colaborador_6\t80000\nmeta_mensal\t200000\nmeta_nps\t80\nmeta_os_dia\t4\nmeta_os_mes\t80\nmeta_os_semana\t20\nmeta_reativacao\t30\nmeta_ticket_medio\t3500\n",
+  "stderr": "",
+  "execution_time_ms": 450
+}

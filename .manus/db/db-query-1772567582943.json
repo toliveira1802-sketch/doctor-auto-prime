@@ -1,0 +1,64 @@
+{
+  "query": "-- Update existing colaboradores with correct roles and info\nUPDATE `01_colaboradores` SET cargo = 'Sócio / Diretor Técnico', ativo = 1 WHERE nome = 'Thales';\nUPDATE `01_colaboradores` SET cargo = 'Gestão / Administração', ativo = 1 WHERE nome = 'Sofia';\nUPDATE `01_colaboradores` SET cargo = 'Gestão / Financeiro', ativo = 1 WHERE nome = 'Francisco';\nUPDATE `01_colaboradores` SET cargo = 'Coordenação Interna', ativo = 1 WHERE nome = 'Márcia';\nUPDATE `01_colaboradores` SET cargo = 'Consultor de Vendas', ativo = 1 WHERE nome = 'Pedro';\nUPDATE `01_colaboradores` SET cargo = 'Consultor de Vendas', ativo = 1 WHERE nome = 'João';\nUPDATE `01_colaboradores` SET cargo = 'Consultor Técnico', ativo = 1 WHERE nome = 'Rony';\nUPDATE `01_colaboradores` SET cargo = 'Consultor Técnico', ativo = 1 WHERE nome = 'Antônio';\n\n-- Add Simone if not exists\nINSERT IGNORE INTO `01_colaboradores` (empresaId, nome, cargo, ativo)\nVALUES (1, 'Simone', 'Coordenação Interna', 1);\n\n-- Verify\nSELECT id, nome, cargo, ativo FROM `01_colaboradores` ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute -- Update existing colaboradores with correct roles and info\nUPDATE `01_colaboradores` SET cargo = 'Sócio / Diretor Técnico', ativo = 1 WHERE nome = 'Thales';\nUPDATE `01_colaboradores` SET cargo = 'Gestão / Administração', ativo = 1 WHERE nome = 'Sofia';\nUPDATE `01_colaboradores` SET cargo = 'Gestão / Financeiro', ativo = 1 WHERE nome = 'Francisco';\nUPDATE `01_colaboradores` SET cargo = 'Coordenação Interna', ativo = 1 WHERE nome = 'Márcia';\nUPDATE `01_colaboradores` SET cargo = 'Consultor de Vendas', ativo = 1 WHERE nome = 'Pedro';\nUPDATE `01_colaboradores` SET cargo = 'Consultor de Vendas', ativo = 1 WHERE nome = 'João';\nUPDATE `01_colaboradores` SET cargo = 'Consultor Técnico', ativo = 1 WHERE nome = 'Rony';\nUPDATE `01_colaboradores` SET cargo = 'Consultor Técnico', ativo = 1 WHERE nome = 'Antônio';\n\n-- Add Simone if not exists\nINSERT IGNORE INTO `01_colaboradores` (empresaId, nome, cargo, ativo)\nVALUES (1, 'Simone', 'Coordenação Interna', 1);\n\n-- Verify\nSELECT id, nome, cargo, ativo FROM `01_colaboradores` ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "Thales",
+      "cargo": "Sócio / Diretor Técnico",
+      "ativo": "1"
+    },
+    {
+      "id": "2",
+      "nome": "Sofia",
+      "cargo": "Gestão / Administração",
+      "ativo": "1"
+    },
+    {
+      "id": "3",
+      "nome": "Francisco",
+      "cargo": "Gestão / Financeiro",
+      "ativo": "1"
+    },
+    {
+      "id": "4",
+      "nome": "Márcia",
+      "cargo": "Coordenação Interna",
+      "ativo": "1"
+    },
+    {
+      "id": "5",
+      "nome": "Pedro",
+      "cargo": "Consultor de Vendas",
+      "ativo": "1"
+    },
+    {
+      "id": "6",
+      "nome": "João",
+      "cargo": "Consultor de Vendas",
+      "ativo": "1"
+    },
+    {
+      "id": "7",
+      "nome": "Rony",
+      "cargo": "Consultor Técnico",
+      "ativo": "1"
+    },
+    {
+      "id": "8",
+      "nome": "Antônio",
+      "cargo": "Consultor Técnico",
+      "ativo": "1"
+    },
+    {
+      "id": "30002",
+      "nome": "Simone",
+      "cargo": "Coordenação Interna",
+      "ativo": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\tcargo\tativo\n1\tThales\tSócio / Diretor Técnico\t1\n2\tSofia\tGestão / Administração\t1\n3\tFrancisco\tGestão / Financeiro\t1\n4\tMárcia\tCoordenação Interna\t1\n5\tPedro\tConsultor de Vendas\t1\n6\tJoão\tConsultor de Vendas\t1\n7\tRony\tConsultor Técnico\t1\n8\tAntônio\tConsultor Técnico\t1\n30002\tSimone\tCoordenação Interna\t1\n",
+  "stderr": "",
+  "execution_time_ms": 840
+}

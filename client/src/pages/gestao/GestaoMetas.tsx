@@ -171,21 +171,32 @@ export default function GestaoMetas() {
 
 function MetasColaboradores() {
   const { data: colaboradores } = trpc.colaboradores.list.useQuery(undefined);
+  const { data: allConfigs } = trpc.config.list.useQuery(undefined);
   const setConfig = trpc.config.set.useMutation({
     onSuccess: () => toast.success("Meta salva!"),
     onError: (e: any) => toast.error(e.message),
   });
   const [metas, setMetas] = useState<Record<string, string>>({});
+  const [initialized, setInitialized] = useState(false);
 
   const cols = ((colaboradores as any[]) ?? []).filter((c: any) =>
     c.cargo?.toLowerCase().includes("consul") || c.cargo?.toLowerCase().includes("vend")
   );
 
-  // Load existing metas
-  const metaQueries = cols.map(c => {
-    const key = `meta_colaborador_${c.id}`;
-    return { id: c.id, key };
-  });
+  // Pre-load existing meta values from system_config
+  useEffect(() => {
+    if (!allConfigs || !cols.length || initialized) return;
+    const loaded: Record<string, string> = {};
+    cols.forEach((c: any) => {
+      const key = `meta_colaborador_${c.id}`;
+      const found = (allConfigs as any[]).find((cfg: any) => cfg.chave === key);
+      if (found?.valor) loaded[key] = found.valor;
+    });
+    if (Object.keys(loaded).length > 0) {
+      setMetas(loaded);
+      setInitialized(true);
+    }
+  }, [allConfigs, cols, initialized]);
 
   return (
     <div className="space-y-3">

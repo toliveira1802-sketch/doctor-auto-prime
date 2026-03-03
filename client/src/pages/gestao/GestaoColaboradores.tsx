@@ -7,10 +7,15 @@ import { Users, Briefcase, Phone, Mail, Calendar } from "lucide-react";
 const CARGO_COLORS: Record<string, string> = {
   "Consultor": "bg-blue-500/20 text-blue-400",
   "Consultor de Vendas": "bg-blue-500/20 text-blue-400",
+  "Consultor Técnico": "bg-cyan-500/20 text-cyan-400",
   "Vendedor": "bg-purple-500/20 text-purple-400",
   "Gerente": "bg-amber-500/20 text-amber-400",
   "Recepcionista": "bg-green-500/20 text-green-400",
   "Coordenador": "bg-orange-500/20 text-orange-400",
+  "Coordenação Interna": "bg-orange-500/20 text-orange-400",
+  "Sócio / Diretor Técnico": "bg-red-500/20 text-red-400",
+  "Gestão / Administração": "bg-amber-500/20 text-amber-400",
+  "Gestão / Financeiro": "bg-yellow-500/20 text-yellow-400",
 };
 
 export default function GestaoColaboradores() {
