@@ -15,6 +15,7 @@ import CRM from "./pages/CRM";
 import ClienteDetail from "./pages/ClienteDetail";
 import Financeiro from "./pages/Financeiro";
 import Produtividade from "./pages/Produtividade";
+import Dev from "./pages/Dev";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/crm/:id" component={ClienteDetail} />
       <Route path="/financeiro" component={Financeiro} />
       <Route path="/produtividade" component={Produtividade} />
+      <Route path="/dev" component={Dev} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
