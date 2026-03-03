@@ -1,7 +1,6 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Car, Clock, User, Wrench, Plus, Loader2, AlertTriangle } from "lucide-react";
+import { Car, Clock, User, Wrench, Plus, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 
 const STAGES = [
@@ -26,11 +25,6 @@ const STAGES = [
 
 type Stage = (typeof STAGES)[number]["key"];
 
-function isOverdue(dateStr: string | null | undefined) {
-  if (!dateStr) return false;
-  return new Date(dateStr) < new Date();
-}
-
 function daysInStage(createdAt: Date | string) {
   const diff = Date.now() - new Date(createdAt).getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -41,21 +35,21 @@ function formatCurrency(v: number | string | null | undefined) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(Number(v));
 }
 
-type PatioItem = {
+type PatioRow = {
   os: {
     id: number;
-    numero: string;
-    status: string;
-    tipoServico: string | null;
-    consultorNome: string | null;
-    descricaoProblema: string | null;
-    valorAprovado: string | null;
-    dataPrevisaoEntrega: Date | string | null;
-    createdAt: Date | string;
+    numeroOs: string | null;
+    status: string | null;
+    motivoVisita: string | null;
+    placa: string | null;
+    km: number | null;
+    totalOrcamento: string | null;
+    valorTotalOs: string | null;
+    createdAt: Date;
   };
-  cliente: { nome: string | null; telefone: string | null } | null;
-  veiculo: { placa: string; modelo: string | null; marca: string | null; cor: string | null } | null;
-  mecanico: { nome: string; emoji: string | null } | null;
+  cliente: { id: number; nomeCompleto: string; telefone: string | null } | null;
+  veiculo: { id: number; marca: string | null; modelo: string | null; placa: string } | null;
+  mecanico: { id: number; nome: string } | null;
 };
 
 function KanbanCard({
@@ -66,14 +60,13 @@ function KanbanCard({
   onDragStart,
   onDragEnd,
 }: {
-  item: PatioItem;
-  onMove: (id: number, status: Stage) => void;
+  item: PatioRow;
+  onMove: (id: number, status: string) => void;
   isMoving: boolean;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
 }) {
-  const overdue = isOverdue(item.os.dataPrevisaoEntrega as string);
   const days = daysInStage(item.os.createdAt);
 
   return (
@@ -83,34 +76,27 @@ function KanbanCard({
       onDragEnd={onDragEnd}
       className={`bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 ${
         dragging ? "opacity-50 scale-95" : ""
-      } ${overdue ? "border-red-500/50" : "border-border"}`}
+      } border-border`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
-        <div>
-          <span className="text-xs font-mono text-muted-foreground">{item.os.numero}</span>
-          {overdue && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <AlertTriangle className="w-3 h-3 text-red-400" />
-              <span className="text-xs text-red-400">Atrasado</span>
-            </div>
-          )}
+        <span className="text-xs font-mono text-primary font-bold">
+          {item.os.numeroOs ?? `#${item.os.id}`}
+        </span>
+        <div className="flex items-center gap-1">
+          <Clock className="w-3 h-3 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">{days}d</span>
         </div>
-        {item.os.tipoServico && (
-          <Badge variant="outline" className="text-xs px-1.5 py-0">
-            {item.os.tipoServico}
-          </Badge>
-        )}
       </div>
 
       {/* Vehicle */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-1.5">
         <Car className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         <div className="min-w-0">
           <span className="text-sm font-semibold text-foreground font-mono">
-            {item.veiculo?.placa ?? "—"}
+            {item.os.placa ?? "—"}
           </span>
-          {item.veiculo?.modelo && (
+          {(item.veiculo?.marca || item.veiculo?.modelo) && (
             <span className="text-xs text-muted-foreground ml-1">
               {item.veiculo.marca} {item.veiculo.modelo}
             </span>
@@ -119,41 +105,34 @@ function KanbanCard({
       </div>
 
       {/* Client */}
-      {item.cliente?.nome && (
-        <div className="flex items-center gap-2 mb-2">
+      {item.cliente && (
+        <div className="flex items-center gap-2 mb-1.5">
           <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <span className="text-xs text-muted-foreground truncate">{item.cliente.nome}</span>
+          <span className="text-xs text-muted-foreground truncate">{item.cliente.nomeCompleto}</span>
         </div>
       )}
 
-      {/* Description */}
-      {item.os.descricaoProblema && (
+      {/* Mechanic */}
+      {item.mecanico && (
+        <div className="flex items-center gap-2 mb-1.5">
+          <Wrench className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <span className="text-xs text-muted-foreground truncate">{item.mecanico.nome}</span>
+        </div>
+      )}
+
+      {/* Motivo */}
+      {item.os.motivoVisita && (
         <p className="text-xs text-muted-foreground mb-2 line-clamp-2 leading-relaxed">
-          {item.os.descricaoProblema}
+          {item.os.motivoVisita}
         </p>
       )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-        <div className="flex items-center gap-1.5">
-          {item.mecanico && (
-            <span className="text-xs text-muted-foreground">
-              {item.mecanico.emoji} {item.mecanico.nome}
-            </span>
-          )}
+      {/* Value */}
+      {(item.os.totalOrcamento || item.os.valorTotalOs) && (
+        <div className="text-xs font-medium text-green-400 mb-2">
+          {formatCurrency(item.os.valorTotalOs ?? item.os.totalOrcamento)}
         </div>
-        <div className="flex items-center gap-2">
-          {item.os.valorAprovado && (
-            <span className="text-xs font-medium text-green-400">
-              {formatCurrency(item.os.valorAprovado)}
-            </span>
-          )}
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">{days}d</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Actions */}
       <div className="mt-2 flex gap-1">
@@ -161,9 +140,9 @@ function KanbanCard({
           <Link href={`/os/${item.os.id}`}>Ver OS</Link>
         </Button>
         {isMoving ? (
-          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground self-center" />
         ) : (
-          <Select onValueChange={(v) => onMove(item.os.id, v as Stage)}>
+          <Select onValueChange={(v) => onMove(item.os.id, v)}>
             <SelectTrigger className="h-6 text-xs w-24 border-border">
               <SelectValue placeholder="Mover" />
             </SelectTrigger>
@@ -173,7 +152,7 @@ function KanbanCard({
                   {s.key}
                 </SelectItem>
               ))}
-              <SelectItem value="Entregue" className="text-xs">Entregue</SelectItem>
+              <SelectItem value="Entregue" className="text-xs">Entregue ✓</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -189,12 +168,13 @@ export default function Patio() {
   const [movingId, setMovingId] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
-  const { data: items = [], isLoading } = trpc.os.patio.useQuery({ consultor: consultor === "todos" ? undefined : consultor });
+  const { data: rawItems = [], isLoading } = trpc.os.patio.useQuery({ consultor: consultor === "todos" ? undefined : consultor });
+  const items = rawItems as PatioRow[];
+
   const updateStatus = trpc.os.updateStatus.useMutation({
     onSuccess: () => {
       utils.os.patio.invalidate();
       utils.dashboard.kpis.invalidate();
-      utils.dashboard.operacional.invalidate();
       setMovingId(null);
     },
     onError: (err) => {
@@ -203,14 +183,17 @@ export default function Patio() {
     },
   });
 
-  const handleMove = (id: number, status: Stage | "Entregue") => {
+  const handleMove = (id: number, status: string) => {
     setMovingId(id);
     updateStatus.mutate({ id, status });
   };
 
   const handleDrop = (stage: string) => {
-    if (draggingId !== null && stage !== items.find((i) => i.os.id === draggingId)?.os.status) {
-      handleMove(draggingId, stage as Stage);
+    if (draggingId !== null) {
+      const current = items.find((i) => i.os.id === draggingId);
+      if (current && stage !== current.os.status) {
+        handleMove(draggingId, stage);
+      }
     }
     setDraggingId(null);
     setDragOverStage(null);
@@ -221,7 +204,7 @@ export default function Patio() {
       acc[s.key] = items.filter((i) => i.os.status === s.key);
       return acc;
     },
-    {} as Record<string, typeof items>
+    {} as Record<string, PatioRow[]>
   );
 
   return (
@@ -298,7 +281,7 @@ export default function Patio() {
                       cards.map((item) => (
                         <KanbanCard
                           key={item.os.id}
-                          item={item as PatioItem}
+                          item={item}
                           onMove={handleMove}
                           isMoving={movingId === item.os.id}
                           dragging={draggingId === item.os.id}

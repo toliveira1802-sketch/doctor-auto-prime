@@ -47,3 +47,11 @@
 
 - [ ] Central de controle com todas as 4 ondas monitoradas
 - [ ] Relatório automático (sugestão recorrente)
+
+## Schema Rebuild (TABELAS_SISTEMA.csv)
+
+- [ ] Rebuild Drizzle schema: 15 tabelas oficiais (empresas, colaboradores, mecanicos, recursos, clientes, veiculos, ordens_servico, ordens_servico_itens, ordens_servico_historico, agendamentos, faturamento, servicos_catalogo, pendencias, crm, lista_status, niveis_acesso, analise_promocoes)
+- [ ] Migrar banco e popular dados de referência (status, niveis_acesso, servicos_catalogo, mecanicos reais)
+- [ ] Reescrever routers tRPC para novo schema
+- [ ] Corrigir fluxo Nova OS: todos os campos obrigatórios, criação inline de cliente/veículo
+- [ ] Atualizar Pátio, OsList, OsDetail, CRM, Financeiro, Produtividade para novo schema

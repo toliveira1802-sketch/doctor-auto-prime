@@ -1,0 +1,40 @@
+{
+  "query": "SHOW TABLES LIKE 'metas%'; DESCRIBE `metas_financeiras`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SHOW TABLES LIKE 'metas%'; DESCRIBE `metas_financeiras`;",
+  "rows": [
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "metas_financeiras"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "Field\tType\tNull\tKey\tDefault\tExtra"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "id\tint\tNO\tPRI\tNULL\tauto_increment"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "mes\tint\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "ano\tint\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "meta_mensal\tdecimal(12,2)\tYES\t\t200000.00\t"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "dias_uteis\tint\tYES\t\t22\t"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "dias_trabalhados\tint\tYES\t\t0\t"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "createdAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)": "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_S6kXiUs3wP8DTXUNAceZmN (metas%)\nmetas_financeiras\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nmes\tint\tNO\t\tNULL\t\nano\tint\tNO\t\tNULL\t\nmeta_mensal\tdecimal(12,2)\tYES\t\t200000.00\t\ndias_uteis\tint\tYES\t\t22\t\ndias_trabalhados\tint\tYES\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\n",
+  "stderr": "",
+  "execution_time_ms": 512
+}

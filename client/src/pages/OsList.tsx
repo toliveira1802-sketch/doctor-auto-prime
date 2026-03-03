@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Car, User, Loader2, AlertTriangle } from "lucide-react";
+import { Plus, Search, Car, User, Loader2, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -26,44 +26,31 @@ const STATUS_BADGE: Record<string, string> = {
   "Cancelada": "bg-red-500/20 text-red-300 border-red-500/30",
 };
 
-const TIPO_BADGE: Record<string, string> = {
-  "Rápido": "bg-blue-500/20 text-blue-300",
-  "Médio": "bg-purple-500/20 text-purple-300",
-  "Demorado": "bg-orange-500/20 text-orange-300",
-  "Projeto": "bg-pink-500/20 text-pink-300",
-};
-
 function formatCurrency(v: string | number | null | undefined) {
-  if (!v) return "—";
+  if (!v) return null;
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(Number(v));
 }
 
-function isOverdue(dateStr: Date | string | null | undefined) {
-  if (!dateStr) return false;
-  return new Date(dateStr as string) < new Date();
+function formatDate(d: Date | string | null | undefined) {
+  if (!d) return "—";
+  return new Date(d as string).toLocaleDateString("pt-BR");
 }
 
 export default function OsList() {
-  const [status, setStatus] = useState("todos");
-  const [consultor, setConsultor] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState("todos");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const limit = 25;
 
   const { data, isLoading } = trpc.os.list.useQuery({
-    status: status === "todos" ? undefined : status,
-    consultor: consultor === "todos" ? undefined : consultor,
-    limit: 100,
+    status: statusFilter === "todos" ? undefined : statusFilter,
+    search: search || undefined,
+    limit,
+    offset: page * limit,
   });
 
   const items = data?.items ?? [];
-
-  const filtered = search
-    ? items.filter(
-        (i) =>
-          i.os.numero.toLowerCase().includes(search.toLowerCase()) ||
-          i.veiculo?.placa?.toLowerCase().includes(search.toLowerCase()) ||
-          i.cliente?.nome?.toLowerCase().includes(search.toLowerCase())
-      )
-    : items;
+  const total = data?.total ?? 0;
 
   return (
     <DashboardLayout>
@@ -72,7 +59,7 @@ export default function OsList() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Ordens de Serviço</h1>
-            <p className="text-sm text-muted-foreground">{filtered.length} OS encontradas</p>
+            <p className="text-sm text-muted-foreground">{total} OS encontradas</p>
           </div>
           <Button asChild>
             <Link href="/os/nova">
@@ -87,14 +74,14 @@ export default function OsList() {
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por OS, placa ou cliente..."
+              placeholder="Buscar por OS, placa ou motivo..."
               className="pl-9 bg-card border-border"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             />
           </div>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-48 border-border">
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-52 border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -109,16 +96,6 @@ export default function OsList() {
               <SelectItem value="Cancelada">Cancelada</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={consultor} onValueChange={setConsultor}>
-            <SelectTrigger className="w-36 border-border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="João">João</SelectItem>
-              <SelectItem value="Pedro">Pedro</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* List */}
@@ -126,91 +103,123 @@ export default function OsList() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Car className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p>Nenhuma OS encontrada</p>
+            <Button className="mt-4" asChild>
+              <Link href="/os/nova">Criar primeira OS</Link>
+            </Button>
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map(({ os, cliente, veiculo, mecanico }) => {
-              const overdue = isOverdue(os.dataPrevisaoEntrega);
-              return (
-                <Link key={os.id} href={`/os/${os.id}`}>
-                  <Card className={`bg-card border cursor-pointer hover:border-primary/50 transition-colors ${overdue && os.status !== "Entregue" && os.status !== "Cancelada" ? "border-red-500/40" : "border-border"}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        {/* OS Number */}
-                        <div className="w-28 shrink-0">
-                          <p className="text-xs font-mono text-muted-foreground">{os.numero}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(os.createdAt).toLocaleDateString("pt-BR")}
-                          </p>
-                        </div>
+            {items.map(({ os, cliente, veiculo, mecanico }) => (
+              <Link key={os.id} href={`/os/${os.id}`}>
+                <Card className="bg-card border border-border cursor-pointer hover:border-primary/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      {/* OS Number + Date */}
+                      <div className="w-32 shrink-0">
+                        <p className="text-xs font-mono text-primary font-bold">
+                          {os.numeroOs ?? `#${os.id}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatDate(os.dataEntrada)}
+                        </p>
+                      </div>
 
-                        {/* Vehicle + Client */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <Car className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-sm font-semibold text-foreground font-mono">
-                              {veiculo?.placa ?? "—"}
+                      {/* Vehicle + Client */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Car className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-semibold text-foreground font-mono">
+                            {os.placa ?? "—"}
+                          </span>
+                          {(veiculo?.marca || veiculo?.modelo) && (
+                            <span className="text-xs text-muted-foreground">
+                              {veiculo?.marca} {veiculo?.modelo}
                             </span>
-                            {veiculo?.modelo && (
-                              <span className="text-xs text-muted-foreground">
-                                {veiculo.marca} {veiculo.modelo}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground">{cliente?.nome ?? "—"}</span>
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        <div className="flex-1 min-w-0 hidden md:block">
-                          <p className="text-xs text-muted-foreground truncate">
-                            {os.descricaoProblema ?? "—"}
-                          </p>
-                          {mecanico && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {mecanico.emoji} {mecanico.nome}
-                            </p>
                           )}
                         </div>
-
-                        {/* Value */}
-                        <div className="w-28 text-right shrink-0 hidden sm:block">
-                          <p className="text-sm font-medium text-green-400">
-                            {formatCurrency(os.valorAprovado ?? os.valorOrcamento)}
-                          </p>
-                          {os.dataPrevisaoEntrega && (
-                            <p className={`text-xs mt-0.5 ${overdue && os.status !== "Entregue" ? "text-red-400" : "text-muted-foreground"}`}>
-                              {overdue && os.status !== "Entregue" && os.status !== "Cancelada" && (
-                                <AlertTriangle className="w-3 h-3 inline mr-0.5" />
-                              )}
-                              {new Date(os.dataPrevisaoEntrega as unknown as string).toLocaleDateString("pt-BR")}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Badges */}
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <Badge variant="outline" className={`text-xs px-2 py-0 ${STATUS_BADGE[os.status] ?? ""}`}>
-                            {os.status}
-                          </Badge>
-                          {os.tipoServico && (
-                            <Badge variant="secondary" className={`text-xs px-2 py-0 ${TIPO_BADGE[os.tipoServico] ?? ""}`}>
-                              {os.tipoServico}
-                            </Badge>
-                          )}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground">
+                            {cliente?.nomeCompleto ?? "—"}
+                          </span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
+
+                      {/* Motivo + Mechanic */}
+                      <div className="flex-1 min-w-0 hidden md:block">
+                        <p className="text-xs text-muted-foreground truncate">
+                          {os.motivoVisita ?? "—"}
+                        </p>
+                        {mecanico && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {mecanico.nome}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Value */}
+                      <div className="w-28 text-right shrink-0 hidden sm:block">
+                        {(os.valorTotalOs || os.totalOrcamento) && (
+                          <p className="text-sm font-medium text-green-400">
+                            {formatCurrency(os.valorTotalOs ?? os.totalOrcamento)}
+                          </p>
+                        )}
+                        {os.dataSaida && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Entregue {formatDate(os.dataSaida)}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Status Badge */}
+                      <div className="shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={`text-xs px-2 py-0 ${STATUS_BADGE[os.status ?? ""] ?? "bg-gray-500/20 text-gray-300"}`}
+                        >
+                          {os.status ?? "—"}
+                        </Badge>
+                      </div>
+
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {total > limit && (
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">
+              {page * limit + 1}–{Math.min((page + 1) * limit, total)} de {total}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="border-border"
+              >
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={(page + 1) * limit >= total}
+                className="border-border"
+              >
+                Próxima
+              </Button>
+            </div>
           </div>
         )}
       </div>

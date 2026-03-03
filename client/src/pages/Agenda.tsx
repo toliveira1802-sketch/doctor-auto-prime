@@ -91,11 +91,11 @@ export default function Agenda() {
     createAgendamento.mutate({
       clienteId: form.selectedClienteId ?? undefined,
       veiculoId: form.selectedVeiculoId ?? undefined,
-      mecanicoId: form.mecanicoId ? parseInt(form.mecanicoId) : undefined,
-      data: dateStr,
-      hora: form.hora,
+      colaboradorId: form.mecanicoId ? parseInt(form.mecanicoId) : undefined,
+      dataAgendamento: dateStr,
+      horaAgendamento: form.hora,
       motivoVisita: form.motivoVisita || undefined,
-      status: form.status as "Confirmado" | "Pendente" | "Cancelado" | "Concluído",
+      status: form.status,
       observacoes: form.observacoes || undefined,
     });
   };
@@ -144,9 +144,9 @@ export default function Agenda() {
                           key={c.id}
                           type="button"
                           className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b border-border last:border-0"
-                          onClick={() => setForm((p) => ({ ...p, selectedClienteId: c.id, clienteSearch: c.nome }))}
+                          onClick={() => setForm((p) => ({ ...p, selectedClienteId: c.id, clienteSearch: c.nomeCompleto }))}
                         >
-                          {c.nome} · {c.telefone ?? "—"}
+                          {c.nomeCompleto} · {c.telefone ?? "—"}
                         </button>
                       ))}
                     </div>
@@ -185,7 +185,7 @@ export default function Agenda() {
                       <SelectContent>
                         {mecanicos?.map((m) => (
                           <SelectItem key={m.id} value={String(m.id)}>
-                            {m.emoji} {m.nome}
+                            {m.nome}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -298,14 +298,14 @@ export default function Agenda() {
           </div>
         ) : (
           <div className="space-y-2">
-            {agendamentos.map(({ ag, cliente, veiculo, mecanico }) => (
+            {agendamentos.map(({ ag, cliente, veiculo }) => (
               <Card key={ag.id} className="bg-card border-border hover:border-primary/40 transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     {/* Time */}
                     <div className="w-16 shrink-0 text-center">
                       <p className="text-lg font-bold text-primary font-mono">
-                        {String(ag.hora).slice(0, 5)}
+                        {String(ag.horaAgendamento ?? "--:--").slice(0, 5)}
                       </p>
                     </div>
 
@@ -325,7 +325,7 @@ export default function Agenda() {
                       {cliente && (
                         <div className="flex items-center gap-1 mt-0.5">
                           <User className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{cliente.nome}</span>
+                          <span className="text-xs text-muted-foreground">{cliente.nomeCompleto}</span>
                         </div>
                       )}
                       {ag.motivoVisita && (
@@ -334,10 +334,9 @@ export default function Agenda() {
                     </div>
 
                     {/* Mechanic */}
-                    {mecanico && (
+                    {ag.colaboradorId && (
                       <div className="text-center shrink-0">
-                        <p className="text-lg">{mecanico.emoji}</p>
-                        <p className="text-xs text-muted-foreground">{mecanico.nome}</p>
+                        <p className="text-xs text-muted-foreground">Consultor #{ag.colaboradorId}</p>
                       </div>
                     )}
 

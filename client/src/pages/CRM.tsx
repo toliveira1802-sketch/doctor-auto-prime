@@ -20,12 +20,11 @@ export default function CRM() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
-    nome: "",
+    nomeCompleto: "",
     telefone: "",
     email: "",
-    cpfCnpj: "",
+    cpf: "",
     endereco: "",
-    observacoes: "",
   });
 
   const utils = trpc.useUtils();
@@ -39,7 +38,7 @@ export default function CRM() {
       utils.clientes.list.invalidate();
       toast.success("Cliente cadastrado!");
       setDialogOpen(false);
-      setForm({ nome: "", telefone: "", email: "", cpfCnpj: "", endereco: "", observacoes: "" });
+      setForm({ nomeCompleto: "", telefone: "", email: "", cpf: "", endereco: "" });
     },
     onError: (err) => toast.error("Erro: " + err.message),
   });
@@ -72,7 +71,7 @@ export default function CRM() {
               <div className="space-y-3 pt-2">
                 <div>
                   <Label>Nome *</Label>
-                  <Input className="mt-1 border-border" placeholder="Nome completo" value={form.nome} onChange={(e) => update("nome", e.target.value)} />
+                  <Input className="mt-1 border-border" placeholder="Nome completo" value={form.nomeCompleto} onChange={(e) => update("nomeCompleto", e.target.value)} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -85,21 +84,18 @@ export default function CRM() {
                   </div>
                   <div>
                     <Label>CPF/CNPJ</Label>
-                    <Input className="mt-1 border-border" placeholder="000.000.000-00" value={form.cpfCnpj} onChange={(e) => update("cpfCnpj", e.target.value)} />
+                    <Input className="mt-1 border-border" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => update("cpf", e.target.value)} />
                   </div>
                 </div>
                 <div>
                   <Label>Endereço</Label>
                   <Input className="mt-1 border-border" placeholder="Rua, número, bairro..." value={form.endereco} onChange={(e) => update("endereco", e.target.value)} />
                 </div>
-                <div>
-                  <Label>Observações</Label>
-                  <Input className="mt-1 border-border" placeholder="Notas sobre o cliente..." value={form.observacoes} onChange={(e) => update("observacoes", e.target.value)} />
-                </div>
+
                 <Button
                   className="w-full"
                   onClick={() => createCliente.mutate(form)}
-                  disabled={!form.nome || createCliente.isPending}
+                  disabled={!form.nomeCompleto || createCliente.isPending}
                 >
                   {createCliente.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Cadastrar
@@ -141,7 +137,7 @@ export default function CRM() {
                         <User className="w-5 h-5 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{c.nome}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{c.nomeCompleto}</p>
                         <div className="flex items-center gap-3 mt-0.5">
                           {c.telefone && (
                             <div className="flex items-center gap-1">

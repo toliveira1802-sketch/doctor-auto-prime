@@ -34,7 +34,6 @@ import {
   Loader2,
   DollarSign,
   Calendar,
-  Edit,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -82,28 +81,28 @@ export default function OsDetail() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [obs, setObs] = useState("");
-  const [valorFinal, setValorFinal] = useState("");
+  const [valorFinalInput, setValorFinalInput] = useState("");
 
   const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.os.byId.useQuery({ id }, { enabled: id > 0 });
+  const { data, isLoading } = trpc.os.get.useQuery({ id }, { enabled: id > 0 });
   const { data: mecanicos } = trpc.mecanicos.list.useQuery();
 
   const updateStatus = trpc.os.updateStatus.useMutation({
     onSuccess: () => {
-      utils.os.byId.invalidate({ id });
+      utils.os.get.invalidate({ id });
       utils.os.patio.invalidate();
       utils.dashboard.kpis.invalidate();
       toast.success("Status atualizado!");
       setStatusDialogOpen(false);
       setObs("");
-      setValorFinal("");
+      setValorFinalInput("");
     },
     onError: (err) => toast.error("Erro: " + err.message),
   });
 
   const updateOs = trpc.os.update.useMutation({
     onSuccess: () => {
-      utils.os.byId.invalidate({ id });
+      utils.os.get.invalidate({ id });
       toast.success("OS atualizada!");
     },
     onError: (err) => toast.error("Erro: " + err.message),
@@ -132,17 +131,21 @@ export default function OsDetail() {
     );
   }
 
-  const { os, cliente, veiculo, mecanico, historico } = data;
-  const currentStatusIdx = STATUS_FLOW.indexOf(os.status);
+  const { os, cliente, veiculo, mecanico, colaborador, historico, itens } = data;
+  const currentStatusIdx = STATUS_FLOW.indexOf(os.status ?? "");
 
   const handleStatusUpdate = () => {
     if (!newStatus) return;
-    updateStatus.mutate({
+    const payload: Parameters<typeof updateStatus.mutate>[0] = {
       id,
-      status: newStatus as Parameters<typeof updateStatus.mutate>[0]["status"],
+      status: newStatus,
       observacao: obs || undefined,
-      valorFinal: valorFinal ? parseFloat(valorFinal) : undefined,
-    });
+    };
+    // If delivering, also update valorTotalOs
+    if (newStatus === "Entregue" && valorFinalInput) {
+      updateOs.mutate({ id, valorTotalOs: parseFloat(valorFinalInput) });
+    }
+    updateStatus.mutate(payload);
   };
 
   return (
@@ -157,15 +160,12 @@ export default function OsDetail() {
           </Button>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-foreground font-mono">{os.numero}</h1>
-              <Badge variant="outline" className={STATUS_BADGE[os.status] ?? ""}>
-                {os.status}
+              <h1 className="text-xl font-bold text-foreground font-mono">
+                {os.numeroOs ?? `OS #${os.id}`}
+              </h1>
+              <Badge variant="outline" className={STATUS_BADGE[os.status ?? ""] ?? ""}>
+                {os.status ?? "—"}
               </Badge>
-              {os.tipoServico && (
-                <Badge variant="secondary" className="text-xs">
-                  {os.tipoServico}
-                </Badge>
-              )}
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               Criada em {formatDateTime(os.createdAt)}
@@ -205,8 +205,8 @@ export default function OsDetail() {
                       type="number"
                       placeholder="0,00"
                       className="mt-1 border-border"
-                      value={valorFinal}
-                      onChange={(e) => setValorFinal(e.target.value)}
+                      value={valorFinalInput}
+                      onChange={(e) => setValorFinalInput(e.target.value)}
                     />
                   </div>
                 )}
@@ -274,20 +274,28 @@ export default function OsDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {veiculo && (
-                <div>
-                  <p className="text-lg font-bold font-mono text-foreground">{veiculo.placa}</p>
+              <div>
+                <p className="text-lg font-bold font-mono text-foreground">
+                  {os.placa ?? veiculo?.placa ?? "—"}
+                </p>
+                {veiculo && (
                   <p className="text-sm text-muted-foreground">
                     {veiculo.marca} {veiculo.modelo} {veiculo.ano && `(${veiculo.ano})`}
                   </p>
-                  {veiculo.cor && <p className="text-xs text-muted-foreground">Cor: {veiculo.cor}</p>}
-                </div>
-              )}
+                )}
+                {os.km && (
+                  <p className="text-xs text-muted-foreground">
+                    KM: {os.km.toLocaleString("pt-BR")}
+                  </p>
+                )}
+              </div>
               {cliente && (
                 <div className="pt-2 border-t border-border">
                   <div className="flex items-center gap-2">
                     <User className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">{cliente.nome}</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {cliente.nomeCompleto}
+                    </span>
                   </div>
                   {cliente.telefone && (
                     <p className="text-xs text-muted-foreground mt-1 ml-5">{cliente.telefone}</p>
@@ -310,14 +318,17 @@ export default function OsDetail() {
             </CardHeader>
             <CardContent className="space-y-2">
               {[
-                { label: "Mecânico", value: mecanico ? `${mecanico.emoji} ${mecanico.nome}` : "—" },
-                { label: "Consultor", value: os.consultorNome ?? "—" },
-                { label: "Tipo", value: os.tipoServico ?? "—" },
-                { label: "KM Entrada", value: os.kmEntrada ? `${os.kmEntrada.toLocaleString("pt-BR")} km` : "—" },
+                { label: "Mecânico", value: mecanico?.nome ?? "—" },
+                { label: "Consultor", value: colaborador?.nome ?? "—" },
+                { label: "Motivo da Visita", value: os.motivoVisita ?? "—" },
+                { label: "Veio de Promoção", value: os.veioDePromocao ? "Sim" : "Não" },
+                { label: "Primeira Vez", value: os.primeiraVez ? "Sim" : "Não" },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{label}</span>
-                  <span className="text-foreground font-medium">{value}</span>
+                  <span className="text-foreground font-medium text-right max-w-[60%] truncate">
+                    {value}
+                  </span>
                 </div>
               ))}
             </CardContent>
@@ -334,8 +345,7 @@ export default function OsDetail() {
             <CardContent className="space-y-2">
               {[
                 { label: "Entrada", value: formatDate(os.dataEntrada) },
-                { label: "Previsão Entrega", value: formatDate(os.dataPrevisaoEntrega) },
-                { label: "Entrega Real", value: formatDate(os.dataEntrega) },
+                { label: "Saída / Entrega", value: formatDate(os.dataSaida) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{label}</span>
@@ -355,41 +365,103 @@ export default function OsDetail() {
             </CardHeader>
             <CardContent className="space-y-2">
               {[
-                { label: "Orçamento", value: formatCurrency(os.valorOrcamento) },
-                { label: "Aprovado", value: formatCurrency(os.valorAprovado) },
-                { label: "Valor Final", value: formatCurrency(os.valorFinal), highlight: true },
+                { label: "Orçamento Total", value: formatCurrency(os.totalOrcamento) },
+                { label: "Valor Final OS", value: formatCurrency(os.valorTotalOs), highlight: true },
               ].map(({ label, value, highlight }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{label}</span>
-                  <span className={`font-medium ${highlight ? "text-green-400 text-base" : "text-foreground"}`}>
+                  <span
+                    className={`font-medium ${
+                      highlight ? "text-green-400 text-base" : "text-foreground"
+                    }`}
+                  >
                     {value}
                   </span>
                 </div>
               ))}
+              <div className="pt-2">
+                <Label className="text-xs text-muted-foreground">Atualizar Valor Final</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="number"
+                    placeholder="R$ 0,00"
+                    className="border-border h-8 text-sm"
+                    onChange={(e) => setValorFinalInput(e.target.value)}
+                    value={valorFinalInput}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 border-border"
+                    disabled={!valorFinalInput || updateOs.isPending}
+                    onClick={() => {
+                      if (valorFinalInput) {
+                        updateOs.mutate({ id, valorTotalOs: parseFloat(valorFinalInput) });
+                        setValorFinalInput("");
+                      }
+                    }}
+                  >
+                    {updateOs.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Salvar"}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Problem Description */}
-        {os.descricaoProblema && (
+        {/* Observations */}
+        {os.observacoes && (
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Problema Relatado</CardTitle>
+              <CardTitle className="text-sm">Observações</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground leading-relaxed">{os.descricaoProblema}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{os.observacoes}</p>
             </CardContent>
           </Card>
         )}
 
-        {/* Services Performed */}
-        {os.servicosRealizados && (
+        {/* Items */}
+        {itens && itens.length > 0 && (
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Serviços Realizados</CardTitle>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-primary" />
+                Itens da OS ({itens.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground leading-relaxed">{os.servicosRealizados}</p>
+              <div className="space-y-2">
+                {itens.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm text-foreground">{item.descricao}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.tipo} · Qtd: {item.quantidade}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-green-400">
+                        {formatCurrency(item.valorTotal)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatCurrency(item.valorUnitario)} un.
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between pt-2 font-semibold">
+                  <span className="text-sm text-foreground">Total Itens</span>
+                  <span className="text-sm text-green-400">
+                    {formatCurrency(
+                      itens.reduce((sum, i) => sum + Number(i.valorTotal ?? 0), 0)
+                    )}
+                  </span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -403,7 +475,7 @@ export default function OsDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {historico.length === 0 ? (
+            {!historico || historico.length === 0 ? (
               <p className="text-sm text-muted-foreground">Sem histórico registrado.</p>
             ) : (
               <div className="relative">
@@ -415,7 +487,7 @@ export default function OsDetail() {
                         <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {h.statusAnterior && (
                             <>
                               <Badge variant="outline" className="text-xs px-1.5 py-0">
@@ -424,15 +496,18 @@ export default function OsDetail() {
                               <ChevronRight className="w-3 h-3 text-muted-foreground" />
                             </>
                           )}
-                          <Badge variant="outline" className={`text-xs px-1.5 py-0 ${STATUS_BADGE[h.statusNovo] ?? ""}`}>
-                            {h.statusNovo}
+                          <Badge
+                            variant="outline"
+                            className={`text-xs px-1.5 py-0 ${STATUS_BADGE[h.statusNovo ?? ""] ?? ""}`}
+                          >
+                            {h.statusNovo ?? "—"}
                           </Badge>
                         </div>
                         {h.observacao && (
                           <p className="text-xs text-muted-foreground mt-1">{h.observacao}</p>
                         )}
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {h.usuarioNome} · {formatDateTime(h.createdAt)}
+                          {formatDateTime(h.dataAlteracao)}
                         </p>
                       </div>
                     </div>

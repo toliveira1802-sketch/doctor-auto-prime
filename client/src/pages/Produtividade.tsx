@@ -122,9 +122,9 @@ export default function Produtividade() {
                           )}
                         </div>
 
-                        {/* Emoji + Name */}
-                        <div className="w-10 text-center shrink-0">
-                          <span className="text-2xl">{m.emoji ?? "🔧"}</span>
+                        {/* Icon */}
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                          <Wrench className="w-5 h-5 text-primary" />
                         </div>
 
                         {/* Info */}

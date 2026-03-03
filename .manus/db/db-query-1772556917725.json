@@ -1,0 +1,58 @@
+{
+  "query": "SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'agendamentos' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'agendamentos' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "cliente_id",
+      "COLUMN_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "veiculo_id",
+      "COLUMN_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "mecanico_id",
+      "COLUMN_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "data",
+      "COLUMN_TYPE": "date"
+    },
+    {
+      "COLUMN_NAME": "hora",
+      "COLUMN_TYPE": "time"
+    },
+    {
+      "COLUMN_NAME": "motivo_visita",
+      "COLUMN_TYPE": "varchar(300)"
+    },
+    {
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('Confirmado','Pendente','Cancelado','Concluído')"
+    },
+    {
+      "COLUMN_NAME": "observacoes",
+      "COLUMN_TYPE": "text"
+    },
+    {
+      "COLUMN_NAME": "createdAt",
+      "COLUMN_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "colaboradorId",
+      "COLUMN_TYPE": "int"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tCOLUMN_TYPE\nid\tint\ncliente_id\tint\nveiculo_id\tint\nmecanico_id\tint\ndata\tdate\nhora\ttime\nmotivo_visita\tvarchar(300)\nstatus\tenum('Confirmado','Pendente','Cancelado','Concluído')\nobservacoes\ttext\ncreatedAt\ttimestamp\nupdatedAt\ttimestamp\ncolaboradorId\tint\n",
+  "stderr": "",
+  "execution_time_ms": 367
+}

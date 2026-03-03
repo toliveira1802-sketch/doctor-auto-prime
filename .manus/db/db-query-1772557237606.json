@@ -1,0 +1,46 @@
+{
+  "query": "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME='agendamentos' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME='agendamentos' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "cliente_id"
+    },
+    {
+      "COLUMN_NAME": "veiculo_id"
+    },
+    {
+      "COLUMN_NAME": "mecanico_id"
+    },
+    {
+      "COLUMN_NAME": "data"
+    },
+    {
+      "COLUMN_NAME": "hora"
+    },
+    {
+      "COLUMN_NAME": "motivo_visita"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "observacoes"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "colaboradorId"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\ncliente_id\nveiculo_id\nmecanico_id\ndata\nhora\nmotivo_visita\nstatus\nobservacoes\ncreatedAt\nupdatedAt\ncolaboradorId\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

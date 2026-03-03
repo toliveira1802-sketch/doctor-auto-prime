@@ -128,7 +128,7 @@ export default function Financeiro() {
                 },
                 {
                   label: "OS Entregues",
-                  value: data.osEntregues,
+                  value: data.totalOS,
                   icon: Car,
                   color: "text-indigo-400",
                   bg: "bg-indigo-500/10",
@@ -204,7 +204,7 @@ export default function Financeiro() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={data.faturamentoMensal}>
+                    <BarChart data={data.fatMensal}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="mes" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
@@ -213,7 +213,7 @@ export default function Financeiro() {
                         contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                         labelStyle={{ color: "hsl(var(--foreground))" }}
                       />
-                      <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -229,7 +229,7 @@ export default function Financeiro() {
                     <ResponsiveContainer width="60%" height={180}>
                       <PieChart>
                         <Pie
-                          data={data.porTipo}
+                          data={data.mixServicos}
                           cx="50%"
                           cy="50%"
                           innerRadius={50}
@@ -237,8 +237,8 @@ export default function Financeiro() {
                           dataKey="valor"
                           nameKey="tipo"
                         >
-                          {data.porTipo.map((entry, i) => (
-                            <Cell key={i} fill={TIPO_COLORS[entry.tipo] ?? "#6366f1"} />
+                          {data.mixServicos.map((entry: { motivoVisita: string | null; count: number }, i: number) => (
+                            <Cell key={i} fill={TIPO_COLORS[entry.motivoVisita ?? ""] ?? "#6366f1"} />
                           ))}
                         </Pie>
                         <Tooltip
@@ -248,12 +248,12 @@ export default function Financeiro() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="space-y-2">
-                      {data.porTipo.map((t) => (
-                        <div key={t.tipo} className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ background: TIPO_COLORS[t.tipo] ?? "#6366f1" }} />
+                      {data.mixServicos.map((t: { motivoVisita: string | null; count: number }) => (
+                        <div key={t.motivoVisita ?? "x"} className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ background: TIPO_COLORS[t.motivoVisita ?? ""] ?? "#6366f1" }} />
                           <div>
-                            <p className="text-xs font-medium text-foreground">{t.tipo}</p>
-                            <p className="text-xs text-muted-foreground">{formatCurrencyShort(t.valor)}</p>
+                            <p className="text-xs font-medium text-foreground">{t.motivoVisita ?? "Outros"}</p>
+                            <p className="text-xs text-muted-foreground">{t.count} OS</p>
                           </div>
                         </div>
                       ))}
@@ -264,21 +264,21 @@ export default function Financeiro() {
             </div>
 
             {/* Top OS */}
-            {data.topOs && data.topOs.length > 0 && (
+            {data.topOS && data.topOS.length > 0 && (
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">Top OS do Mês</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {data.topOs.map((o, i) => (
-                      <div key={o.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
+                    {data.topOS.map((o: { os: { id: number; numeroOs: string | null; valorTotalOs: string | null; placa: string | null }; cliente: { nomeCompleto: string } | null }, i: number) => (
+                      <div key={o.os.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
                         <span className="text-sm font-bold text-muted-foreground w-5">{i + 1}</span>
                         <div className="flex-1">
-                          <span className="text-xs font-mono text-muted-foreground">{o.numero}</span>
-                          <p className="text-xs text-foreground">{o.veiculo ?? "—"}</p>
+                          <span className="text-xs font-mono text-muted-foreground">{o.os.numeroOs ?? `#${o.os.id}`}</span>
+                          <p className="text-xs text-foreground">{o.os.placa ?? o.cliente?.nomeCompleto ?? "—"}</p>
                         </div>
-                        <span className="text-sm font-bold text-green-400">{formatCurrency(o.valor)}</span>
+                        <span className="text-sm font-bold text-green-400">{formatCurrency(Number(o.os.valorTotalOs ?? 0))}</span>
                       </div>
                     ))}
                   </div>

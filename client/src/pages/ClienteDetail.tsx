@@ -54,8 +54,8 @@ export default function ClienteDetail() {
 
   const { cliente, veiculos, os: ordens } = data;
   const totalGasto = ordens
-    .filter((o: { status: string; valorFinal?: string | number | null }) => o.status === "Entregue" && o.valorFinal)
-    .reduce((sum: number, o: { valorFinal?: string | number | null }) => sum + Number(o.valorFinal ?? 0), 0);
+    .filter((o: { status: string | null; valorTotalOs?: string | number | null }) => o.status === "Entregue" && o.valorTotalOs)
+    .reduce((sum: number, o: { valorTotalOs?: string | number | null }) => sum + Number(o.valorTotalOs ?? 0), 0);
 
   return (
     <DashboardLayout>
@@ -72,7 +72,7 @@ export default function ClienteDetail() {
               <User className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">{cliente.nome}</h1>
+              <h1 className="text-xl font-bold text-foreground">{cliente.nomeCompleto}</h1>
               <p className="text-sm text-muted-foreground">
                 Cliente desde {new Date(cliente.createdAt).toLocaleDateString("pt-BR")}
               </p>
@@ -121,9 +121,9 @@ export default function ClienteDetail() {
                   </div>
                 ) : null
               )}
-              {cliente.observacoes && (
+              {cliente.origemCadastro && (
                 <div className="pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground">{cliente.observacoes}</p>
+                  <p className="text-xs text-muted-foreground">Origem: {cliente.origemCadastro}</p>
                 </div>
               )}
             </CardContent>
@@ -168,26 +168,26 @@ export default function ClienteDetail() {
               <p className="text-sm text-muted-foreground">Nenhuma OS encontrada.</p>
             ) : (
               <div className="space-y-2">
-                {ordens.map((o: { id: number; numero: string; status: string; descricaoProblema?: string | null; valorFinal?: string | number | null; valorAprovado?: string | number | null; createdAt: Date | string }) => (
+                {ordens.map((o: { id: number; numeroOs: string | null; status: string | null; motivoVisita?: string | null; valorTotalOs?: string | number | null; totalOrcamento?: string | number | null; dataEntrada: Date | string | null; createdAt: Date | string }) => (
                   <Link key={o.id} href={`/os/${o.id}`}>
                     <div className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/40 transition-colors cursor-pointer">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground">{o.numero}</span>
-                          <Badge variant="outline" className={`text-xs px-1.5 py-0 ${STATUS_BADGE[o.status] ?? ""}`}>
-                            {o.status}
+                          <span className="text-xs font-mono text-muted-foreground">{o.numeroOs ?? `#${o.id}`}</span>
+                          <Badge variant="outline" className={`text-xs px-1.5 py-0 ${STATUS_BADGE[o.status ?? ""] ?? ""}`}>
+                            {o.status ?? "—"}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {o.descricaoProblema ?? "—"}
+                          {o.motivoVisita ?? "—"}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-medium text-green-400">
-                          {formatCurrency(o.valorFinal ?? o.valorAprovado)}
+                          {formatCurrency(o.valorTotalOs ?? o.totalOrcamento)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(o.createdAt).toLocaleDateString("pt-BR")}
+                          {o.dataEntrada ? new Date(o.dataEntrada as string).toLocaleDateString("pt-BR") : "—"}
                         </p>
                       </div>
                     </div>

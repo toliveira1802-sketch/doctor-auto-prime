@@ -8,27 +8,19 @@ import {
   clientes,
   veiculos,
   mecanicos,
+  colaboradores,
   ordensServico,
-  osHistorico,
+  ordensServicoItens,
+  ordensServicoHistorico,
   agendamentos,
-  crmInteracoes,
+  faturamento,
+  servicosCatalogo,
+  listaStatus,
+  crm,
   metasFinanceiras,
+  recursos,
 } from "../drizzle/schema";
-import { eq, desc, and, gte, lte, sql, like, or } from "drizzle-orm";
-
-// ─── Status helpers ───────────────────────────────────────────────────────────
-const OS_STATUS = [
-  "Diagnóstico",
-  "Orçamento",
-  "Aguardando Aprovação",
-  "Aguardando Peças",
-  "Em Execução",
-  "Pronto",
-  "Entregue",
-  "Cancelada",
-] as const;
-
-type OsStatus = (typeof OS_STATUS)[number];
+import { eq, desc, and, gte, lte, sql, like, or, ne } from "drizzle-orm";
 
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
@@ -43,309 +35,248 @@ export const appRouter = router({
     }),
   }),
 
-  // ─── Dashboard ─────────────────────────────────────────────────────────────
+  // ─── Dashboard KPIs ────────────────────────────────────────────────────────
   dashboard: router({
     kpis: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return null;
 
-      const now = new Date();
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const todayStr = now.toISOString().split("T")[0];
-      const firstOfMonthStr = firstOfMonth.toISOString().split("T")[0];
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      const [veiculosNoPatio] = await db
+      // Veículos no pátio (não entregues, não cancelados)
+      const [patioCount] = await db
         .select({ count: sql<number>`count(*)` })
         .from(ordensServico)
-        .where(
-          and(
-            sql`status NOT IN ('Entregue', 'Cancelada')`
-          )
-        );
+        .where(sql`${ordensServico.status} NOT IN ('Entregue', 'Cancelada')`);
 
-      const [agendamentosHoje] = await db
+      // Agendamentos hoje
+      const [agCount] = await db
         .select({ count: sql<number>`count(*)` })
         .from(agendamentos)
-        .where(eq(agendamentos.data, todayStr as unknown as Date));
+        .where(sql`DATE(${agendamentos.dataAgendamento}) = ${todayStr}`);
 
-      const [faturamentoMes] = await db
-        .select({ total: sql<number>`COALESCE(SUM(valor_final), 0)` })
-        .from(ordensServico)
-        .where(
-          and(
-            eq(ordensServico.status, "Entregue"),
-            gte(ordensServico.dataEntrega, firstOfMonthStr as unknown as Date)
-          )
-        );
+      // Faturamento do mês
+      const [fatMes] = await db
+        .select({ total: sql<number>`COALESCE(SUM(valor), 0)`, count: sql<number>`count(*)` })
+        .from(faturamento)
+        .where(gte(faturamento.createdAt, firstOfMonth));
 
-      const [ticketMedio] = await db
-        .select({ avg: sql<number>`COALESCE(AVG(valor_final), 0)` })
-        .from(ordensServico)
-        .where(
-          and(
-            eq(ordensServico.status, "Entregue"),
-            gte(ordensServico.dataEntrega, firstOfMonthStr as unknown as Date)
-          )
-        );
-
-      const [entreguesMes] = await db
+      // Entregas do mês
+      const [entregues] = await db
         .select({ count: sql<number>`count(*)` })
         .from(ordensServico)
-        .where(
-          and(
-            eq(ordensServico.status, "Entregue"),
-            gte(ordensServico.dataEntrega, firstOfMonthStr as unknown as Date)
-          )
-        );
+        .where(and(eq(ordensServico.status, "Entregue"), gte(ordensServico.updatedAt, firstOfMonth)));
 
-      const meta = await db
+      // Meta do mês
+      const [meta] = await db
         .select()
         .from(metasFinanceiras)
         .where(
           and(
-            eq(metasFinanceiras.mes, now.getMonth() + 1),
-            eq(metasFinanceiras.ano, now.getFullYear())
+            eq(metasFinanceiras.mes, today.getMonth() + 1),
+            eq(metasFinanceiras.ano, today.getFullYear())
           )
         )
         .limit(1);
 
+      // Status counts para o gráfico do pátio
+      const statusCounts = await db
+        .select({ status: ordensServico.status, count: sql<number>`count(*)` })
+        .from(ordensServico)
+        .where(sql`${ordensServico.status} NOT IN ('Entregue', 'Cancelada')`)
+        .groupBy(ordensServico.status);
+
       return {
-        veiculosNoPatio: Number(veiculosNoPatio?.count ?? 0),
-        agendamentosHoje: Number(agendamentosHoje?.count ?? 0),
-        faturamentoMes: Number(faturamentoMes?.total ?? 0),
-        ticketMedio: Number(ticketMedio?.avg ?? 0),
-        entreguesMes: Number(entreguesMes?.count ?? 0),
-        metaMensal: Number(meta[0]?.metaMensal ?? 200000),
-        diasUteis: meta[0]?.diasUteis ?? 22,
-        diasTrabalhados: meta[0]?.diasTrabalhados ?? 0,
+        veiculosNoPatio: Number(patioCount?.count ?? 0),
+        agendamentosHoje: Number(agCount?.count ?? 0),
+        faturamentoMes: Number(fatMes?.total ?? 0),
+        entreguesMes: Number(entregues?.count ?? 0),
+        metaMensal: meta ? Number(meta.metaMensal ?? 200000) : 200000,
+        statusCounts: statusCounts.map((s) => ({
+          status: s.status,
+          count: Number(s.count),
+        })),
       };
     }),
 
-    operacional: protectedProcedure.query(async () => {
-      const db = await getDb();
-      if (!db) return [];
-
-      const counts = await db
-        .select({
-          status: ordensServico.status,
-          count: sql<number>`count(*)`,
-        })
-        .from(ordensServico)
-        .where(sql`status NOT IN ('Entregue', 'Cancelada')`)
-        .groupBy(ordensServico.status);
-
-      return counts;
-    }),
-
     financeiro: protectedProcedure
-      .input(z.object({ mes: z.string().optional(), consultor: z.string().optional() }))
+      .input(z.object({ mes: z.string().optional(), consultor: z.string().optional() }).optional())
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) return null;
 
         const now = new Date();
-        // Parse mes param (YYYY-MM) or default to current month
-        let year = now.getFullYear();
-        let month = now.getMonth();
-        if (input.mes) {
+        let mes = now.getMonth() + 1;
+        let ano = now.getFullYear();
+        if (input?.mes) {
           const parts = input.mes.split("-");
-          year = parseInt(parts[0]);
-          month = parseInt(parts[1]) - 1;
+          ano = parseInt(parts[0]);
+          mes = parseInt(parts[1]);
         }
-        const firstOfMonthStr = new Date(year, month, 1).toISOString().split("T")[0];
-        const firstOfNextMonthStr = new Date(year, month + 1, 1).toISOString().split("T")[0];
+        const firstOfMonth = new Date(ano, mes - 1, 1);
+        const lastOfMonth = new Date(ano, mes, 0, 23, 59, 59);
 
-        const baseConditions = [
-          eq(ordensServico.status, "Entregue"),
-          gte(ordensServico.dataEntrega, firstOfMonthStr as unknown as Date),
-          sql`data_entrega < ${firstOfNextMonthStr}`,
-        ];
-        if (input.consultor && input.consultor !== "todos") {
-          baseConditions.push(eq(ordensServico.consultorNome, input.consultor));
-        }
+        const [fatMes] = await db
+          .select({ total: sql<number>`COALESCE(SUM(valor), 0)`, count: sql<number>`count(*)` })
+          .from(faturamento)
+          .where(and(gte(faturamento.createdAt, firstOfMonth), lte(faturamento.createdAt, lastOfMonth)));
 
-        const [faturadoRow] = await db
-          .select({ total: sql<number>`COALESCE(SUM(valor_final), 0)`, count: sql<number>`count(*)`, avg: sql<number>`COALESCE(AVG(valor_final), 0)` })
-          .from(ordensServico)
-          .where(and(...baseConditions));
-
-        // Previous month for growth calc
-        const prevFirstStr = new Date(year, month - 1, 1).toISOString().split("T")[0];
-        const prevLastStr = firstOfMonthStr;
-        const [prevRow] = await db
-          .select({ total: sql<number>`COALESCE(SUM(valor_final), 0)` })
-          .from(ordensServico)
-          .where(and(
-            eq(ordensServico.status, "Entregue"),
-            gte(ordensServico.dataEntrega, prevFirstStr as unknown as Date),
-            sql`data_entrega < ${prevLastStr}`,
-          ));
-
-        const faturamentoMes = Number(faturadoRow?.total ?? 0);
-        const prevFaturamento = Number(prevRow?.total ?? 0);
-        const crescimento = prevFaturamento > 0 ? ((faturamentoMes - prevFaturamento) / prevFaturamento) * 100 : 0;
-
-        // Monthly trend (last 6 months)
-        const faturamentoMensal: { mes: string; valor: number }[] = [];
+        const fatMensal = [];
         for (let i = 5; i >= 0; i--) {
-          const d = new Date(year, month - i, 1);
-          const s = d.toISOString().split("T")[0];
-          const e = new Date(year, month - i + 1, 1).toISOString().split("T")[0];
+          const d = new Date(ano, mes - 1 - i, 1);
+          const dEnd = new Date(ano, mes - i, 0, 23, 59, 59);
           const [row] = await db
-            .select({ total: sql<number>`COALESCE(SUM(valor_final), 0)` })
-            .from(ordensServico)
-            .where(and(
-              eq(ordensServico.status, "Entregue"),
-              gte(ordensServico.dataEntrega, s as unknown as Date),
-              sql`data_entrega < ${e}`,
-            ));
-          faturamentoMensal.push({
-            mes: d.toLocaleDateString("pt-BR", { month: "short" }),
-            valor: Number(row?.total ?? 0),
+            .select({ total: sql<number>`COALESCE(SUM(valor), 0)`, count: sql<number>`count(*)` })
+            .from(faturamento)
+            .where(and(gte(faturamento.createdAt, d), lte(faturamento.createdAt, dEnd)));
+          fatMensal.push({
+            mes: d.toLocaleString("pt-BR", { month: "short" }),
+            total: Number(row?.total ?? 0),
+            count: Number(row?.count ?? 0),
           });
         }
 
-        // By tipo
-        const tipoRows = await db
-          .select({ tipo: ordensServico.tipoServico, valor: sql<number>`COALESCE(SUM(valor_final), 0)` })
-          .from(ordensServico)
-          .where(and(...baseConditions))
-          .groupBy(ordensServico.tipoServico);
+        const [meta] = await db
+          .select()
+          .from(metasFinanceiras)
+          .where(and(eq(metasFinanceiras.mes, mes), eq(metasFinanceiras.ano, ano)))
+          .limit(1);
 
-        const porTipo = tipoRows
-          .filter((r) => r.tipo)
-          .map((r) => ({ tipo: r.tipo ?? "Outros", valor: Number(r.valor) }));
+        const totalFat = Number(fatMes?.total ?? 0);
+        const totalOS = Number(fatMes?.count ?? 0);
+        const metaValor = meta ? Number(meta.metaMensal ?? 200000) : 200000;
 
-        // Top OS
-        const topOsRows = await db
-          .select({
-            id: ordensServico.id,
-            numero: ordensServico.numero,
-            valor: sql<number>`COALESCE(valor_final, 0)`,
-            placa: veiculos.placa,
-            modelo: veiculos.modelo,
-          })
+        const topOS = await db
+          .select({ os: ordensServico, cliente: clientes })
           .from(ordensServico)
-          .leftJoin(veiculos, eq(ordensServico.veiculoId, veiculos.id))
-          .where(and(...baseConditions))
-          .orderBy(sql`valor_final DESC`)
+          .leftJoin(clientes, eq(ordensServico.clienteId, clientes.id))
+          .where(
+            and(
+              eq(ordensServico.status, "Entregue"),
+              gte(ordensServico.updatedAt, firstOfMonth),
+              lte(ordensServico.updatedAt, lastOfMonth)
+            )
+          )
+          .orderBy(desc(ordensServico.valorTotalOs))
           .limit(5);
 
-        const topOs = topOsRows.map((r) => ({
-          id: r.id,
-          numero: r.numero,
-          valor: Number(r.valor),
-          veiculo: r.placa ? `${r.placa} ${r.modelo ?? ""}`.trim() : null,
-        }));
+        const mixServicos = await db
+          .select({ motivoVisita: ordensServico.motivoVisita, count: sql<number>`count(*)` })
+          .from(ordensServico)
+          .where(gte(ordensServico.createdAt, firstOfMonth))
+          .groupBy(ordensServico.motivoVisita)
+          .orderBy(desc(sql`count(*)`))
+          .limit(8);
+
+        const crescimento =
+          fatMensal.length >= 2 && fatMensal[fatMensal.length - 2].total > 0
+            ? ((totalFat - fatMensal[fatMensal.length - 2].total) /
+                fatMensal[fatMensal.length - 2].total) *
+              100
+            : 0;
 
         return {
-          faturamentoMes,
-          ticketMedio: Number(faturadoRow?.avg ?? 0),
-          osEntregues: Number(faturadoRow?.count ?? 0),
+          faturamentoMes: totalFat,
+          totalOS,
+          ticketMedio: totalOS > 0 ? totalFat / totalOS : 0,
+          metaMensal: metaValor,
+          percentualMeta: metaValor > 0 ? (totalFat / metaValor) * 100 : 0,
+          fatMensal,
+          topOS,
+          mixServicos,
           crescimento,
-          faturamentoMensal,
-          porTipo,
-          topOs,
         };
       }),
 
     produtividade: protectedProcedure
-      .input(z.object({ periodo: z.enum(["semana", "mes"]).default("mes") }))
+      .input(z.object({ periodo: z.enum(["semana", "mes"]).default("mes") }).optional())
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) return [];
 
         const now = new Date();
-        let startDate: string;
-
-        if (input.periodo === "semana") {
-          const dayOfWeek = now.getDay();
-          const monday = new Date(now);
-          monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-          startDate = monday.toISOString().split("T")[0];
+        const periodo = input?.periodo ?? "mes";
+        let startDate: Date;
+        if (periodo === "semana") {
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 7);
         } else {
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-            .toISOString()
-            .split("T")[0];
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         }
 
-        const mecs = await db.select().from(mecanicos).where(eq(mecanicos.ativo, true));
+        const osPorMecanico = await db
+          .select({
+            mecanicoId: ordensServico.mecanicoId,
+            count: sql<number>`count(*)`,
+            valorTotal: sql<number>`COALESCE(SUM(CAST(valor_total_os AS DECIMAL(10,2))), 0)`,
+          })
+          .from(ordensServico)
+          .where(and(ne(ordensServico.status, "Cancelada"), gte(ordensServico.createdAt, startDate)))
+          .groupBy(ordensServico.mecanicoId);
 
-        const results = await Promise.all(
-          mecs.map(async (mec) => {
-            const [stats] = await db
-              .select({
-                total: sql<number>`COALESCE(SUM(valor_final), 0)`,
-                count: sql<number>`count(*)`,
-              })
-              .from(ordensServico)
-              .where(
-                and(
-                  eq(ordensServico.mecanicoId, mec.id),
-                  eq(ordensServico.status, "Entregue"),
-                  gte(ordensServico.dataEntrega, startDate as unknown as Date)
-                )
-              );
+        const mecanicosList = await db.select().from(mecanicos).where(eq(mecanicos.ativo, true));
 
+        return mecanicosList
+          .map((m) => {
+            const stats = osPorMecanico.find((o) => o.mecanicoId === m.id);
             return {
-              ...mec,
-              produzido: Number(stats?.total ?? 0),
+              id: m.id,
+              nome: m.nome,
+              especialidade: m.especialidade,
               carros: Number(stats?.count ?? 0),
-              meta: input.periodo === "semana" ? Number(mec.metaSemanal) : Number(mec.metaMensal),
+              produzido: Number(stats?.valorTotal ?? 0),
+              meta: 30000,
             };
           })
-        );
-
-        return results.sort((a, b) => b.produzido - a.produzido);
+          .sort((a, b) => b.produzido - a.produzido);
       }),
   }),
 
-  // ─── Ordens de Serviço ──────────────────────────────────────────────────────
-  os: router({
+  // ─── Clientes ──────────────────────────────────────────────────────────────
+  clientes: router({
     list: protectedProcedure
       .input(
-        z.object({
-          status: z.string().optional(),
-          consultor: z.string().optional(),
-          search: z.string().optional(),
-          limit: z.number().default(50),
-          offset: z.number().default(0),
-        })
+        z
+          .object({
+            search: z.string().optional(),
+            limit: z.number().optional(),
+          })
+          .optional()
       )
       .query(async ({ input }) => {
         const db = await getDb();
-        if (!db) return { items: [], total: 0 };
-
-        const conditions = [];
-        if (input.status && input.status !== "todos") {
-          conditions.push(eq(ordensServico.status, input.status as OsStatus));
+        if (!db) return [];
+        const lim = input?.limit ?? 100;
+        if (input?.search) {
+          return db
+            .select()
+            .from(clientes)
+            .where(
+              or(
+                like(clientes.nomeCompleto, `%${input.search}%`),
+                like(clientes.telefone, `%${input.search}%`),
+                like(clientes.cpf, `%${input.search}%`)
+              )
+            )
+            .orderBy(desc(clientes.createdAt))
+            .limit(lim);
         }
-        if (input.consultor && input.consultor !== "todos") {
-          conditions.push(eq(ordensServico.consultorNome, input.consultor));
-        }
+        return db.select().from(clientes).orderBy(desc(clientes.createdAt)).limit(lim);
+      }),
 
-        const query = db
-          .select({
-            os: ordensServico,
-            cliente: { nome: clientes.nome, telefone: clientes.telefone },
-            veiculo: { placa: veiculos.placa, modelo: veiculos.modelo, marca: veiculos.marca },
-            mecanico: { nome: mecanicos.nome, emoji: mecanicos.emoji },
-          })
-          .from(ordensServico)
-          .leftJoin(clientes, eq(ordensServico.clienteId, clientes.id))
-          .leftJoin(veiculos, eq(ordensServico.veiculoId, veiculos.id))
-          .leftJoin(mecanicos, eq(ordensServico.mecanicoId, mecanicos.id))
-          .orderBy(desc(ordensServico.createdAt))
-          .limit(input.limit)
-          .offset(input.offset);
-
-        if (conditions.length > 0) {
-          const items = await query.where(and(...conditions));
-          return { items, total: items.length };
-        }
-
-        const items = await query;
-        return { items, total: items.length };
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return null;
+        const [cliente] = await db
+          .select()
+          .from(clientes)
+          .where(eq(clientes.id, input.id))
+          .limit(1);
+        return cliente ?? null;
       }),
 
     byId: protectedProcedure
@@ -353,8 +284,242 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) return null;
+        const [cliente] = await db
+          .select()
+          .from(clientes)
+          .where(eq(clientes.id, input.id))
+          .limit(1);
+        if (!cliente) return null;
+        const veiculosCliente = await db
+          .select()
+          .from(veiculos)
+          .where(eq(veiculos.clienteId, input.id));
+        const osCliente = await db
+          .select()
+          .from(ordensServico)
+          .where(eq(ordensServico.clienteId, input.id))
+          .orderBy(desc(ordensServico.createdAt))
+          .limit(20);
+        const [crmData] = await db
+          .select()
+          .from(crm)
+          .where(eq(crm.clienteId, input.id))
+          .limit(1);
+        return { cliente, veiculos: veiculosCliente, os: osCliente, crm: crmData ?? null };
+      }),
 
-        const [os] = await db
+    create: protectedProcedure
+      .input(
+        z.object({
+          nomeCompleto: z.string(),
+          cpf: z.string().optional(),
+          email: z.string().optional(),
+          telefone: z.string().optional(),
+          dataNascimento: z.string().optional(),
+          endereco: z.string().optional(),
+          cep: z.string().optional(),
+          cidade: z.string().optional(),
+          estado: z.string().optional(),
+          origemCadastro: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const [result] = await db.insert(clientes).values({
+          nomeCompleto: input.nomeCompleto,
+          cpf: input.cpf || null,
+          email: input.email || null,
+          telefone: input.telefone || null,
+          dataNascimento: input.dataNascimento
+            ? (input.dataNascimento as unknown as Date)
+            : null,
+          endereco: input.endereco || null,
+          cep: input.cep || null,
+          cidade: input.cidade || null,
+          estado: input.estado || null,
+          origemCadastro: input.origemCadastro || null,
+        });
+        return { id: (result as unknown as { insertId: number }).insertId };
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          nomeCompleto: z.string().optional(),
+          cpf: z.string().optional(),
+          email: z.string().optional(),
+          telefone: z.string().optional(),
+          endereco: z.string().optional(),
+          cep: z.string().optional(),
+          cidade: z.string().optional(),
+          estado: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const { id, ...data } = input;
+        const updateData: Record<string, unknown> = {};
+        Object.entries(data).forEach(([k, v]) => {
+          if (v !== undefined) updateData[k] = v;
+        });
+        await db.update(clientes).set(updateData).where(eq(clientes.id, id));
+        return { success: true };
+      }),
+  }),
+
+  // ─── Veículos ──────────────────────────────────────────────────────────────
+  veiculos: router({
+    list: protectedProcedure
+      .input(z.object({ clienteId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        if (input?.clienteId) {
+          return db
+            .select()
+            .from(veiculos)
+            .where(eq(veiculos.clienteId, input.clienteId))
+            .orderBy(desc(veiculos.createdAt));
+        }
+        return db.select().from(veiculos).orderBy(desc(veiculos.createdAt)).limit(100);
+      }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          clienteId: z.number(),
+          placa: z.string(),
+          marca: z.string().optional(),
+          modelo: z.string().optional(),
+          versao: z.string().optional(),
+          ano: z.number().optional(),
+          combustivel: z.string().optional(),
+          kmAtual: z.number().optional(),
+          origemContato: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const [result] = await db.insert(veiculos).values({
+          clienteId: input.clienteId,
+          placa: input.placa.toUpperCase(),
+          marca: input.marca || null,
+          modelo: input.modelo || null,
+          versao: input.versao || null,
+          ano: input.ano || null,
+          combustivel: input.combustivel || null,
+          kmAtual: input.kmAtual || null,
+          origemContato: input.origemContato || null,
+        });
+        return { id: (result as unknown as { insertId: number }).insertId };
+      }),
+  }),
+
+  // ─── Mecânicos ─────────────────────────────────────────────────────────────
+  mecanicos: router({
+    list: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(mecanicos).where(eq(mecanicos.ativo, true)).orderBy(mecanicos.nome);
+    }),
+  }),
+
+  // ─── Colaboradores ─────────────────────────────────────────────────────────
+  colaboradores: router({
+    list: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(colaboradores)
+        .where(eq(colaboradores.ativo, true))
+        .orderBy(colaboradores.nome);
+    }),
+  }),
+
+  // ─── Recursos ──────────────────────────────────────────────────────────────
+  recursos: router({
+    list: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(recursos)
+        .where(eq(recursos.ativo, true))
+        .orderBy(recursos.nomeRecurso);
+    }),
+  }),
+
+  // ─── Serviços Catálogo ─────────────────────────────────────────────────────
+  servicos: router({
+    list: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(servicosCatalogo)
+        .where(eq(servicosCatalogo.ativo, true))
+        .orderBy(servicosCatalogo.nome);
+    }),
+  }),
+
+  // ─── Lista Status ──────────────────────────────────────────────────────────
+  status: router({
+    list: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(listaStatus)
+        .where(eq(listaStatus.ativo, true))
+        .orderBy(listaStatus.ordem);
+    }),
+  }),
+
+  // ─── Ordens de Serviço ─────────────────────────────────────────────────────
+  os: router({
+    list: protectedProcedure
+      .input(
+        z
+          .object({
+            status: z.string().optional(),
+            colaboradorId: z.number().optional(),
+            search: z.string().optional(),
+            limit: z.number().default(50),
+            offset: z.number().default(0),
+          })
+          .optional()
+      )
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { items: [], total: 0 };
+
+        const conditions = [];
+        if (input?.status) conditions.push(eq(ordensServico.status, input.status));
+        if (input?.colaboradorId)
+          conditions.push(eq(ordensServico.colaboradorId, input.colaboradorId));
+        if (input?.search) {
+          conditions.push(
+            or(
+              like(ordensServico.placa, `%${input.search}%`),
+              like(ordensServico.numeroOs, `%${input.search}%`),
+              like(ordensServico.motivoVisita, `%${input.search}%`)
+            )
+          );
+        }
+
+        const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const [countResult] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(ordensServico)
+          .where(where);
+
+        const items = await db
           .select({
             os: ordensServico,
             cliente: clientes,
@@ -365,436 +530,328 @@ export const appRouter = router({
           .leftJoin(clientes, eq(ordensServico.clienteId, clientes.id))
           .leftJoin(veiculos, eq(ordensServico.veiculoId, veiculos.id))
           .leftJoin(mecanicos, eq(ordensServico.mecanicoId, mecanicos.id))
-          .where(eq(ordensServico.id, input.id));
+          .where(where)
+          .orderBy(desc(ordensServico.createdAt))
+          .limit(input?.limit ?? 50)
+          .offset(input?.offset ?? 0);
 
-        if (!os) return null;
+        return { items, total: Number(countResult?.count ?? 0) };
+      }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return null;
+
+        const [row] = await db
+          .select({
+            os: ordensServico,
+            cliente: clientes,
+            veiculo: veiculos,
+          })
+          .from(ordensServico)
+          .leftJoin(clientes, eq(ordensServico.clienteId, clientes.id))
+          .leftJoin(veiculos, eq(ordensServico.veiculoId, veiculos.id))
+          .where(eq(ordensServico.id, input.id))
+          .limit(1);
+
+        if (!row) return null;
+
+        const itens = await db
+          .select()
+          .from(ordensServicoItens)
+          .where(eq(ordensServicoItens.ordemServicoId, input.id))
+          .orderBy(ordensServicoItens.createdAt);
 
         const historico = await db
           .select()
-          .from(osHistorico)
-          .where(eq(osHistorico.osId, input.id))
-          .orderBy(desc(osHistorico.createdAt));
+          .from(ordensServicoHistorico)
+          .where(eq(ordensServicoHistorico.ordemServicoId, input.id))
+          .orderBy(desc(ordensServicoHistorico.dataAlteracao));
 
-        return { ...os, historico };
+        const mecanicoData = row.os.mecanicoId
+          ? await db
+              .select()
+              .from(mecanicos)
+              .where(eq(mecanicos.id, row.os.mecanicoId))
+              .limit(1)
+          : [];
+
+        const colaboradorData = row.os.colaboradorId
+          ? await db
+              .select()
+              .from(colaboradores)
+              .where(eq(colaboradores.id, row.os.colaboradorId))
+              .limit(1)
+          : [];
+
+        return {
+          ...row,
+          itens,
+          historico,
+          mecanico: mecanicoData[0] ?? null,
+          colaborador: colaboradorData[0] ?? null,
+        };
+      }),
+
+    patio: protectedProcedure
+      .input(z.object({ consultor: z.string().optional() }).optional())
+      .query(async () => {
+        const db = await getDb();
+        if (!db) return [];
+
+        return db
+          .select({
+            os: ordensServico,
+            cliente: clientes,
+            veiculo: veiculos,
+            mecanico: mecanicos,
+          })
+          .from(ordensServico)
+          .leftJoin(clientes, eq(ordensServico.clienteId, clientes.id))
+          .leftJoin(veiculos, eq(ordensServico.veiculoId, veiculos.id))
+          .leftJoin(mecanicos, eq(ordensServico.mecanicoId, mecanicos.id))
+          .where(sql`${ordensServico.status} NOT IN ('Entregue', 'Cancelada')`)
+          .orderBy(ordensServico.createdAt);
       }),
 
     create: protectedProcedure
       .input(
         z.object({
-          clienteId: z.number().optional(),
-          veiculoId: z.number().optional(),
+          clienteId: z.number(),
+          veiculoId: z.number(),
+          placa: z.string(),
+          km: z.number().optional(),
+          status: z.string().default("Diagnóstico"),
+          colaboradorId: z.number().optional(),
           mecanicoId: z.number().optional(),
-          consultorNome: z.string().optional(),
-          tipoServico: z.enum(["Rápido", "Médio", "Demorado", "Projeto"]).optional(),
-          descricaoProblema: z.string().optional(),
-          valorOrcamento: z.number().optional(),
-          dataEntrada: z.string().optional(),
-          dataPrevisaoEntrega: z.string().optional(),
+          recursoId: z.number().optional(),
+          motivoVisita: z.string().optional(),
           observacoes: z.string().optional(),
-          kmEntrada: z.number().optional(),
-          // Quick client creation
-          clienteNome: z.string().optional(),
-          clienteTelefone: z.string().optional(),
-          // Quick vehicle creation
-          placa: z.string().optional(),
-          marca: z.string().optional(),
-          modelo: z.string().optional(),
-          ano: z.string().optional(),
+          veioDePromocao: z.boolean().default(false),
+          primeiraVez: z.boolean().default(false),
+          totalOrcamento: z.number().optional(),
+          itens: z
+            .array(
+              z.object({
+                tipo: z.string(),
+                descricao: z.string(),
+                quantidade: z.number().default(1),
+                valorUnitario: z.number(),
+                valorTotal: z.number(),
+                mecanicoId: z.number().optional(),
+              })
+            )
+            .optional(),
         })
       )
-      .mutation(async ({ input, ctx }) => {
+      .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
 
-        let clienteId = input.clienteId;
-        let veiculoId = input.veiculoId;
+        // Generate OS number: DAP-YYYYMM-XXXX
+        const now = new Date();
+        const [countRow] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(ordensServico);
+        const seq = String(Number(countRow?.count ?? 0) + 1).padStart(4, "0");
+        const numeroOs = `DAP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${seq}`;
 
-        // Quick client creation
-        if (!clienteId && input.clienteNome) {
-          const [newCliente] = await db
-            .insert(clientes)
-            .values({ nome: input.clienteNome, telefone: input.clienteTelefone })
-            .$returningId();
-          clienteId = newCliente.id;
-        }
-
-        // Quick vehicle creation
-        if (!veiculoId && input.placa) {
-          const [newVeiculo] = await db
-            .insert(veiculos)
-            .values({
-              clienteId,
-              placa: input.placa.toUpperCase(),
-              marca: input.marca,
-              modelo: input.modelo,
-              ano: input.ano,
-            })
-            .$returningId();
-          veiculoId = newVeiculo.id;
-        }
-
-        // Generate OS number
-        const [lastOs] = await db
-          .select({ id: ordensServico.id })
-          .from(ordensServico)
-          .orderBy(desc(ordensServico.id))
-          .limit(1);
-        const nextNum = (lastOs?.id ?? 0) + 1;
-        const numero = `OS-${new Date().getFullYear()}-${String(nextNum).padStart(3, "0")}`;
-
-        const [newOs] = await db
-          .insert(ordensServico)
-          .values({
-            numero,
-            clienteId,
-            veiculoId,
-            mecanicoId: input.mecanicoId,
-            consultorNome: input.consultorNome,
-            tipoServico: input.tipoServico,
-            descricaoProblema: input.descricaoProblema,
-            valorOrcamento: input.valorOrcamento?.toString(),
-            dataEntrada: input.dataEntrada as unknown as Date,
-            dataPrevisaoEntrega: input.dataPrevisaoEntrega as unknown as Date,
-            observacoes: input.observacoes,
-            kmEntrada: input.kmEntrada,
-            status: "Diagnóstico",
-          })
-          .$returningId();
-
-        // Log history
-        await db.insert(osHistorico).values({
-          osId: newOs.id,
-          statusNovo: "Diagnóstico",
-          observacao: "OS criada",
-          usuarioNome: ctx.user?.name ?? "Sistema",
+        const [result] = await db.insert(ordensServico).values({
+          numeroOs,
+          dataEntrada: now,
+          clienteId: input.clienteId,
+          veiculoId: input.veiculoId,
+          placa: input.placa.toUpperCase(),
+          km: input.km || null,
+          status: input.status,
+          colaboradorId: input.colaboradorId || null,
+          mecanicoId: input.mecanicoId || null,
+          recursoId: input.recursoId || null,
+          motivoVisita: input.motivoVisita || null,
+          observacoes: input.observacoes || null,
+          veioDePromocao: input.veioDePromocao,
+          primeiraVez: input.primeiraVez,
+          totalOrcamento: input.totalOrcamento ? String(input.totalOrcamento) : null,
         });
 
-        return { id: newOs.id, numero };
+        const osId = (result as unknown as { insertId: number }).insertId;
+
+        if (input.itens && input.itens.length > 0) {
+          await db.insert(ordensServicoItens).values(
+            input.itens.map((item) => ({
+              ordemServicoId: osId,
+              tipo: item.tipo,
+              descricao: item.descricao,
+              quantidade: item.quantidade,
+              valorUnitario: String(item.valorUnitario),
+              valorTotal: String(item.valorTotal),
+              mecanicoId: item.mecanicoId || null,
+            }))
+          );
+        }
+
+        await db.insert(ordensServicoHistorico).values({
+          ordemServicoId: osId,
+          statusAnterior: null,
+          statusNovo: input.status,
+          observacao: "OS criada",
+          dataAlteracao: now,
+        });
+
+        return { id: osId, numeroOs };
       }),
 
     updateStatus: protectedProcedure
       .input(
         z.object({
           id: z.number(),
-          status: z.enum([
-            "Diagnóstico",
-            "Orçamento",
-            "Aguardando Aprovação",
-            "Aguardando Peças",
-            "Em Execução",
-            "Pronto",
-            "Entregue",
-            "Cancelada",
-          ]),
+          status: z.string(),
           observacao: z.string().optional(),
-          valorFinal: z.number().optional(),
-          dataEntrega: z.string().optional(),
+          colaboradorId: z.number().optional(),
         })
       )
-      .mutation(async ({ input, ctx }) => {
+      .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
 
         const [current] = await db
           .select({ status: ordensServico.status })
           .from(ordensServico)
-          .where(eq(ordensServico.id, input.id));
+          .where(eq(ordensServico.id, input.id))
+          .limit(1);
 
-        const updateData: Record<string, unknown> = { status: input.status };
-        if (input.valorFinal !== undefined) updateData.valorFinal = input.valorFinal.toString();
-        if (input.dataEntrega) updateData.dataEntrega = input.dataEntrega;
-        if (input.status === "Entregue" && !input.dataEntrega) {
-          updateData.dataEntrega = new Date().toISOString().split("T")[0];
+        const updates: Record<string, unknown> = { status: input.status };
+        if (input.status === "Entregue") {
+          updates.dataSaida = new Date();
         }
 
-        await db
-          .update(ordensServico)
-          .set(updateData)
-          .where(eq(ordensServico.id, input.id));
+        await db.update(ordensServico).set(updates).where(eq(ordensServico.id, input.id));
 
-        await db.insert(osHistorico).values({
-          osId: input.id,
-          statusAnterior: current?.status,
+        await db.insert(ordensServicoHistorico).values({
+          ordemServicoId: input.id,
+          statusAnterior: current?.status ?? null,
           statusNovo: input.status,
-          observacao: input.observacao,
-          usuarioNome: ctx.user?.name ?? "Sistema",
+          colaboradorId: input.colaboradorId || null,
+          observacao: input.observacao || null,
+          dataAlteracao: new Date(),
         });
 
-        return { success: true };
-      }),
-
-    update: protectedProcedure
-      .input(
-        z.object({
-          id: z.number(),
-          mecanicoId: z.number().optional(),
-          consultorNome: z.string().optional(),
-          tipoServico: z.enum(["Rápido", "Médio", "Demorado", "Projeto"]).optional(),
-          descricaoProblema: z.string().optional(),
-          servicosRealizados: z.string().optional(),
-          valorOrcamento: z.number().optional(),
-          valorAprovado: z.number().optional(),
-          valorFinal: z.number().optional(),
-          dataPrevisaoEntrega: z.string().optional(),
-          observacoes: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const db = await getDb();
-        if (!db) throw new Error("DB unavailable");
-
-        const { id, ...rest } = input;
-        const updateData: Record<string, unknown> = {};
-        if (rest.mecanicoId !== undefined) updateData.mecanicoId = rest.mecanicoId;
-        if (rest.consultorNome !== undefined) updateData.consultorNome = rest.consultorNome;
-        if (rest.tipoServico !== undefined) updateData.tipoServico = rest.tipoServico;
-        if (rest.descricaoProblema !== undefined) updateData.descricaoProblema = rest.descricaoProblema;
-        if (rest.servicosRealizados !== undefined) updateData.servicosRealizados = rest.servicosRealizados;
-        if (rest.valorOrcamento !== undefined) updateData.valorOrcamento = rest.valorOrcamento.toString();
-        if (rest.valorAprovado !== undefined) updateData.valorAprovado = rest.valorAprovado.toString();
-        if (rest.valorFinal !== undefined) updateData.valorFinal = rest.valorFinal.toString();
-        if (rest.dataPrevisaoEntrega !== undefined) updateData.dataPrevisaoEntrega = rest.dataPrevisaoEntrega;
-        if (rest.observacoes !== undefined) updateData.observacoes = rest.observacoes;
-
-        await db.update(ordensServico).set(updateData).where(eq(ordensServico.id, id));
-        return { success: true };
-      }),
-
-    patio: protectedProcedure
-      .input(z.object({ consultor: z.string().optional() }))
-      .query(async ({ input }) => {
-        const db = await getDb();
-        if (!db) return [];
-
-        const conditions = [sql`os.status NOT IN ('Entregue', 'Cancelada')`];
-        if (input.consultor && input.consultor !== "todos") {
-          conditions.push(eq(ordensServico.consultorNome, input.consultor));
-        }
-
-        const items = await db
-          .select({
-            os: ordensServico,
-            cliente: { nome: clientes.nome, telefone: clientes.telefone },
-            veiculo: { placa: veiculos.placa, modelo: veiculos.modelo, marca: veiculos.marca, cor: veiculos.cor },
-            mecanico: { nome: mecanicos.nome, emoji: mecanicos.emoji },
-          })
-          .from(ordensServico)
-          .leftJoin(clientes, eq(ordensServico.clienteId, clientes.id))
-          .leftJoin(veiculos, eq(ordensServico.veiculoId, veiculos.id))
-          .leftJoin(mecanicos, eq(ordensServico.mecanicoId, mecanicos.id))
-          .where(and(...conditions))
-          .orderBy(ordensServico.dataPrevisaoEntrega);
-
-        return items;
-      }),
-  }),
-
-  // ─── Clientes ───────────────────────────────────────────────────────────────
-  clientes: router({
-    list: protectedProcedure
-      .input(z.object({ search: z.string().optional(), limit: z.number().default(50) }))
-      .query(async ({ input }) => {
-        const db = await getDb();
-        if (!db) return [];
-
-        if (input.search) {
-          return db
+        if (input.status === "Entregue") {
+          const [os] = await db
             .select()
-            .from(clientes)
-            .where(
-              or(
-                like(clientes.nome, `%${input.search}%`),
-                like(clientes.telefone, `%${input.search}%`),
-                like(clientes.email, `%${input.search}%`)
-              )
-            )
-            .limit(input.limit)
-            .orderBy(clientes.nome);
+            .from(ordensServico)
+            .where(eq(ordensServico.id, input.id))
+            .limit(1);
+          if (os?.valorTotalOs) {
+            await db.insert(faturamento).values({
+              ordemServicoId: input.id,
+              clienteId: os.clienteId,
+              dataEntrega: new Date().toISOString().split("T")[0] as unknown as Date,
+              valor: os.valorTotalOs,
+            });
+          }
         }
 
-        return db.select().from(clientes).limit(input.limit).orderBy(clientes.nome);
-      }),
-
-    byId: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        const db = await getDb();
-        if (!db) return null;
-
-        const [cliente] = await db.select().from(clientes).where(eq(clientes.id, input.id));
-        if (!cliente) return null;
-
-        const veiculosCliente = await db
-          .select()
-          .from(veiculos)
-          .where(eq(veiculos.clienteId, input.id));
-
-        const osCliente = await db
-          .select()
-          .from(ordensServico)
-          .where(eq(ordensServico.clienteId, input.id))
-          .orderBy(desc(ordensServico.createdAt))
-          .limit(10);
-
-        const interacoes = await db
-          .select()
-          .from(crmInteracoes)
-          .where(eq(crmInteracoes.clienteId, input.id))
-          .orderBy(desc(crmInteracoes.createdAt))
-          .limit(20);
-
-        return { cliente, veiculos: veiculosCliente, os: osCliente, interacoes };
-      }),
-
-    create: protectedProcedure
-      .input(
-        z.object({
-          nome: z.string().min(2),
-          telefone: z.string().optional(),
-          email: z.string().email().optional().or(z.literal("")),
-          cpfCnpj: z.string().optional(),
-          endereco: z.string().optional(),
-          observacoes: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const db = await getDb();
-        if (!db) throw new Error("DB unavailable");
-        const [r] = await db.insert(clientes).values(input).$returningId();
-        return r;
+        return { success: true };
       }),
 
     update: protectedProcedure
       .input(
         z.object({
           id: z.number(),
-          nome: z.string().min(2).optional(),
-          telefone: z.string().optional(),
-          email: z.string().optional(),
-          cpfCnpj: z.string().optional(),
-          endereco: z.string().optional(),
+          mecanicoId: z.number().optional().nullable(),
+          colaboradorId: z.number().optional().nullable(),
+          recursoId: z.number().optional().nullable(),
+          motivoVisita: z.string().optional(),
           observacoes: z.string().optional(),
+          km: z.number().optional(),
+          totalOrcamento: z.number().optional(),
+          valorTotalOs: z.number().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
         const { id, ...data } = input;
-        await db.update(clientes).set(data).where(eq(clientes.id, id));
+        const updateData: Record<string, unknown> = {};
+        if (data.mecanicoId !== undefined) updateData.mecanicoId = data.mecanicoId;
+        if (data.colaboradorId !== undefined) updateData.colaboradorId = data.colaboradorId;
+        if (data.recursoId !== undefined) updateData.recursoId = data.recursoId;
+        if (data.motivoVisita !== undefined) updateData.motivoVisita = data.motivoVisita;
+        if (data.observacoes !== undefined) updateData.observacoes = data.observacoes;
+        if (data.km !== undefined) updateData.km = data.km;
+        if (data.totalOrcamento !== undefined)
+          updateData.totalOrcamento = String(data.totalOrcamento);
+        if (data.valorTotalOs !== undefined) updateData.valorTotalOs = String(data.valorTotalOs);
+        await db.update(ordensServico).set(updateData).where(eq(ordensServico.id, id));
         return { success: true };
       }),
 
-    addInteracao: protectedProcedure
+    addItem: protectedProcedure
       .input(
         z.object({
-          clienteId: z.number(),
-          tipo: z.enum(["Ligação", "WhatsApp", "Email", "Visita", "Outro"]),
-          descricao: z.string().min(3),
-        })
-      )
-      .mutation(async ({ input, ctx }) => {
-        const db = await getDb();
-        if (!db) throw new Error("DB unavailable");
-        await db.insert(crmInteracoes).values({
-          ...input,
-          usuarioNome: ctx.user?.name ?? "Sistema",
-        });
-        return { success: true };
-      }),
-  }),
-
-  // ─── Veículos ───────────────────────────────────────────────────────────────
-  veiculos: router({
-    list: protectedProcedure
-      .input(z.object({ clienteId: z.number().optional(), search: z.string().optional() }))
-      .query(async ({ input }) => {
-        const db = await getDb();
-        if (!db) return [];
-
-        if (input.clienteId) {
-          return db.select().from(veiculos).where(eq(veiculos.clienteId, input.clienteId));
-        }
-        if (input.search) {
-          return db
-            .select()
-            .from(veiculos)
-            .where(
-              or(
-                like(veiculos.placa, `%${input.search}%`),
-                like(veiculos.modelo, `%${input.search}%`)
-              )
-            )
-            .limit(20);
-        }
-        return db.select().from(veiculos).limit(50);
-      }),
-
-    create: protectedProcedure
-      .input(
-        z.object({
-          clienteId: z.number().optional(),
-          placa: z.string().min(6),
-          marca: z.string().optional(),
-          modelo: z.string().optional(),
-          ano: z.string().optional(),
-          cor: z.string().optional(),
-          km: z.number().optional(),
-          observacoes: z.string().optional(),
+          ordemServicoId: z.number(),
+          tipo: z.string(),
+          descricao: z.string(),
+          quantidade: z.number().default(1),
+          valorUnitario: z.number(),
+          valorTotal: z.number(),
+          mecanicoId: z.number().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-        const [r] = await db
-          .insert(veiculos)
-          .values({ ...input, placa: input.placa.toUpperCase() })
-          .$returningId();
-        return r;
+        const [result] = await db.insert(ordensServicoItens).values({
+          ordemServicoId: input.ordemServicoId,
+          tipo: input.tipo,
+          descricao: input.descricao,
+          quantidade: input.quantidade,
+          valorUnitario: String(input.valorUnitario),
+          valorTotal: String(input.valorTotal),
+          mecanicoId: input.mecanicoId || null,
+        });
+        return { id: (result as unknown as { insertId: number }).insertId };
       }),
   }),
 
-  // ─── Mecânicos ──────────────────────────────────────────────────────────────
-  mecanicos: router({
-    list: protectedProcedure.query(async () => {
-      const db = await getDb();
-      if (!db) return [];
-      return db.select().from(mecanicos).where(eq(mecanicos.ativo, true)).orderBy(mecanicos.nome);
-    }),
-  }),
-
-  // ─── Agendamentos ───────────────────────────────────────────────────────────
+  // ─── Agendamentos ──────────────────────────────────────────────────────────
   agendamentos: router({
     list: protectedProcedure
-      .input(z.object({ data: z.string().optional(), mecanicoId: z.number().optional() }))
+      .input(
+        z
+          .object({
+            data: z.string().optional(),
+            colaboradorId: z.number().optional(),
+          })
+          .optional()
+      )
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) return [];
 
-        const conditions = [];
-        if (input.data) {
-          conditions.push(eq(agendamentos.data, input.data as unknown as Date));
+        const conditions: ReturnType<typeof sql>[] = [];
+        if (input?.data) {
+          conditions.push(sql`DATE(${agendamentos.dataAgendamento}) = ${input.data}`);
         }
-        if (input.mecanicoId) {
-          conditions.push(eq(agendamentos.mecanicoId, input.mecanicoId));
-        }
+        if (input?.colaboradorId)
+          conditions.push(eq(agendamentos.colaboradorId, input.colaboradorId));
 
-        const query = db
+        const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+        return db
           .select({
             ag: agendamentos,
-            cliente: { nome: clientes.nome, telefone: clientes.telefone },
-            veiculo: { placa: veiculos.placa, modelo: veiculos.modelo },
-            mecanico: { nome: mecanicos.nome, emoji: mecanicos.emoji },
+            cliente: clientes,
+            veiculo: veiculos,
           })
           .from(agendamentos)
           .leftJoin(clientes, eq(agendamentos.clienteId, clientes.id))
           .leftJoin(veiculos, eq(agendamentos.veiculoId, veiculos.id))
-          .leftJoin(mecanicos, eq(agendamentos.mecanicoId, mecanicos.id))
-          .orderBy(agendamentos.hora);
-
-        if (conditions.length > 0) {
-          return query.where(and(...conditions));
-        }
-        return query;
+          .where(where)
+          .orderBy(agendamentos.dataAgendamento, agendamentos.horaAgendamento);
       }),
 
     create: protectedProcedure
@@ -802,95 +859,122 @@ export const appRouter = router({
         z.object({
           clienteId: z.number().optional(),
           veiculoId: z.number().optional(),
-          mecanicoId: z.number().optional(),
-          data: z.string(),
-          hora: z.string(),
+          dataAgendamento: z.string(),
+          horaAgendamento: z.string().optional(),
           motivoVisita: z.string().optional(),
-          status: z.enum(["Confirmado", "Pendente", "Cancelado", "Concluído"]).default("Pendente"),
+          status: z.string().default("agendado"),
+          colaboradorId: z.number().optional(),
           observacoes: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-        const { data: dataStr, hora: horaStr, ...rest } = input;
-        const [r] = await db
-          .insert(agendamentos)
-          .values({
-            ...rest,
-            data: dataStr as unknown as Date,
-            hora: horaStr,
-          })
-          .$returningId();
-        return r;
+        const [result] = await db.insert(agendamentos).values({
+          clienteId: input.clienteId || null,
+          veiculoId: input.veiculoId || null,
+          dataAgendamento: input.dataAgendamento as unknown as Date,
+          horaAgendamento: input.horaAgendamento || null,
+          motivoVisita: input.motivoVisita || null,
+          status: input.status,
+          colaboradorId: input.colaboradorId || null,
+          observacoes: input.observacoes || null,
+        });
+        return { id: (result as unknown as { insertId: number }).insertId };
       }),
 
     updateStatus: protectedProcedure
-      .input(z.object({ id: z.number(), status: z.enum(["Confirmado", "Pendente", "Cancelado", "Concluído"]) }))
+      .input(z.object({ id: z.number(), status: z.string() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-        await db.update(agendamentos).set({ status: input.status }).where(eq(agendamentos.id, input.id));
+        await db
+          .update(agendamentos)
+          .set({ status: input.status })
+          .where(eq(agendamentos.id, input.id));
         return { success: true };
       }),
   }),
 
-  // ─── Metas ──────────────────────────────────────────────────────────────────
-  metas: router({
-    get: protectedProcedure.query(async () => {
-      const db = await getDb();
-      if (!db) return null;
-      const now = new Date();
-      const [meta] = await db
-        .select()
-        .from(metasFinanceiras)
-        .where(
-          and(
-            eq(metasFinanceiras.mes, now.getMonth() + 1),
-            eq(metasFinanceiras.ano, now.getFullYear())
-          )
-        )
-        .limit(1);
-      return meta ?? null;
-    }),
+  // ─── CRM ───────────────────────────────────────────────────────────────────
+  crm: router({
+    list: protectedProcedure
+      .input(
+        z
+          .object({
+            search: z.string().optional(),
+            limit: z.number().optional(),
+          })
+          .optional()
+      )
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
 
-    update: protectedProcedure
+        const lim = input?.limit ?? 100;
+        if (input?.search) {
+          return db
+            .select({ cliente: clientes, crmData: crm })
+            .from(clientes)
+            .leftJoin(crm, eq(clientes.id, crm.clienteId))
+            .where(
+              or(
+                like(clientes.nomeCompleto, `%${input.search}%`),
+                like(clientes.telefone, `%${input.search}%`)
+              )
+            )
+            .orderBy(desc(clientes.createdAt))
+            .limit(lim);
+        }
+
+        return db
+          .select({ cliente: clientes, crmData: crm })
+          .from(clientes)
+          .leftJoin(crm, eq(clientes.id, crm.clienteId))
+          .orderBy(desc(clientes.createdAt))
+          .limit(lim);
+      }),
+
+    upsert: protectedProcedure
       .input(
         z.object({
-          metaMensal: z.number(),
-          diasUteis: z.number(),
-          diasTrabalhados: z.number(),
+          clienteId: z.number(),
+          comoConheceu: z.string().optional(),
+          nivelFidelidade: z.string().optional(),
+          tipoServico1: z.string().optional(),
+          tipoServico2: z.string().optional(),
+          tipoServico3: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-        const now = new Date();
-        const mes = now.getMonth() + 1;
-        const ano = now.getFullYear();
 
         const existing = await db
-          .select({ id: metasFinanceiras.id })
-          .from(metasFinanceiras)
-          .where(and(eq(metasFinanceiras.mes, mes), eq(metasFinanceiras.ano, ano)))
+          .select()
+          .from(crm)
+          .where(eq(crm.clienteId, input.clienteId))
           .limit(1);
 
         if (existing.length > 0) {
           await db
-            .update(metasFinanceiras)
+            .update(crm)
             .set({
-              metaMensal: input.metaMensal.toString(),
-              diasUteis: input.diasUteis,
-              diasTrabalhados: input.diasTrabalhados,
+              comoConheceu: input.comoConheceu || null,
+              nivelFidelidade: input.nivelFidelidade || null,
+              tipoServico1: input.tipoServico1 || null,
+              tipoServico2: input.tipoServico2 || null,
+              tipoServico3: input.tipoServico3 || null,
             })
-            .where(eq(metasFinanceiras.id, existing[0].id));
+            .where(eq(crm.clienteId, input.clienteId));
         } else {
-          await db.insert(metasFinanceiras).values({
-            mes,
-            ano,
-            metaMensal: input.metaMensal.toString(),
-            diasUteis: input.diasUteis,
-            diasTrabalhados: input.diasTrabalhados,
+          await db.insert(crm).values({
+            clienteId: input.clienteId,
+            comoConheceu: input.comoConheceu || null,
+            nivelFidelidade: input.nivelFidelidade || null,
+            tipoServico1: input.tipoServico1 || null,
+            tipoServico2: input.tipoServico2 || null,
+            tipoServico3: input.tipoServico3 || null,
           });
         }
         return { success: true };

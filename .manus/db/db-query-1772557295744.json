@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE agendamentos \n  CHANGE COLUMN `cliente_id` `clienteId` INT NULL,\n  CHANGE COLUMN `veiculo_id` `veiculoId` INT NULL,\n  CHANGE COLUMN `mecanico_id` `mecanicoId` INT NULL,\n  CHANGE COLUMN `data` `dataAgendamento` DATE NOT NULL,\n  CHANGE COLUMN `hora` `horaAgendamento` TIME NULL,\n  CHANGE COLUMN `motivo_visita` `motivoVisita` VARCHAR(300) NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nALTER TABLE agendamentos \n  CHANGE COLUMN `cliente_id` `clienteId` INT NULL,\n  CHANGE COLUMN `veiculo_id` `veiculoId` INT NULL,\n  CHANGE COLUMN `mecanico_id` `mecanicoId` INT NULL,\n  CHANGE COLUMN `data` `dataAgendamento` DATE NOT NULL,\n  CHANGE COLUMN `hora` `horaAgendamento` TIME NULL,\n  CHANGE COLUMN `motivo_visita` `motivoVisita` VARCHAR(300) NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 591
+}

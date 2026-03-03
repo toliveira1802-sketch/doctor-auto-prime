@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE clientes \n  CHANGE COLUMN `nome` `nomeCompleto` VARCHAR(200) NOT NULL,\n  CHANGE COLUMN `cpf_cnpj` `cpf` VARCHAR(20) NULL;\n\nALTER TABLE veiculos\n  CHANGE COLUMN `cliente_id` `clienteId` INT NULL;\n\nALTER TABLE crm_interacoes\n  CHANGE COLUMN `cliente_id` `clienteId` INT NULL,\n  CHANGE COLUMN `usuario_nome` `usuarioNome` VARCHAR(100) NULL;\n\nALTER TABLE os_historico\n  CHANGE COLUMN `os_id` `osId` INT NULL,\n  CHANGE COLUMN `status_anterior` `statusAnterior` VARCHAR(50) NULL,\n  CHANGE COLUMN `status_novo` `statusNovo` VARCHAR(50) NULL,\n  CHANGE COLUMN `usuario_nome` `usuarioNome` VARCHAR(100) NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nALTER TABLE clientes \n  CHANGE COLUMN `nome` `nomeCompleto` VARCHAR(200) NOT NULL,\n  CHANGE COLUMN `cpf_cnpj` `cpf` VARCHAR(20) NULL;\n\nALTER TABLE veiculos\n  CHANGE COLUMN `cliente_id` `clienteId` INT NULL;\n\nALTER TABLE crm_interacoes\n  CHANGE COLUMN `cliente_id` `clienteId` INT NULL,\n  CHANGE COLUMN `usuario_nome` `usuarioNome` VARCHAR(100) NULL;\n\nALTER TABLE os_historico\n  CHANGE COLUMN `os_id` `osId` INT NULL,\n  CHANGE COLUMN `status_anterior` `statusAnterior` VARCHAR(50) NULL,\n  CHANGE COLUMN `status_novo` `statusNovo` VARCHAR(50) NULL,\n  CHANGE COLUMN `usuario_nome` `usuarioNome` VARCHAR(100) NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1491
+}
