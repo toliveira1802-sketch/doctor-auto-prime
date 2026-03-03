@@ -131,7 +131,8 @@ export default function OsDetail() {
     );
   }
 
-  const { os, cliente, veiculo, mecanico, colaborador, historico, itens } = data;
+  type OsData = NonNullable<typeof data>;
+  const { os, cliente, veiculo, mecanico, colaborador, historico, itens } = data as OsData;
   const currentStatusIdx = STATUS_FLOW.indexOf(os.status ?? "");
 
   const handleStatusUpdate = () => {
@@ -318,8 +319,8 @@ export default function OsDetail() {
             </CardHeader>
             <CardContent className="space-y-2">
               {[
-                { label: "Mecânico", value: mecanico?.nome ?? "—" },
-                { label: "Consultor", value: colaborador?.nome ?? "—" },
+                { label: "Mecânico", value: (mecanico as any)?.nome ?? "—" },
+                { label: "Consultor", value: (colaborador as any)?.nome ?? "—" },
                 { label: "Motivo da Visita", value: os.motivoVisita ?? "—" },
                 { label: "Veio de Promoção", value: os.veioDePromocao ? "Sim" : "Não" },
                 { label: "Primeira Vez", value: os.primeiraVez ? "Sim" : "Não" },
@@ -432,7 +433,7 @@ export default function OsDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {itens.map((item) => (
+                {(itens as any[]).map((item: any) => (
                   <div
                     key={item.id}
                     className="flex items-center justify-between py-2 border-b border-border last:border-0"
@@ -457,7 +458,7 @@ export default function OsDetail() {
                   <span className="text-sm text-foreground">Total Itens</span>
                   <span className="text-sm text-green-400">
                     {formatCurrency(
-                      itens.reduce((sum, i) => sum + Number(i.valorTotal ?? 0), 0)
+                      (itens as any[]).reduce((sum: number, i: any) => sum + Number(i.valorTotal ?? 0), 0)
                     )}
                   </span>
                 </div>
@@ -481,7 +482,7 @@ export default function OsDetail() {
               <div className="relative">
                 <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
                 <div className="space-y-4">
-                  {historico.map((h) => (
+                  {(historico as any[]).map((h: any) => (
                     <div key={h.id} className="flex gap-4 pl-7 relative">
                       <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary" />

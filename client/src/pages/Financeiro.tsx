@@ -58,7 +58,7 @@ export default function Financeiro() {
     consultor: consultor === "todos" ? undefined : consultor,
   });
 
-  const pctMeta = data ? Math.min((data.faturamentoMes / META_MENSAL) * 100, 100) : 0;
+  const pctMeta = data ? Math.min((data.fatMensal / META_MENSAL) * 100, 100) : 0;
 
   const mesOptions = Array.from({ length: 12 }, (_, i) => {
     const d = new Date();
@@ -112,11 +112,11 @@ export default function Financeiro() {
               {[
                 {
                   label: "Faturamento do Mês",
-                  value: formatCurrency(data.faturamentoMes),
+                  value: formatCurrency(data.fatMensal),
                   icon: DollarSign,
                   color: "text-green-400",
                   bg: "bg-green-500/10",
-                  trend: data.crescimento,
+                  trend: data.crescimento ?? 0,
                 },
                 {
                   label: "Ticket Médio",
@@ -174,7 +174,7 @@ export default function Financeiro() {
                     Termômetro da Meta — {formatCurrency(META_MENSAL)}
                   </CardTitle>
                   <span className={`text-sm font-bold ${pctMeta >= 100 ? "text-green-400" : pctMeta >= 70 ? "text-yellow-400" : "text-red-400"}`}>
-                    {formatCurrency(data.faturamentoMes)} / {formatCurrency(META_MENSAL)}
+                    {formatCurrency(data.fatMensal)} / {formatCurrency(META_MENSAL)}
                   </span>
                 </div>
               </CardHeader>
@@ -204,7 +204,7 @@ export default function Financeiro() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={data.fatMensal}>
+                    <BarChart data={data.historicoMensal ?? []}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="mes" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
@@ -237,8 +237,8 @@ export default function Financeiro() {
                           dataKey="valor"
                           nameKey="tipo"
                         >
-                          {data.mixServicos.map((entry: { motivoVisita: string | null; count: number }, i: number) => (
-                            <Cell key={i} fill={TIPO_COLORS[entry.motivoVisita ?? ""] ?? "#6366f1"} />
+                          {data.mixServicos.map((entry: { tipo: string; count: number }, i: number) => (
+                            <Cell key={i} fill={TIPO_COLORS[entry.tipo ?? ""] ?? "#6366f1"} />
                           ))}
                         </Pie>
                         <Tooltip
@@ -248,11 +248,11 @@ export default function Financeiro() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="space-y-2">
-                      {data.mixServicos.map((t: { motivoVisita: string | null; count: number }) => (
-                        <div key={t.motivoVisita ?? "x"} className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ background: TIPO_COLORS[t.motivoVisita ?? ""] ?? "#6366f1" }} />
+                      {data.mixServicos.map((t: { tipo: string; count: number }) => (
+                        <div key={t.tipo ?? "x"} className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ background: TIPO_COLORS[t.tipo ?? ""] ?? "#6366f1" }} />
                           <div>
-                            <p className="text-xs font-medium text-foreground">{t.motivoVisita ?? "Outros"}</p>
+                            <p className="text-xs font-medium text-foreground">{t.tipo ?? "Outros"}</p>
                             <p className="text-xs text-muted-foreground">{t.count} OS</p>
                           </div>
                         </div>
@@ -271,14 +271,14 @@ export default function Financeiro() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {data.topOS.map((o: { os: { id: number; numeroOs: string | null; valorTotalOs: string | null; placa: string | null }; cliente: { nomeCompleto: string } | null }, i: number) => (
-                      <div key={o.os.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
+                    {data.topOS.map((o: { id: number; numeroOs: string | null; cliente: string; placa: string; valor: number; status: string | null }, i: number) => (
+                      <div key={o.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
                         <span className="text-sm font-bold text-muted-foreground w-5">{i + 1}</span>
                         <div className="flex-1">
-                          <span className="text-xs font-mono text-muted-foreground">{o.os.numeroOs ?? `#${o.os.id}`}</span>
-                          <p className="text-xs text-foreground">{o.os.placa ?? o.cliente?.nomeCompleto ?? "—"}</p>
+                          <span className="text-xs font-mono text-muted-foreground">{o.numeroOs ?? `#${o.id}`}</span>
+                          <p className="text-xs text-foreground">{o.placa} · {o.cliente}</p>
                         </div>
-                        <span className="text-sm font-bold text-green-400">{formatCurrency(Number(o.os.valorTotalOs ?? 0))}</span>
+                        <span className="text-sm font-bold text-green-400">{formatCurrency(o.valor)}</span>
                       </div>
                     ))}
                   </div>

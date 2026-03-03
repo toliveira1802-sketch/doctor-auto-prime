@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Drop foreign key constraints first\nSET FOREIGN_KEY_CHECKS = 0;\n\nDROP TABLE IF EXISTS ordens_servico_historico;\nDROP TABLE IF EXISTS ordens_servico_itens;\nDROP TABLE IF EXISTS crm_interacoes;\nDROP TABLE IF EXISTS metas_financeiras;\nDROP TABLE IF EXISTS servicos_catalogo;\nDROP TABLE IF EXISTS lista_status;\nDROP TABLE IF EXISTS agendamentos;\nDROP TABLE IF EXISTS ordens_servico;\nDROP TABLE IF EXISTS recursos;\nDROP TABLE IF EXISTS mecanicos;\nDROP TABLE IF EXISTS colaboradores;\nDROP TABLE IF EXISTS clientes;\nDROP TABLE IF EXISTS veiculos;\nDROP TABLE IF EXISTS empresas;\n\nSET FOREIGN_KEY_CHECKS = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \n-- Drop foreign key constraints first\nSET FOREIGN_KEY_CHECKS = 0;\n\nDROP TABLE IF EXISTS ordens_servico_historico;\nDROP TABLE IF EXISTS ordens_servico_itens;\nDROP TABLE IF EXISTS crm_interacoes;\nDROP TABLE IF EXISTS metas_financeiras;\nDROP TABLE IF EXISTS servicos_catalogo;\nDROP TABLE IF EXISTS lista_status;\nDROP TABLE IF EXISTS agendamentos;\nDROP TABLE IF EXISTS ordens_servico;\nDROP TABLE IF EXISTS recursos;\nDROP TABLE IF EXISTS mecanicos;\nDROP TABLE IF EXISTS colaboradores;\nDROP TABLE IF EXISTS clientes;\nDROP TABLE IF EXISTS veiculos;\nDROP TABLE IF EXISTS empresas;\n\nSET FOREIGN_KEY_CHECKS = 1;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2108
+}

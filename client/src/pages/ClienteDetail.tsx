@@ -52,10 +52,12 @@ export default function ClienteDetail() {
     );
   }
 
-  const { cliente, veiculos, os: ordens } = data;
+  const cliente = data;
+  const veiculos = data.veiculos ?? [];
+  const ordens = data.os ?? [];
   const totalGasto = ordens
-    .filter((o: { status: string | null; valorTotalOs?: string | number | null }) => o.status === "Entregue" && o.valorTotalOs)
-    .reduce((sum: number, o: { valorTotalOs?: string | number | null }) => sum + Number(o.valorTotalOs ?? 0), 0);
+    .filter((o) => o.status === "Entregue" && o.valorTotalOs)
+    .reduce((sum: number, o) => sum + Number(o.valorTotalOs ?? 0), 0);
 
   return (
     <DashboardLayout>
@@ -74,7 +76,7 @@ export default function ClienteDetail() {
             <div>
               <h1 className="text-xl font-bold text-foreground">{cliente.nomeCompleto}</h1>
               <p className="text-sm text-muted-foreground">
-                Cliente desde {new Date(cliente.createdAt).toLocaleDateString("pt-BR")}
+                Cliente desde {cliente.createdAt ? new Date(cliente.createdAt).toLocaleDateString("pt-BR") : "—"}
               </p>
             </div>
           </div>
@@ -168,7 +170,7 @@ export default function ClienteDetail() {
               <p className="text-sm text-muted-foreground">Nenhuma OS encontrada.</p>
             ) : (
               <div className="space-y-2">
-                {ordens.map((o: { id: number; numeroOs: string | null; status: string | null; motivoVisita?: string | null; valorTotalOs?: string | number | null; totalOrcamento?: string | number | null; dataEntrada: Date | string | null; createdAt: Date | string }) => (
+                {(ordens as any[]).map((o) => (
                   <Link key={o.id} href={`/os/${o.id}`}>
                     <div className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/40 transition-colors cursor-pointer">
                       <div className="flex-1 min-w-0">

@@ -95,7 +95,6 @@ export default function Agenda() {
       dataAgendamento: dateStr,
       horaAgendamento: form.hora,
       motivoVisita: form.motivoVisita || undefined,
-      status: form.status,
       observacoes: form.observacoes || undefined,
     });
   };
@@ -298,7 +297,7 @@ export default function Agenda() {
           </div>
         ) : (
           <div className="space-y-2">
-            {agendamentos.map(({ ag, cliente, veiculo }) => (
+            {(agendamentos as any[]).map((ag) => (
               <Card key={ag.id} className="bg-card border-border hover:border-primary/40 transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
@@ -312,20 +311,20 @@ export default function Agenda() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        {veiculo && (
+                        {ag.veiculoPlaca && (
                           <div className="flex items-center gap-1">
                             <Car className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-sm font-mono font-bold text-foreground">{veiculo.placa}</span>
-                            {veiculo.modelo && (
-                              <span className="text-xs text-muted-foreground">{veiculo.modelo}</span>
+                            <span className="text-sm font-mono font-bold text-foreground">{ag.veiculoPlaca}</span>
+                            {ag.veiculoModelo && (
+                              <span className="text-xs text-muted-foreground">{ag.veiculoModelo}</span>
                             )}
                           </div>
                         )}
                       </div>
-                      {cliente && (
+                      {ag.clienteNome && (
                         <div className="flex items-center gap-1 mt-0.5">
                           <User className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{cliente.nomeCompleto}</span>
+                          <span className="text-xs text-muted-foreground">{ag.clienteNome}</span>
                         </div>
                       )}
                       {ag.motivoVisita && (

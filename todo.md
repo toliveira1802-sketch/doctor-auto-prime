@@ -24,6 +24,23 @@
 - [x] Filtro por consultor (João, Pedro) nos dashboards
 - [x] Termômetro de meta mensal (R$200.000 padrão)
 
+## Wave 1.5: Admin + Gestão Pages (Concluído)
+
+- [x] AdminFinanceiro: faturamento mensal, ticket médio, histórico 6 meses, mix de serviços
+- [x] AdminProdutividade: ranking de mecânicos, gráfico de barras, indicadores de qualidade
+- [x] AdminConfiguracoes: metas financeiras, metas por consultor, dados da empresa
+- [x] GestaoVisaoGeral: painel estratégico com KPIs consolidados e histórico
+- [x] GestaoOperacional: OS ativas em tempo real, prontas para entrega, aguardando aprovação
+- [x] GestaoFinanceiro: análise financeira com faturamento vs meta e mix de serviços
+- [x] GestaoProdutividade: ranking completo com score de qualidade por período
+- [x] GestaoColaboradores: equipe administrativa com perfis
+- [x] GestaoMecanicos: equipe técnica com grau, especialidade e score
+- [x] GestaoMetas: configuração e acompanhamento de metas com barra de progresso
+- [x] GestaoRelatorios: relatórios gerenciais consolidados por período
+- [x] DashboardLayout atualizado: grupos Admin + Gestão + Dev
+- [x] App.tsx: rotas /admin/* e /gestao/* completas
+- [x] Dev navigator atualizado com todas as rotas
+
 ## Wave 2: Atendimento Kommo + IA (próxima onda)
 
 - [ ] Integração Kommo CRM via API

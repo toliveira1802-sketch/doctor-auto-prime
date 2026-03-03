@@ -34,6 +34,11 @@ import {
   BarChart3,
   Plus,
   Wrench,
+  Settings,
+  TrendingUp,
+  Target,
+  FileText,
+  Code2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -44,25 +49,35 @@ import { trpc } from "@/lib/trpc";
 
 const menuItems = [
   {
-    group: "Principal",
+    group: "Admin",
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-      { icon: Car, label: "Pátio", path: "/patio" },
-    ],
-  },
-  {
-    group: "Operacional",
-    items: [
-      { icon: ClipboardList, label: "Ordens de Serviço", path: "/os" },
-      { icon: CalendarClock, label: "Agenda", path: "/agenda" },
-      { icon: Users, label: "CRM / Clientes", path: "/crm" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+      { icon: Car, label: "Pátio", path: "/admin/patio" },
+      { icon: ClipboardList, label: "Ordens de Serviço", path: "/admin/os" },
+      { icon: CalendarClock, label: "Agenda", path: "/admin/agenda" },
+      { icon: Users, label: "Clientes", path: "/admin/clientes" },
+      { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
+      { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
+      { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
     ],
   },
   {
     group: "Gestão",
     items: [
-      { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
-      { icon: BarChart3, label: "Produtividade", path: "/produtividade" },
+      { icon: TrendingUp, label: "Visão Geral", path: "/gestao/visao-geral" },
+      { icon: Wrench, label: "Operacional", path: "/gestao/operacional" },
+      { icon: DollarSign, label: "Financeiro", path: "/gestao/financeiro" },
+      { icon: BarChart3, label: "Produtividade", path: "/gestao/produtividade" },
+      { icon: Users, label: "Colaboradores", path: "/gestao/colaboradores" },
+      { icon: Wrench, label: "Mecânicos", path: "/gestao/mecanicos" },
+      { icon: Target, label: "Metas", path: "/gestao/metas" },
+      { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
+    ],
+  },
+  {
+    group: "Dev",
+    items: [
+      { icon: Code2, label: "Navegador de Páginas", path: "/dev" },
     ],
   },
 ];
@@ -148,7 +163,7 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const allItems = menuItems.flatMap(g => g.items);
-  const activeMenuItem = allItems.find(item => item.path === location);
+  const activeMenuItem = allItems.find(item => item.path === location || (item.path !== "/" && location.startsWith(item.path)));
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -252,7 +267,7 @@ function DashboardLayoutContent({
                 <Button
                   size="sm"
                   className="w-full gap-2 h-8"
-                  onClick={() => setLocation("/os/nova")}
+                  onClick={() => setLocation("/admin/nova-os")}
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Nova OS

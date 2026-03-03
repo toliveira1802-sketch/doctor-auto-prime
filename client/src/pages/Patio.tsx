@@ -168,7 +168,7 @@ export default function Patio() {
   const [movingId, setMovingId] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
-  const { data: rawItems = [], isLoading } = trpc.os.patio.useQuery({ consultor: consultor === "todos" ? undefined : consultor });
+  const { data: rawItems = [], isLoading } = trpc.os.patio.useQuery();
   const items = rawItems as PatioRow[];
 
   const updateStatus = trpc.os.updateStatus.useMutation({

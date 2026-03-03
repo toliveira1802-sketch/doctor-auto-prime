@@ -49,7 +49,8 @@ export default function OsList() {
     offset: page * limit,
   });
 
-  const items = data?.items ?? [];
+  type OsItem = NonNullable<typeof data>["items"][number];
+  const items: OsItem[] = data?.items ?? [];
   const total = data?.total ?? 0;
 
   return (
