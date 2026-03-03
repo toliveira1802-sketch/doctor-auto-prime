@@ -49,7 +49,7 @@ import { trpc } from "@/lib/trpc";
 
 const menuItems = [
   {
-    group: "Admin",
+    group: "POMBAL",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
       { icon: Car, label: "Pátio", path: "/admin/patio" },
