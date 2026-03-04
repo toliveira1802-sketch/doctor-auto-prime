@@ -41,6 +41,7 @@ import GestaoCampanhas from "./pages/gestao/GestaoCampanhas";
 import GestaoRH from "./pages/gestao/GestaoRH";
 import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
+import SelecionarPerfil from "./pages/SelecionarPerfil";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -49,10 +50,22 @@ function WithLayout({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
-      {/* Root redirect to admin dashboard */}
+      {/* Tela de seleção de perfil (antes do login) */}
+      <Route path="/selecionar-perfil">
+        <SelecionarPerfil />
+      </Route>
+
+      {/* Root: após OAuth callback redireciona para o perfil salvo, senão vai ao dashboard */}
       <Route path="/">
         {() => {
-          window.location.replace("/admin/dashboard");
+          const perfilRedirect = sessionStorage.getItem("perfil_redirect");
+          if (perfilRedirect) {
+            sessionStorage.removeItem("perfil_redirect");
+            sessionStorage.removeItem("perfil_selecionado");
+            window.location.replace(perfilRedirect);
+          } else {
+            window.location.replace("/admin/dashboard");
+          }
           return null;
         }}
       </Route>
