@@ -246,3 +246,8 @@
 - [ ] Rota POST /api/auth/local-login aceitar username+senha além de colaboradorId
 - [ ] Tela /trocar-senha: obrigatória no primeiro acesso antes de acessar o sistema
 - [ ] Rota POST /api/auth/change-password para atualizar senha e limpar primeiroAcesso
+
+## Login — Seleção de Perfil (sem expor funcionários)
+
+- [ ] Reescrever Login.tsx: 4 cards de perfil (Consultor, Gestão, Administrador, Mecânico)
+- [ ] Servidor: aceitar { perfil } em vez de { colaboradorId } e criar sessão pelo perfil

@@ -12,6 +12,13 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import * as db from "./db";
 
+const PERFIL_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  gestor: "Gestão",
+  consultor: "Consultor",
+  mecanico: "Mecânico",
+};
+
 // Mapeamento nivelAcessoId → perfil do sistema
 function getPerfil(nivelAcessoId: number): string {
   if (nivelAcessoId === 1) return "admin";
@@ -98,6 +105,73 @@ export function registerLocalAuthRoutes(app: Express) {
       });
     } catch (error) {
       console.error("[LocalAuth] Login failed", error);
+      res.status(500).json({ error: "Erro interno ao fazer login" });
+    }
+  });
+
+  // POST /api/auth/local-login-perfil — aceita { nivelAcessoId } e autentica como perfil genérico
+  app.post("/api/auth/local-login-perfil", async (req: Request, res: Response) => {
+    const { nivelAcessoId, redirectPath: clientRedirect } = req.body as {
+      nivelAcessoId?: number;
+      redirectPath?: string;
+    };
+
+    if (!nivelAcessoId) {
+      res.status(400).json({ error: "Selecione um perfil" });
+      return;
+    }
+
+    try {
+      const drizzle = await getDb();
+      if (!drizzle) {
+        res.status(500).json({ error: "Banco de dados indisponível" });
+        return;
+      }
+
+      // Busca o primeiro colaborador ativo daquele nível
+      const result = await drizzle
+        .select()
+        .from(colaboradores)
+        .where(
+          and(
+            eq(colaboradores.nivelAcessoId, nivelAcessoId),
+            eq(colaboradores.ativo, true)
+          )
+        )
+        .limit(1);
+
+      if (result.length === 0) {
+        res.status(401).json({ error: "Nenhum colaborador ativo neste perfil" });
+        return;
+      }
+
+      const colab = result[0];
+      const perfil = getPerfil(colab.nivelAcessoId ?? 3);
+      const redirectPath = clientRedirect ?? getRedirectPath(perfil);
+
+      const openId = `local_perfil_${nivelAcessoId}`;
+      const role = perfil === "admin" ? "admin" : "user";
+
+      await db.upsertUser({
+        openId,
+        name: PERFIL_LABELS[perfil] ?? perfil,
+        email: null,
+        loginMethod: "local",
+        role,
+        lastSignedIn: new Date(),
+      });
+
+      const sessionToken = await sdk.createSessionToken(openId, {
+        name: PERFIL_LABELS[perfil] ?? perfil,
+        expiresInMs: ONE_YEAR_MS,
+      });
+
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+      res.json({ success: true, perfil, redirectPath });
+    } catch (error) {
+      console.error("[LocalAuth] Perfil login failed", error);
       res.status(500).json({ error: "Erro interno ao fazer login" });
     }
   });
