@@ -26,6 +26,7 @@ import {
   veiculos,
   oficinaVagas,
   leadScores,
+  leadScoreHistory,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -1949,6 +1950,23 @@ Retorne APENAS JSON válido:
               leadCreatedAt: lead.createdAt ?? null,
             });
 
+            // Save snapshot in history table (never delete, always append)
+            await db.insert(leadScoreHistory).values({
+              leadId: lead.id,
+              leadName: lead.name,
+              score,
+              tier,
+              temperature: parsed.temperature ?? lead.temperature ?? "morno",
+              serviceType: parsed.serviceType ?? "indefinido",
+              breakdownValor: parsed.breakdown?.valor ?? 0,
+              breakdownTemperatura: parsed.breakdown?.temperatura ?? 0,
+              breakdownEngajamento: parsed.breakdown?.engajamento ?? 0,
+              breakdownVeiculo: parsed.breakdown?.veiculo ?? 0,
+              breakdownServico: parsed.breakdown?.servico ?? 0,
+              breakdownRecencia: parsed.breakdown?.recencia ?? 0,
+              breakdownCompletude: parsed.breakdown?.completude ?? 0,
+            });
+
             results.push({ leadId: lead.id, score, tier, success: true });
 
             // Notify owner for S-tier leads
@@ -1965,6 +1983,19 @@ Retorne APENAS JSON válido:
         }
 
         return { results, total: results.length, success: results.filter((r) => r.success).length };
+      }),
+
+    // Histórico de scores de um lead (evolução temporal)
+    history: protectedProcedure
+      .input(z.object({ leadId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db
+          .select()
+          .from(leadScoreHistory)
+          .where(eq(leadScoreHistory.leadId, input.leadId))
+          .orderBy(leadScoreHistory.scoredAt);
       }),
 
     // Deletar score de um lead

@@ -14,12 +14,13 @@ import { toast } from "sonner";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Legend,
+  LineChart, Line, CartesianGrid, ReferenceLine,
 } from "recharts";
 import {
   Bot, Zap, Users, RefreshCw, Play, CheckCircle2, AlertCircle,
   Flame, Thermometer, Snowflake, ChevronRight, Loader2, Brain,
-  MessageSquare, TrendingUp, Target, Wifi, WifiOff, BarChart3,
-  Trophy, Star, Trash2, DollarSign,
+  MessageSquare, TrendingUp, TrendingDown, Target, Wifi, WifiOff, BarChart3,
+  Trophy, Star, Trash2, DollarSign, History,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -162,6 +163,22 @@ function ScoreRow({ score, rank, onDelete }: { score: LeadScore; rank: number; o
     fullMark: b.max,
   }));
 
+  // Fetch history only when expanded
+  const { data: historyData, isLoading: historyLoading } = trpc.leadScoring.history.useQuery(
+    { leadId: score.leadId },
+    { enabled: expanded, staleTime: 30_000 }
+  );
+
+  const historyChartData = (historyData ?? []).map((h: any) => ({
+    date: new Date(h.scoredAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
+    score: h.score,
+    tier: h.tier,
+  }));
+
+  const scoreDelta = historyChartData.length >= 2
+    ? historyChartData[historyChartData.length - 1].score - historyChartData[historyChartData.length - 2].score
+    : null;
+
   return (
     <div className="rounded-lg border border-border/50 overflow-hidden">
       <div
@@ -253,6 +270,67 @@ function ScoreRow({ score, rank, onDelete }: { score: LeadScore; rank: number; o
                 <Radar name="Score" dataKey="value" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
               </RadarChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* History chart — full width */}
+          <div className="col-span-1 md:col-span-2 border-t border-border/30 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Evolução do Score</p>
+              </div>
+              {scoreDelta !== null && (
+                <div className={`flex items-center gap-1 text-xs font-semibold ${
+                  scoreDelta > 0 ? "text-green-400" : scoreDelta < 0 ? "text-red-400" : "text-zinc-400"
+                }`}>
+                  {scoreDelta > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : scoreDelta < 0 ? <TrendingDown className="h-3.5 w-3.5" /> : null}
+                  {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta} pts vs anterior
+                </div>
+              )}
+            </div>
+
+            {historyLoading ? (
+              <div className="flex items-center justify-center h-28 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            ) : historyChartData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-28 text-muted-foreground gap-2">
+                <History className="h-6 w-6 opacity-40" />
+                <p className="text-xs">Nenhum histórico ainda. Pontue este lead para iniciar o rastreamento.</p>
+              </div>
+            ) : historyChartData.length === 1 ? (
+              <div className="flex flex-col items-center justify-center h-28 gap-1">
+                <span className="text-3xl font-bold">{historyChartData[0].score}</span>
+                <span className="text-xs text-muted-foreground">Primeira pontuação em {historyChartData[0].date}</span>
+                <Badge variant="outline" className="text-xs mt-1">Pontue novamente para ver a evolução</Badge>
+              </div>
+            ) : (
+              <div className="h-40">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={historyChartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#666" }} interval="preserveStartEnd" />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#666" }} />
+                    <Tooltip
+                      contentStyle={{ background: "#18181b", border: "1px solid #333", borderRadius: 8, fontSize: 12 }}
+                      formatter={(val: any, _name: any, props: any) => [
+                        <span key="val"><strong>{val}</strong>/100 — Tier <strong>{props.payload.tier}</strong></span>,
+                        "Score"
+                      ]}
+                    />
+                    <ReferenceLine y={score.score} stroke="#8b5cf6" strokeDasharray="4 2" label={{ value: "Atual", position: "right", fontSize: 9, fill: "#8b5cf6" }} />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="#8b5cf6"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#8b5cf6", stroke: "#18181b", strokeWidth: 2 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
       )}

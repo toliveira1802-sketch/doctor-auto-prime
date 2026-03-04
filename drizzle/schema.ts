@@ -473,3 +473,24 @@ export const leadScores = mysqlTable("21_lead_scores", {
   createdAt: timestamp("createdAt").defaultNow(),
 });
 export type LeadScore = typeof leadScores.$inferSelect;
+
+// ─── 22_LEAD_SCORE_HISTORY ────────────────────────────────────────────────────
+// Snapshots históricos de score de cada lead (um registro por pontuação)
+export const leadScoreHistory = mysqlTable("22_lead_score_history", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  leadName: varchar("leadName", { length: 255 }),
+  score: int("score").notNull(),
+  tier: varchar("tier", { length: 2 }).notNull(),
+  temperature: varchar("temperature", { length: 20 }),
+  serviceType: varchar("serviceType", { length: 30 }),
+  breakdownValor: int("breakdownValor").default(0),
+  breakdownTemperatura: int("breakdownTemperatura").default(0),
+  breakdownEngajamento: int("breakdownEngajamento").default(0),
+  breakdownVeiculo: int("breakdownVeiculo").default(0),
+  breakdownServico: int("breakdownServico").default(0),
+  breakdownRecencia: int("breakdownRecencia").default(0),
+  breakdownCompletude: int("breakdownCompletude").default(0),
+  scoredAt: timestamp("scoredAt").defaultNow(),
+});
+export type LeadScoreHistory = typeof leadScoreHistory.$inferSelect;

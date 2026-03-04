@@ -211,3 +211,13 @@
 - [x] Badges de tier: S (90+), A (75-89), B (55-74), C (35-54), D (<35)
 - [x] Filtro por consultor e tier
 - [x] Alerta automático para leads S-Tier (notificação owner)
+
+## Lead Score History (Evolução Temporal)
+
+- [x] Schema: tabela 22_lead_score_history (id, leadId, score, tier, temperature, scoredAt)
+- [x] SQL migration: criar tabela 22_lead_score_history
+- [x] Router: leadScoring.history — buscar snapshots históricos por leadId
+- [x] Atualizar scoreLeads: salvar snapshot em lead_score_history a cada pontuação
+- [x] Gráfico de linha histórico no card expandido do ScoreRow (LineChart recharts)
+- [x] Tooltip com data, score, tier e delta (variação vs anterior)
+- [x] Indicador de tendência: seta para cima/baixo com variação percentual
