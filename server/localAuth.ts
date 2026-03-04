@@ -1,12 +1,12 @@
 /**
  * Local Authentication Routes
- * Allows colaboradores to login with email + password without Manus OAuth.
- * Creates the same JWT session cookie as the OAuth flow.
+ * Login por seleção de colaborador (sem senha) — modo teste.
+ * Cria o mesmo JWT session cookie que o fluxo OAuth.
  */
 import type { Express, Request, Response } from "express";
 import { getDb } from "./db";
 import { colaboradores } from "../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
@@ -14,10 +14,10 @@ import * as db from "./db";
 
 // Mapeamento nivelAcessoId → perfil do sistema
 function getPerfil(nivelAcessoId: number): string {
-  if (nivelAcessoId === 1) return "admin";       // Direção / Admin
-  if (nivelAcessoId === 2) return "gestor";      // Gestão
-  if (nivelAcessoId === 3) return "consultor";   // Consultor Técnico
-  if (nivelAcessoId === 4) return "mecanico";    // Mecânico
+  if (nivelAcessoId === 1) return "admin";
+  if (nivelAcessoId === 2) return "gestor";
+  if (nivelAcessoId === 3) return "consultor";
+  if (nivelAcessoId === 4) return "mecanico";
   return "consultor";
 }
 
@@ -30,12 +30,12 @@ function getRedirectPath(perfil: string): string {
 }
 
 export function registerLocalAuthRoutes(app: Express) {
-  // POST /api/auth/local-login
+  // POST /api/auth/local-login — aceita { colaboradorId } (sem senha)
   app.post("/api/auth/local-login", async (req: Request, res: Response) => {
-    const { email, senha } = req.body as { email?: string; senha?: string };
+    const { colaboradorId } = req.body as { colaboradorId?: number };
 
-    if (!email || !senha) {
-      res.status(400).json({ error: "Email e senha são obrigatórios" });
+    if (!colaboradorId) {
+      res.status(400).json({ error: "Selecione um colaborador" });
       return;
     }
 
@@ -46,21 +46,20 @@ export function registerLocalAuthRoutes(app: Express) {
         return;
       }
 
-      // Busca colaborador ativo com email + senha
+      // Busca colaborador ativo pelo id
       const result = await drizzle
         .select()
         .from(colaboradores)
         .where(
           and(
-            eq(colaboradores.email, email.toLowerCase().trim()),
-            eq(colaboradores.senha, senha),
+            eq(colaboradores.id, colaboradorId),
             eq(colaboradores.ativo, true)
           )
         )
         .limit(1);
 
       if (result.length === 0) {
-        res.status(401).json({ error: "Email ou senha incorretos" });
+        res.status(401).json({ error: "Colaborador não encontrado ou inativo" });
         return;
       }
 
@@ -68,11 +67,11 @@ export function registerLocalAuthRoutes(app: Express) {
       const perfil = getPerfil(colab.nivelAcessoId ?? 3);
       const redirectPath = getRedirectPath(perfil);
 
-      // Cria um openId único para o colaborador (prefixo "local_" + id)
+      // openId único para o colaborador
       const openId = `local_${colab.id}`;
 
       // Upsert no users table para manter consistência
-      const role = (perfil === "admin") ? "admin" : "user";
+      const role = perfil === "admin" ? "admin" : "user";
       await db.upsertUser({
         openId,
         name: colab.nome,

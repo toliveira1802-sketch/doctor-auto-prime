@@ -183,3 +183,20 @@
 - [x] Router: kommo.leads.analisarLote — IA classifica todos os leads pendentes
 - [x] Router: kommo.leads.distribuir — atribuir lead a consultor + notificar
 - [x] Link "QG das IAs" no sidebar POMBAL com ícone de IA
+
+## Lead Scoring System (QG das IAs)
+
+- [ ] Schema: tabela lead_scores (leadId, score, breakdown JSON, tier, scoredAt)
+- [ ] Engine de scoring: 7 dimensões (valor, temperatura, engajamento, veículo, serviço, recência, completude)
+- [ ] Router: kommo.scoreLeads — pontuar leads em lote
+- [ ] Router: kommo.getScores — listar scores salvos com ranking
+- [ ] Aba "Lead Scoring" no QG das IAs com ranking visual e breakdown por dimensão
+- [ ] Badges de tier: S-Tier (90+), A (75-89), B (55-74), C (35-54), D (<35)
+- [ ] Filtros por tier, consultor, período
+- [ ] Alertas automáticos para S-Tier (notificação owner)
+
+## Login sem senha (modo teste)
+
+- [x] Remover campo senha do frontend Login.tsx
+- [x] Remover validação de senha na rota /api/auth/local-login
+- [x] Login por seleção de nome/perfil apenas (sem senha)
