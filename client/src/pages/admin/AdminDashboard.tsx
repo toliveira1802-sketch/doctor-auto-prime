@@ -1,64 +1,55 @@
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { toast } from "sonner";
 import {
-  Car, Calendar, DollarSign, CheckCircle, TrendingUp,
-  Plus, ArrowRight, Wrench, Target,
+  Plus, CheckCircle, Clock, AlertTriangle, ChevronRight,
+  Car, Calendar, DollarSign, Wrench,
 } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-} from "recharts";
 
-// Veículos ATIVOS no pátio = todas as OS que NÃO são Entregue/Cancelado
-const PATIO_ATIVOS = ["Diagnóstico", "Orçamento", "Aguardando Aprovação", "Aprovado", "Em Execução", "Aguardando Peça", "Pronto", "Em Teste"];
+const PRIORIDADE_COLORS: Record<string, string> = {
+  alta:   "bg-red-500/20 text-red-400 border-red-500/40",
+  media:  "bg-amber-500/20 text-amber-400 border-amber-500/40",
+  baixa:  "bg-blue-500/20 text-blue-400 border-blue-500/40",
+};
 
-const STATUS_COLORS: Record<string, string> = {
-  "Diagnóstico": "#f59e0b",
-  "Orçamento": "#3b82f6",
-  "Aguardando Aprovação": "#8b5cf6",
-  "Aprovado": "#06b6d4",
-  "Em Execução": "#f97316",
-  "Aguardando Peça": "#ef4444",
-  "Pronto": "#22c55e",
-  "Em Teste": "#a855f7",
-  "Entregue": "#6b7280",
-  "Cancelado": "#dc2626",
+const PRIORIDADE_ICON: Record<string, React.ReactNode> = {
+  alta:  <AlertTriangle className="h-3.5 w-3.5 text-red-400" />,
+  media: <Clock className="h-3.5 w-3.5 text-amber-400" />,
+  baixa: <CheckCircle className="h-3.5 w-3.5 text-blue-400" />,
 };
 
 export default function AdminDashboard() {
-  const { data: kpis, isLoading } = trpc.dashboard.kpis.useQuery();
+  const utils = trpc.useUtils();
 
-  // Apenas status do pátio ativo (exclui Entregue/Cancelado)
-  const statusData = (kpis?.statusCounts ?? [])
-    .filter((s: any) => PATIO_ATIVOS.includes(s.status))
-    .map((s: any) => ({
-      name: s.status,
-      value: Number(s.count),
-      color: STATUS_COLORS[s.status] ?? "#6b7280",
-    }))
-    .sort((a: any, b: any) => b.value - a.value); // maior gargalo primeiro
+  // Pendências do dia (status = Pendente)
+  const { data: pendenciasList = [], isLoading: loadingPend } =
+    trpc.pendencias.list.useQuery({ status: "Pendente" });
 
-  // Veículos no pátio = soma dos status ativos
-  const veiculosNoPatio = statusData.reduce((acc: number, s: any) => acc + s.value, 0);
+  const updateStatus = trpc.pendencias.updateStatus.useMutation({
+    onSuccess: () => {
+      utils.pendencias.list.invalidate();
+      toast.success("Pendência concluída!");
+    },
+  });
 
-  // Faturamento = OS fechadas no mês vigente (vem do backend)
-  const faturamento = kpis?.faturamentoMes ?? 0;
-  const metaMes = kpis?.metaMes ?? 200000;
-  const metaPerc = metaMes > 0 ? Math.min(100, Math.round((faturamento / metaMes) * 100)) : 0;
-  const metaColor = metaPerc >= 100 ? "bg-green-500" : metaPerc >= 70 ? "bg-amber-500" : "bg-red-500";
-  const metaTextColor = metaPerc >= 100 ? "text-green-400" : metaPerc >= 70 ? "text-amber-400" : "text-red-400";
+  const [showAll, setShowAll] = useState(false);
+  const displayed = showAll ? pendenciasList : pendenciasList.slice(0, 5);
 
-  const entregasMes = kpis?.entregasMes ?? 0;
-  const agendamentosHoje = kpis?.agendamentosHoje ?? 0;
+  // KPIs compactos para o header bar
+  const { data: kpis } = trpc.dashboard.kpis.useQuery();
+  const veiculosNoPatio = (kpis?.statusCounts ?? [])
+    .filter((s: any) => !["Entregue", "Cancelado"].includes(s.status))
+    .reduce((acc: number, s: any) => acc + Number(s.count), 0);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard Operacional</h1>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground text-sm">Visão geral em tempo real</p>
         </div>
         <Link href="/admin/nova-os">
@@ -66,212 +57,131 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Veículos no Pátio — soma das fileiras ativas do Kanban */}
-        <Link href="/admin/patio">
-          <Card className="border-primary/20 hover:border-primary/50 cursor-pointer transition-colors">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Veículos no Pátio</span>
-                <Car className="h-4 w-4 text-primary" />
-              </div>
-              <div className="text-3xl font-bold">{isLoading ? "—" : veiculosNoPatio}</div>
-              <p className="text-xs text-muted-foreground mt-1">em diagnóstico → pronto</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Agendamentos Hoje */}
-        <Link href="/admin/agenda">
-          <Card className="border-blue-500/20 hover:border-blue-500/50 cursor-pointer transition-colors">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Agendamentos Hoje</span>
-                <Calendar className="h-4 w-4 text-blue-500" />
-              </div>
-              <div className="text-3xl font-bold">{isLoading ? "—" : agendamentosHoje}</div>
-              <p className="text-xs text-muted-foreground mt-1">confirmados</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Faturamento do Mês — somatória das OS fechadas no mês vigente */}
-        <Link href="/admin/financeiro">
-          <Card className="border-green-500/20 hover:border-green-500/50 cursor-pointer transition-colors">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Faturamento do Mês</span>
-                <DollarSign className="h-4 w-4 text-green-500" />
-              </div>
-              <div className="text-3xl font-bold">
-                {isLoading ? "—" : `R$ ${faturamento.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`}
-              </div>
-              {/* Termômetro meta vs atingimento */}
-              <div className="mt-2">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">Meta: R$ {(metaMes / 1000).toFixed(0)}k</span>
-                  <span className={`font-bold ${metaTextColor}`}>{metaPerc}%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className={`h-full ${metaColor} rounded-full transition-all`} style={{ width: `${metaPerc}%` }} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Entregas no Mês — OS finalizadas no mês vigente */}
-        <Link href="/admin/os">
-          <Card className="border-amber-500/20 hover:border-amber-500/50 cursor-pointer transition-colors">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Entregas no Mês</span>
-                <CheckCircle className="h-4 w-4 text-amber-500" />
-              </div>
-              <div className="text-3xl font-bold">{isLoading ? "—" : entregasMes}</div>
-              <p className="text-xs text-muted-foreground mt-1">OS entregues este mês</p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gargalo — barras horizontais por status, indicando onde estão acumulando */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-primary" />
-              Gargalo do Pátio
-              <Badge variant="outline" className="ml-auto text-xs">{veiculosNoPatio} ativos</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {statusData.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Nenhuma OS ativa</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={statusData}
-                  layout="vertical"
-                  margin={{ left: 8, right: 24, top: 4, bottom: 4 }}
-                >
-                  <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 10 }}
-                    width={130}
-                  />
-                  <Tooltip
-                    formatter={(v: any) => [`${v} OS`, "Quantidade"]}
-                    contentStyle={{ background: "#1a1a2e", border: "1px solid #333", borderRadius: 8 }}
-                  />
-                  <Bar dataKey="value" name="OS" radius={[0, 4, 4, 0]}>
-                    {statusData.map((entry: any, i: number) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Meta vs Atingimento */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="h-4 w-4 text-green-500" />
-              Meta vs Atingimento
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-2">
-            {/* Faturamento */}
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">Faturamento</span>
-                <span className={`font-bold ${metaTextColor}`}>
-                  R$ {faturamento.toLocaleString("pt-BR")} / R$ {(metaMes / 1000).toFixed(0)}k
-                </span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div className={`h-full ${metaColor} rounded-full transition-all`} style={{ width: `${metaPerc}%` }} />
-              </div>
-              <div className="text-right text-xs text-muted-foreground mt-0.5">{metaPerc}% da meta</div>
-            </div>
-
-            {/* Entregas */}
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">OS Entregues</span>
-                <span className="font-bold text-amber-400">{entregasMes} / 80 OS</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${entregasMes >= 80 ? "bg-green-500" : entregasMes >= 56 ? "bg-amber-500" : "bg-red-500"}`}
-                  style={{ width: `${Math.min(100, Math.round((entregasMes / 80) * 100))}%` }}
-                />
-              </div>
-              <div className="text-right text-xs text-muted-foreground mt-0.5">
-                {Math.min(100, Math.round((entregasMes / 80) * 100))}% da meta
-              </div>
-            </div>
-
-            {/* Agendamentos */}
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">Agendamentos Hoje</span>
-                <span className="font-bold text-blue-400">{agendamentosHoje} confirmados</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-500 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, agendamentosHoje * 10)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Veículos no pátio */}
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">Veículos no Pátio</span>
-                <span className="font-bold text-primary">{veiculosNoPatio} ativos</span>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {statusData.map((s: any) => (
-                  <Badge key={s.name} variant="outline" className="text-xs" style={{ borderColor: s.color, color: s.color }}>
-                    {s.name}: {s.value}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Links — todos com rotas corretas */}
+      {/* Barra de KPIs compacta — linha superior */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { href: "/admin/patio", label: "Ver Pátio", icon: Car, color: "text-primary" },
-          { href: "/admin/os", label: "Todas as OS", icon: Wrench, color: "text-blue-500" },
-          { href: "/admin/agenda", label: "Agendamentos", icon: Calendar, color: "text-amber-500" },
-          { href: "/admin/financeiro", label: "Financeiro", icon: DollarSign, color: "text-green-500" },
-        ].map(item => {
+          {
+            href: "/admin/patio",
+            label: "Veículos no Pátio",
+            value: kpis ? veiculosNoPatio : "—",
+            icon: Car,
+            color: "text-primary border-primary/30",
+          },
+          {
+            href: "/admin/agenda",
+            label: "Agendamentos Hoje",
+            value: kpis ? (kpis.agendamentosHoje ?? 0) : "—",
+            icon: Calendar,
+            color: "text-blue-400 border-blue-500/30",
+          },
+          {
+            href: "/admin/financeiro",
+            label: "Faturamento (Mês)",
+            value: kpis
+              ? `R$ ${((kpis.faturamentoMes ?? 0) / 1000).toFixed(0)}k`
+              : "—",
+            icon: DollarSign,
+            color: "text-green-400 border-green-500/30",
+          },
+          {
+            href: "/admin/os",
+            label: "Entregas no Mês",
+            value: kpis ? (kpis.entregasMes ?? 0) : "—",
+            icon: Wrench,
+            color: "text-amber-400 border-amber-500/30",
+          },
+        ].map((item) => {
           const Icon = item.icon;
           return (
             <Link key={item.href} href={item.href}>
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-                <CardContent className="pt-4 pb-4 flex items-center gap-3">
-                  <Icon className={`h-5 w-5 ${item.color}`} />
-                  <span className="text-sm font-medium">{item.label}</span>
-                  <ArrowRight className="h-3 w-3 text-muted-foreground ml-auto" />
-                </CardContent>
-              </Card>
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-accent/30 transition-colors cursor-pointer ${item.color}`}
+              >
+                <Icon className={`h-4 w-4 shrink-0 ${item.color.split(" ")[0]}`} />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{item.label}</p>
+                  <p className={`text-lg font-bold leading-tight ${item.color.split(" ")[0]}`}>
+                    {item.value}
+                  </p>
+                </div>
+              </div>
             </Link>
           );
         })}
+      </div>
+
+      {/* ─── Pendências do Dia ─────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <h2 className="font-semibold text-sm">Pendências do dia</h2>
+            {pendenciasList.length > 0 && (
+              <Badge variant="outline" className="text-xs ml-1">
+                {pendenciasList.length}
+              </Badge>
+            )}
+          </div>
+          <button
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll ? "Ver menos" : "Ver todas"}
+            <ChevronRight className={`h-3 w-3 transition-transform ${showAll ? "rotate-90" : ""}`} />
+          </button>
+        </div>
+
+        {/* Lista */}
+        <div className="divide-y divide-border">
+          {loadingPend ? (
+            <div className="px-5 py-4 text-sm text-muted-foreground">Carregando...</div>
+          ) : displayed.length === 0 ? (
+            <div className="px-5 py-4 text-sm text-muted-foreground flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              Nenhuma pendência para hoje. Bom trabalho!
+            </div>
+          ) : (
+            displayed.map((p: any) => (
+              <div
+                key={p.id}
+                className="flex items-center gap-3 px-5 py-3 hover:bg-accent/20 transition-colors group"
+              >
+                {/* Prioridade ícone */}
+                <div className="shrink-0">
+                  {PRIORIDADE_ICON[p.prioridade ?? "media"]}
+                </div>
+
+                {/* Título + descrição */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{p.titulo}</p>
+                  {p.descricao && (
+                    <p className="text-xs text-muted-foreground truncate">{p.descricao}</p>
+                  )}
+                </div>
+
+                {/* Badge prioridade */}
+                <Badge
+                  variant="outline"
+                  className={`text-xs shrink-0 ${PRIORIDADE_COLORS[p.prioridade ?? "media"]}`}
+                >
+                  {p.prioridade ?? "média"}
+                </Badge>
+
+                {/* Botão concluir (aparece no hover) */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity h-7 text-xs text-green-400 hover:text-green-300 hover:bg-green-500/10 shrink-0"
+                  onClick={() => updateStatus.mutate({ id: p.id, status: "Concluído" })}
+                >
+                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                  Concluir
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
