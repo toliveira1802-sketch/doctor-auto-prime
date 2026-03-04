@@ -22,6 +22,8 @@ import AdminClienteDetalhe from "./pages/admin/AdminClienteDetalhe";
 import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 import AdminProdutividade from "./pages/admin/AdminProdutividade";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
+import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
 
 // Gestão pages
 import GestaoVisaoGeral from "./pages/gestao/GestaoVisaoGeral";
@@ -89,6 +91,12 @@ function Router() {
       </Route>
       <Route path="/admin/configuracoes">
         <WithLayout><AdminConfiguracoes /></WithLayout>
+      </Route>
+      <Route path="/admin/mecanicos/analytics">
+        <WithLayout><AdminMechanicAnalytics /></WithLayout>
+      </Route>
+      <Route path="/admin/mecanicos/feedback">
+        <WithLayout><AdminMechanicFeedback /></WithLayout>
       </Route>
 
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}

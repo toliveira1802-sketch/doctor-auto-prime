@@ -209,6 +209,11 @@ export const osItens = mysqlTable("11_ordens_servico_itens", {
   aprovado: boolean("aprovado"),
   executado: boolean("executado").default(false),
   mecanicoId: int("mecanicoId"),
+  prioridade: varchar("prioridade", { length: 20 }).default("amarelo"),
+  valorCusto: decimal("valorCusto", { precision: 10, scale: 2 }).default("0"),
+  margemAplicada: decimal("margemAplicada", { precision: 5, scale: 2 }).default("40"),
+  status: varchar("status", { length: 30 }).default("pendente"),
+  motivoRecusa: text("motivoRecusa"),
   createdAt: timestamp("createdAt").defaultNow(),
 });
 export type OsItem = typeof osItens.$inferSelect;
@@ -294,6 +299,17 @@ export const crm = mysqlTable("99_crm", {
 export type CrmRecord = typeof crm.$inferSelect;
 
 // ─── SYSTEM_CONFIG ───────────────────────────────────────────────────────────
+export const mecanicoFeedback = mysqlTable("13_mecanico_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  mecanicoId: int("mecanicoId").notNull(),
+  tipo: varchar("tipo", { length: 20 }).notNull(), // 'positivo' | 'negativo'
+  comentario: text("comentario"),
+  dataFeedback: date("dataFeedback").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+export type MecanicoFeedback = typeof mecanicoFeedback.$inferSelect;
+export type InsertMecanicoFeedback = typeof mecanicoFeedback.$inferInsert;
+
 export const systemConfig = mysqlTable("system_config", {
   id: int("id").autoincrement().primaryKey(),
   chave: varchar("chave", { length: 200 }).notNull().unique(),

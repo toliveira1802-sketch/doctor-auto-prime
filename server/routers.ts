@@ -16,6 +16,7 @@ import {
   pendencias,
   recursos,
   servicosCatalogo,
+  mecanicoFeedback,
   systemConfig,
   veiculos,
 } from "../drizzle/schema";
@@ -286,6 +287,47 @@ export const appRouter = router({
       }),
   }),
 
+  // ─── MECANICO FEEDBACK ──────────────────────────────────────────────────────
+  mecanicoFeedback: router({
+    list: protectedProcedure
+      .input(z.object({ mecanicoId: z.number().optional(), data: z.string().optional() }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const q = db.select().from(mecanicoFeedback);
+        return q.orderBy(desc(mecanicoFeedback.createdAt));
+      }),
+    listToday: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const today = new Date();
+      return db.select().from(mecanicoFeedback).where(gte(mecanicoFeedback.createdAt, new Date(today.getFullYear(), today.getMonth(), today.getDate())));
+    }),
+    add: protectedProcedure
+      .input(z.object({
+        mecanicoId: z.number(),
+        tipo: z.enum(["positivo", "negativo"]),
+        comentario: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const today = new Date();
+        await db.insert(mecanicoFeedback).values({
+          mecanicoId: input.mecanicoId,
+          tipo: input.tipo,
+          comentario: input.comentario ?? null,
+          dataFeedback: today,
+        });
+        // Update mecanico counters
+        if (input.tipo === "positivo") {
+          await db.update(mecanicos).set({ qtdePositivos: sql`${mecanicos.qtdePositivos} + 1` }).where(eq(mecanicos.id, input.mecanicoId));
+        } else {
+          await db.update(mecanicos).set({ qtdeNegativos: sql`${mecanicos.qtdeNegativos} + 1` }).where(eq(mecanicos.id, input.mecanicoId));
+        }
+        return { success: true };
+      }),
+  }),
   // ─── RECURSOS ──────────────────────────────────────────────────────────────
   recursos: router({
     list: protectedProcedure.query(async () => {
@@ -703,6 +745,65 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
         await db.update(osItens).set({ aprovado: input.aprovado }).where(eq(osItens.id, input.itemId));
+        return { success: true };
+      }),
+    deleteItem: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const [item] = await db.select().from(osItens).where(eq(osItens.id, input.id));
+        if (item) {
+          await db.update(ordensServico).set({
+            totalOrcamento: sql`GREATEST(0, ${ordensServico.totalOrcamento} - ${item.valorTotal ?? 0})`,
+          }).where(eq(ordensServico.id, item.ordemServicoId));
+        }
+        await db.delete(osItens).where(eq(osItens.id, input.id));
+        return { success: true };
+      }),
+    updateItemStatus: protectedProcedure
+      .input(z.object({ id: z.number(), status: z.string(), motivoRecusa: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const updateData: Record<string, unknown> = { status: input.status };
+        if (input.motivoRecusa) updateData.motivoRecusa = input.motivoRecusa;
+        if (input.status === 'aprovado') updateData.aprovado = true;
+        if (input.status === 'recusado') updateData.aprovado = false;
+        await db.update(osItens).set(updateData).where(eq(osItens.id, input.id));
+        return { success: true };
+      }),
+    addItemFull: protectedProcedure
+      .input(z.object({
+        ordemServicoId: z.number(),
+        descricao: z.string(),
+        tipo: z.string().default("peca"),
+        quantidade: z.number().default(1),
+        valorCusto: z.number().default(0),
+        margemAplicada: z.number().default(40),
+        valorUnitario: z.number().default(0),
+        valorTotal: z.number().default(0),
+        prioridade: z.enum(["verde", "amarelo", "vermelho"]).default("amarelo"),
+        status: z.string().default("pendente"),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.insert(osItens).values({
+          ordemServicoId: input.ordemServicoId,
+          descricao: input.descricao,
+          tipo: input.tipo,
+          quantidade: input.quantidade.toString(),
+          valorCusto: input.valorCusto.toString(),
+          margemAplicada: input.margemAplicada.toString(),
+          valorUnitario: input.valorUnitario.toString(),
+          valorTotal: input.valorTotal.toString(),
+          prioridade: input.prioridade,
+          status: input.status,
+        });
+        await db.update(ordensServico).set({
+          totalOrcamento: sql`${ordensServico.totalOrcamento} + ${input.valorTotal}`,
+        }).where(eq(ordensServico.id, input.ordemServicoId));
         return { success: true };
       }),
 

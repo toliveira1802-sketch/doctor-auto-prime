@@ -39,6 +39,7 @@ import {
   Target,
   FileText,
   Code2,
+  ThumbsUp,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -58,6 +59,8 @@ const menuItems = [
       { icon: Users, label: "Clientes", path: "/admin/clientes" },
       { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
       { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
+      { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
+      { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
       { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
     ],
   },
