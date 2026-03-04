@@ -46,6 +46,7 @@ import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import SelecionarPerfil from "./pages/SelecionarPerfil";
 import MecanicoView from "./pages/MecanicoView";
 import Login from "./pages/Login";
+import TrocarSenha from "./pages/TrocarSenha";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import IaQG from "./pages/admin/IaQG";
 
@@ -59,6 +60,11 @@ function Router() {
       {/* Login local por email+senha */}
       <Route path="/login">
         <Login />
+      </Route>
+
+      {/* Troca de senha obrigatória no 1º acesso */}
+      <Route path="/trocar-senha">
+        <TrocarSenha />
       </Route>
 
       {/* Tela de seleção de perfil (antes do login) */}

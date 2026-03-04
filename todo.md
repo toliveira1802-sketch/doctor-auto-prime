@@ -251,3 +251,10 @@
 
 - [ ] Reescrever Login.tsx: 4 cards de perfil (Consultor, Gestão, Administrador, Mecânico)
 - [ ] Servidor: aceitar { perfil } em vez de { colaboradorId } e criar sessão pelo perfil
+
+## Login Individual com Senha (Doctor_Nome)
+
+- [ ] Corrigir bug: clique no perfil Consultor não redireciona
+- [ ] Tela de login: username + senha (Doctor_Sophia, Doctor_Pedro, Doctor_Joao)
+- [ ] Fluxo de troca obrigatória de senha no primeiro acesso
+- [ ] Credenciais: Doctor_Sophia/123456 (Sophia com PH), Doctor_Pedro/123456, Doctor_Joao/123456

@@ -45,6 +45,7 @@ export const colaboradores = mysqlTable("01_colaboradores", {
   nome: varchar("nome", { length: 200 }).notNull(),
   cargo: varchar("cargo", { length: 100 }),
   email: varchar("email", { length: 320 }),
+  username: varchar("username", { length: 100 }),
   telefone: varchar("telefone", { length: 20 }),
   cpf: varchar("cpf", { length: 20 }),
   senha: varchar("senha", { length: 255 }).default("123456"),
