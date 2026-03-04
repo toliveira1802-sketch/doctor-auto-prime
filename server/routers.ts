@@ -1299,6 +1299,152 @@ export const appRouter = router({
       return db.select().from(trelloSyncLog).orderBy(desc(trelloSyncLog.executadoEm)).limit(20);
     }),
 
+    importFromTrello: protectedProcedure
+      .input(z.object({
+        incluirFevereiro: z.boolean().default(true),
+        dryRun: z.boolean().default(false),
+      }).optional())
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+        const { fetchEntregueCards } = await import("./trelloService");
+        const cards = await fetchEntregueCards(input?.incluirFevereiro ?? true);
+
+        const results = {
+          total: cards.length,
+          clientesCriados: 0,
+          clientesExistentes: 0,
+          veiculosCriados: 0,
+          veiculosExistentes: 0,
+          osCriadas: 0,
+          osExistentes: 0,
+          erros: [] as string[],
+        };
+
+        if (input?.dryRun) {
+          const placas = Array.from(new Set(cards.map(c => c.placa).filter(Boolean)));
+          const existingVeiculos = await db.select({ placa: veiculos.placa }).from(veiculos);
+          const existingPlacas = new Set(existingVeiculos.map(v => v.placa));
+          results.veiculosExistentes = placas.filter(p => existingPlacas.has(p)).length;
+          results.veiculosCriados = placas.filter(p => !existingPlacas.has(p)).length;
+          results.osCriadas = cards.length;
+          return results;
+        }
+
+        for (const card of cards) {
+          try {
+            const nomeCliente = (card.nomeCliente || card.nomeCard || "Cliente Trello").trim();
+            let clienteId: number;
+
+            const [existingCliente] = await db
+              .select({ id: clientes.id })
+              .from(clientes)
+              .where(sql`LOWER(TRIM(${clientes.nomeCompleto})) = LOWER(TRIM(${nomeCliente}))`);
+
+            if (existingCliente) {
+              clienteId = existingCliente.id;
+              results.clientesExistentes++;
+            } else {
+              const ins = await db.insert(clientes).values({
+                nomeCompleto: nomeCliente,
+                telefone: card.telefone || null,
+                email: card.email || null,
+                origemCadastro: "Trello",
+                nivelFidelidade: "Bronze",
+              });
+              clienteId = Number((ins as any).insertId);
+              results.clientesCriados++;
+            }
+
+            const placaNorm = (card.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+            let veiculoId: number;
+
+            if (placaNorm) {
+              const [existingVeiculo] = await db
+                .select({ id: veiculos.id })
+                .from(veiculos)
+                .where(eq(veiculos.placa, placaNorm));
+
+              if (existingVeiculo) {
+                veiculoId = existingVeiculo.id;
+                results.veiculosExistentes++;
+              } else {
+                const vIns = await db.insert(veiculos).values({
+                  clienteId,
+                  placa: placaNorm,
+                  marca: card.marca || null,
+                  modelo: card.modelo || null,
+                  ultimoKm: card.km || 0,
+                  kmAtual: card.km || 0,
+                  origemContato: "Trello",
+                });
+                veiculoId = Number((vIns as any).insertId);
+                results.veiculosCriados++;
+              }
+            } else {
+              const vIns = await db.insert(veiculos).values({
+                clienteId,
+                placa: `TRELLO-${card.id.slice(-6)}`,
+                marca: card.marca || null,
+                modelo: card.modelo || null,
+                origemContato: "Trello",
+              });
+              veiculoId = Number((vIns as any).insertId);
+              results.veiculosCriados++;
+            }
+
+            const [existingOs] = await db
+              .select({ id: ordensServico.id })
+              .from(ordensServico)
+              .where(sql`${ordensServico.observacoes} LIKE ${`%trello:${card.id}%`}`);
+
+            if (existingOs) {
+              results.osExistentes++;
+              continue;
+            }
+
+            let dataEntrada: Date | null = null;
+            let dataSaida: Date | null = null;
+            if (card.dataEntrada) {
+              const p = new Date(card.dataEntrada);
+              if (!isNaN(p.getTime())) dataEntrada = p;
+            }
+            if (card.dataEntregaReal) {
+              const p = new Date(card.dataEntregaReal);
+              if (!isNaN(p.getTime())) dataSaida = p;
+            }
+
+            await db.insert(ordensServico).values({
+              clienteId,
+              veiculoId,
+              placa: placaNorm || null,
+              km: card.km || 0,
+              status: "Entregue",
+              valorTotalOs: card.valorAprovado > 0 ? card.valorAprovado.toFixed(2) : "0",
+              totalOrcamento: card.valorAprovado > 0 ? card.valorAprovado.toFixed(2) : "0",
+              diagnostico: card.categoria || null,
+              observacoes: `Importado do Trello. Lista: ${card.listaOrigem}. trello:${card.id}`,
+              dataEntrada: dataEntrada ?? new Date(),
+              dataSaida: dataSaida,
+              createdAt: dataEntrada ?? new Date(),
+            });
+            results.osCriadas++;
+          } catch (err: any) {
+            results.erros.push(`Card ${card.id} (${card.nomeCard}): ${err?.message ?? "unknown"}`);
+          }
+        }
+
+        await db.insert(trelloSyncLog).values({
+          status: results.erros.length === 0 ? "sucesso" : "parcial",
+          totalCards: results.total,
+          totalEntregue: results.osCriadas,
+          erro: results.erros.length > 0 ? results.erros.slice(0, 3).join("; ") : null,
+        }).catch(() => {});
+
+        return results;
+      }),
+
     boardStatus: protectedProcedure.query(async () => {
       const apiKey = process.env.TRELLO_API_KEY || "";
       const token = process.env.TRELLO_TOKEN || "";

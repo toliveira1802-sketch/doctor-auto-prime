@@ -33,6 +33,7 @@ import {
   Clock,
   Trello,
   ExternalLink,
+  Database,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +58,59 @@ export default function TrelloMigracao() {
   const [incluirFevereiro, setIncluirFevereiro] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastExcelUrl, setLastExcelUrl] = useState<string | null>(null);
+  const [importStep, setImportStep] = useState<"idle" | "preview" | "importing" | "done">("idle");
+  const [importResults, setImportResults] = useState<{
+    total: number;
+    clientesCriados: number;
+    clientesExistentes: number;
+    veiculosCriados: number;
+    veiculosExistentes: number;
+    osCriadas: number;
+    osExistentes: number;
+    erros: string[];
+  } | null>(null);
+
+  const utils = trpc.useUtils();
+
+  const importMutation = trpc.trello.importFromTrello.useMutation({
+    onSuccess: (data) => {
+      setImportResults(data);
+      setImportStep("done");
+      if (data.osCriadas > 0) {
+        toast.success(`Importação concluída! ${data.osCriadas} OS criadas no sistema.`);
+        utils.os.list.invalidate();
+        utils.os.patio.invalidate();
+        utils.dashboard.kpis.invalidate();
+      } else {
+        toast.info("Nenhuma OS nova para importar — todos os cards já estão no sistema.");
+      }
+    },
+    onError: (err) => {
+      setImportStep("idle");
+      toast.error(`Erro na importação: ${err.message}`);
+    },
+  });
+
+  const previewMutation = trpc.trello.importFromTrello.useMutation({
+    onSuccess: (data) => {
+      setImportResults(data);
+      setImportStep("preview");
+    },
+    onError: (err) => {
+      setImportStep("idle");
+      toast.error(`Erro ao simular importação: ${err.message}`);
+    },
+  });
+
+  const handlePreviewImport = () => {
+    setImportStep("importing");
+    previewMutation.mutate({ incluirFevereiro, dryRun: true });
+  };
+
+  const handleConfirmImport = () => {
+    setImportStep("importing");
+    importMutation.mutate({ incluirFevereiro, dryRun: false });
+  };
 
   const { data: boardStatus, isLoading: loadingBoard } = trpc.trello.boardStatus.useQuery(undefined, {
     refetchInterval: 60_000,
@@ -208,6 +262,72 @@ export default function TrelloMigracao() {
                   </Button>
                 </a>
               )}
+              <div className="border-t border-gray-700 pt-2">
+                {importStep === "idle" && (
+                  <Button
+                    onClick={handlePreviewImport}
+                    disabled={loadingCards}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Database className="w-4 h-4 mr-2" />
+                    Importar para o Sistema
+                  </Button>
+                )}
+                {importStep === "importing" && (
+                  <Button disabled className="w-full bg-blue-600/50 text-white">
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Processando...
+                  </Button>
+                )}
+                {importStep === "preview" && importResults && (
+                  <div className="space-y-2">
+                    <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-xs space-y-1">
+                      <p className="text-yellow-400 font-medium">Prévia da Importação</p>
+                      <p className="text-gray-300">{importResults.total} cards → {importResults.osCriadas} OS a criar</p>
+                      <p className="text-gray-300">{importResults.veiculosCriados} veículos novos / {importResults.veiculosExistentes} existentes</p>
+                    </div>
+                    <Button
+                      onClick={handleConfirmImport}
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Confirmar Importação
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setImportStep("idle"); setImportResults(null); }}
+                      className="w-full border-gray-600 text-gray-400"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                )}
+                {importStep === "done" && importResults && (
+                  <div className="space-y-2">
+                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-xs space-y-1">
+                      <p className="text-green-400 font-medium flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> Importação Concluída!
+                      </p>
+                      <p className="text-gray-300">{importResults.osCriadas} OS criadas</p>
+                      <p className="text-gray-300">{importResults.clientesCriados} clientes novos</p>
+                      <p className="text-gray-300">{importResults.veiculosCriados} veículos novos</p>
+                      {importResults.osExistentes > 0 && (
+                        <p className="text-gray-500">{importResults.osExistentes} já existiam (ignorados)</p>
+                      )}
+                      {importResults.erros.length > 0 && (
+                        <p className="text-red-400">{importResults.erros.length} erros</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setImportStep("idle"); setImportResults(null); }}
+                      className="w-full border-gray-600 text-gray-400"
+                    >
+                      Nova Importação
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
