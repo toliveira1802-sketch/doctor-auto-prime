@@ -42,6 +42,7 @@ import GestaoRH from "./pages/gestao/GestaoRH";
 import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import SelecionarPerfil from "./pages/SelecionarPerfil";
+import MecanicoView from "./pages/MecanicoView";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -53,6 +54,11 @@ function Router() {
       {/* Tela de seleção de perfil (antes do login) */}
       <Route path="/selecionar-perfil">
         <SelecionarPerfil />
+      </Route>
+
+      {/* Tela dedicada para mecânicos (sem sidebar) */}
+      <Route path="/mecanico">
+        <MecanicoView />
       </Route>
 
       {/* Root: após OAuth callback redireciona para o perfil salvo, senão vai ao dashboard */}

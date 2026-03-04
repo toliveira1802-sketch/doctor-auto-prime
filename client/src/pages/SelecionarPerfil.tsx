@@ -45,7 +45,7 @@ const perfis: Perfil[] = [
     cor: "text-orange-400",
     corBg: "bg-orange-500/10",
     corBorda: "border-orange-500/40 hover:border-orange-400",
-    redirectTo: "/admin/os",
+    redirectTo: "/mecanico",
   },
   {
     id: "gestor",

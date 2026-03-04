@@ -55,6 +55,37 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { trpc } from "@/lib/trpc";
 
+// Mapeamento de itens visíveis por perfil
+// 'all' = todos os perfis vêem; lista de ids = apenas esses perfis vêem
+const PERFIL_ACESSO: Record<string, string[]> = {
+  "/admin/dashboard": ["consultor", "admin"],
+  "/admin/patio": ["consultor", "admin"],
+  "/admin/os": ["consultor", "admin"],
+  "/admin/agenda": ["consultor", "admin"],
+  "/admin/clientes": ["consultor", "admin"],
+  "/admin/financeiro": ["admin"],
+  "/admin/produtividade": ["admin"],
+  "/admin/mecanicos/analytics": ["admin"],
+  "/admin/mecanicos/feedback": ["consultor", "admin"],
+  "/admin/configuracoes": ["admin"],
+  "/admin/integracoes": ["admin"],
+  "/admin/trello-migracao": ["admin"],
+  "/gestao/visao-geral": ["gestor", "admin"],
+  "/gestao/operacional": ["gestor", "admin"],
+  "/gestao/financeiro": ["gestor", "admin"],
+  "/gestao/produtividade": ["gestor", "admin"],
+  "/gestao/colaboradores": ["gestor", "admin"],
+  "/gestao/mecanicos": ["gestor", "admin"],
+  "/gestao/metas": ["gestor", "admin"],
+  "/gestao/relatorios": ["gestor", "admin"],
+  "/gestao/melhorias": ["gestor", "admin"],
+  "/gestao/campanhas": ["gestor", "admin"],
+  "/gestao/rh": ["gestor", "admin"],
+  "/gestao/operacoes": ["gestor", "admin"],
+  "/gestao/tecnologia": ["gestor", "admin"],
+  "/dev": ["admin"],
+};
+
 const menuItems = [
   {
     group: "POMBAL",
@@ -159,7 +190,21 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const allItems = menuItems.flatMap(g => g.items);
+
+  // Filtra menu por perfil selecionado (salvo em sessionStorage)
+  const perfilAtual = sessionStorage.getItem("perfil_selecionado") ?? "admin";
+  const filteredMenuItems = menuItems
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        const acesso = PERFIL_ACESSO[item.path];
+        if (!acesso) return true; // sem restrição = todos veem
+        return acesso.includes(perfilAtual);
+      }),
+    }))
+    .filter(group => group.items.length > 0);
+
+  const allItems = filteredMenuItems.flatMap(g => g.items);
   const activeMenuItem = allItems.find(item => item.path === location || (item.path !== "/" && location.startsWith(item.path)));
   const isMobile = useIsMobile();
 
@@ -228,7 +273,7 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 overflow-y-auto">
-            {menuItems.map((group, gi) => (
+            {filteredMenuItems.map((group, gi) => (
               <div key={group.group}>
                 {gi > 0 && <SidebarSeparator className="mx-2 my-1" />}
                 {!isCollapsed && (
