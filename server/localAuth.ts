@@ -109,15 +109,31 @@ export function registerLocalAuthRoutes(app: Express) {
     }
   });
 
-  // POST /api/auth/local-login-perfil — aceita { nivelAcessoId } e autentica como perfil genérico
+  // Senhas por perfil (nivelAcessoId → pin)
+  const PERFIL_PINS: Record<number, string> = {
+    1: "1234", // Administrador
+    2: "1234", // Gestão
+    3: "1234", // Consultor
+    4: "1234", // Mecânico
+  };
+
+  // POST /api/auth/local-login-perfil — aceita { nivelAcessoId, pin } e autentica como perfil genérico
   app.post("/api/auth/local-login-perfil", async (req: Request, res: Response) => {
-    const { nivelAcessoId, redirectPath: clientRedirect } = req.body as {
+    const { nivelAcessoId, redirectPath: clientRedirect, pin } = req.body as {
       nivelAcessoId?: number;
       redirectPath?: string;
+      pin?: string;
     };
 
     if (!nivelAcessoId) {
       res.status(400).json({ error: "Selecione um perfil" });
+      return;
+    }
+
+    // Valida PIN do perfil
+    const senhaCorreta = PERFIL_PINS[nivelAcessoId];
+    if (senhaCorreta && pin !== senhaCorreta) {
+      res.status(401).json({ error: "Senha incorreta" });
       return;
     }
 

@@ -258,3 +258,22 @@
 - [ ] Tela de login: username + senha (Doctor_Sophia, Doctor_Pedro, Doctor_Joao)
 - [ ] Fluxo de troca obrigatória de senha no primeiro acesso
 - [ ] Credenciais: Doctor_Sophia/123456 (Sophia com PH), Doctor_Pedro/123456, Doctor_Joao/123456
+
+## Academia Doctor Auto (Roadmap v3)
+
+- [ ] Schema: tabelas academia_modulos, academia_licoes, academia_quiz_perguntas, academia_progresso
+- [ ] SQL migration: criar tabelas e popular com conteúdo inicial (3 módulos)
+- [ ] Módulo 1: "De onde vêm os dados" — fontes (Trello, OS, Kommo, Pátio, Financeiro)
+- [ ] Módulo 2: "Como funcionam as campanhas" — ciclo lead → OS → reativação → fidelização
+- [ ] Módulo 3: "O sistema na prática" — como usar cada tela do dia a dia
+- [ ] Quiz interativo por módulo (5 perguntas cada, múltipla escolha)
+- [ ] Barra de progresso por colaborador (% de módulos concluídos)
+- [ ] Badge de conclusão por módulo (visual na tela de perfil)
+- [ ] Página /admin/academia visível para todos os perfis
+- [ ] Link "Academia" no sidebar grupo POMBAL com ícone de graduação
+
+## Login — Senha por Perfil
+
+- [ ] Ao clicar no quadrado de perfil, exibir campo de senha simples
+- [ ] Senha por perfil: Consultor=1234, Administrador=1234, Gestão=1234, Mecânico=1234
+- [ ] Rota /api/auth/local-login-perfil valida senha por nivelAcessoId
