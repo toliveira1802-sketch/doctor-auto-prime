@@ -127,3 +127,16 @@
 - [x] GestaoTecnologia.tsx: status integrações, stack tecnológico, roadmap expansão 2026-2028
 - [x] DashboardLayout: adicionados Trello, Melhorias, Campanhas, RH, Operações, Tecnologia no sidebar
 - [x] App.tsx: rotas /admin/trello-migracao, /gestao/melhorias, /gestao/campanhas, /gestao/rh, /gestao/operacoes, /gestao/tecnologia
+
+## Gerenciamento de Usuários (Concluído)
+
+- [x] Procedures tRPC: colaboradores.list (com filtro inativo), niveisAcesso, create, update, delete (soft), resetSenha
+- [x] Página AdminUsuarios: tabela com busca, filtro de inativos, badge de nível de acesso
+- [x] Modal Criar Usuário: nome, cargo, email, telefone, nível de acesso (senha inicial 123456)
+- [x] Modal Editar Usuário: todos os campos + campo de nova senha opcional
+- [x] Modal Desativar Usuário: soft delete (ativo=false), com confirmação
+- [x] Modal Resetar Senha: redefine para 123456 + marca primeiroAcesso=true
+- [x] Reativar Usuário: opção no dropdown de ações para usuários inativos
+- [x] Rota /admin/usuarios registrada no App.tsx
+- [x] Link "Usuários" adicionado ao submenu Sistema no DashboardLayout (acesso: admin)
+- [x] Vitest: 10 testes para colaboradores.crud passando

@@ -46,6 +46,7 @@ import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import SelecionarPerfil from "./pages/SelecionarPerfil";
 import MecanicoView from "./pages/MecanicoView";
 import Login from "./pages/Login";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -140,6 +141,9 @@ function Router() {
       </Route>
       <Route path="/admin/trello-migracao">
         <WithLayout><TrelloMigracao /></WithLayout>
+      </Route>
+      <Route path="/admin/usuarios">
+        <WithLayout><AdminUsuarios /></WithLayout>
       </Route>
       <Route path="/admin/agenda-mecanicos">
         <WithLayout><AdminAgendaMecanicos /></WithLayout>

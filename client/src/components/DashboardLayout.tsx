@@ -73,6 +73,7 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/admin/configuracoes": ["admin"],
   "/admin/integracoes": ["admin"],
   "/admin/trello-migracao": ["admin"],
+  "/admin/usuarios": ["admin"],
   "/admin/agenda-mecanicos": ["consultor", "admin"],
   "/admin/operacional": ["consultor", "admin"],
   "/gestao/visao-geral": ["gestor", "admin"],
@@ -139,6 +140,7 @@ const menuItems: MenuGroup[] = [
         path: "/_sistema",
         children: [
           { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
+          { icon: UserCog, label: "Usuários", path: "/admin/usuarios" },
           { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
           { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
         ],

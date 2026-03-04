@@ -5,6 +5,7 @@ import {
   agendamentos,
   clientes,
   colaboradores,
+  nivelDeAcesso,
   crm,
   empresas,
   faturamento,
@@ -292,13 +293,100 @@ export const appRouter = router({
 
   // ─── COLABORADORES ─────────────────────────────────────────────────────────
   colaboradores: router({
+    // List all colaboradores (active only by default, or all if includeInactive=true)
     list: protectedProcedure
-      .input(z.object({ empresaId: z.number().optional() }).optional())
+      .input(z.object({ includeInactive: z.boolean().optional() }).optional())
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db) return [];
-        const q = db.select().from(colaboradores).where(eq(colaboradores.ativo, true));
-        return q;
+        if (input?.includeInactive) {
+          return db.select().from(colaboradores).orderBy(colaboradores.nome);
+        }
+        return db.select().from(colaboradores).where(eq(colaboradores.ativo, true)).orderBy(colaboradores.nome);
+      }),
+
+    // List all nivelDeAcesso options
+    niveisAcesso: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(nivelDeAcesso).orderBy(nivelDeAcesso.nivelAcesso);
+    }),
+
+    // Create a new colaborador
+    create: protectedProcedure
+      .input(z.object({
+        nome: z.string().min(2),
+        cargo: z.string().optional(),
+        email: z.string().email().optional(),
+        telefone: z.string().optional(),
+        nivelAcessoId: z.number().default(3),
+        empresaId: z.number().default(1),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB unavailable' });
+        // Check for duplicate email
+        if (input.email) {
+          const existing = await db.select({ id: colaboradores.id }).from(colaboradores)
+            .where(eq(colaboradores.email, input.email)).limit(1);
+          if (existing.length > 0) throw new TRPCError({ code: 'CONFLICT', message: 'E-mail já cadastrado' });
+        }
+        await db.insert(colaboradores).values({
+          ...input,
+          senha: '123456',
+          primeiroAcesso: true,
+          ativo: true,
+        });
+        const [created] = await db.select().from(colaboradores)
+          .where(eq(colaboradores.email, input.email ?? ''))
+          .orderBy(desc(colaboradores.id)).limit(1);
+        return created;
+      }),
+
+    // Update an existing colaborador
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().min(2).optional(),
+        cargo: z.string().optional(),
+        email: z.string().email().optional().nullable(),
+        telefone: z.string().optional().nullable(),
+        nivelAcessoId: z.number().optional(),
+        ativo: z.boolean().optional(),
+        senha: z.string().min(4).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB unavailable' });
+        const { id, ...data } = input;
+        // Check for duplicate email (excluding current user)
+        if (data.email) {
+          const existing = await db.select({ id: colaboradores.id }).from(colaboradores)
+            .where(and(eq(colaboradores.email, data.email), ne(colaboradores.id, id))).limit(1);
+          if (existing.length > 0) throw new TRPCError({ code: 'CONFLICT', message: 'E-mail já cadastrado por outro usuário' });
+        }
+        await db.update(colaboradores).set(data).where(eq(colaboradores.id, id));
+        return { success: true };
+      }),
+
+    // Soft delete (set ativo=false)
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB unavailable' });
+        await db.update(colaboradores).set({ ativo: false }).where(eq(colaboradores.id, input.id));
+        return { success: true };
+      }),
+
+    // Reset password to 123456
+    resetSenha: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB unavailable' });
+        await db.update(colaboradores).set({ senha: '123456', primeiroAcesso: true }).where(eq(colaboradores.id, input.id));
+        return { success: true };
       }),
   }),
 
