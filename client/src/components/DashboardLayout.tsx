@@ -40,6 +40,7 @@ import {
   FileText,
   Code2,
   ThumbsUp,
+  Zap,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -62,6 +63,7 @@ const menuItems = [
       { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
       { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
       { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
+      { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
     ],
   },
   {

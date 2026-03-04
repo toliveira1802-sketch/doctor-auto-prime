@@ -1,4 +1,5 @@
 import {
+  bigint,
   boolean,
   date,
   decimal,
@@ -336,3 +337,39 @@ export const systemConfig = mysqlTable("system_config", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 });
 export type SystemConfig = typeof systemConfig.$inferSelect;
+
+// ─── 15_KOMMO_TOKENS ────────────────────────────────────────────────────────────
+export const kommoTokens = mysqlTable("15_kommo_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  accessToken: text("accessToken").notNull(),
+  refreshToken: text("refreshToken").notNull(),
+  tokenType: varchar("tokenType", { length: 50 }).default("Bearer"),
+  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
+  baseDomain: varchar("baseDomain", { length: 200 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+export type KommoToken = typeof kommoTokens.$inferSelect;
+
+// ─── 16_KOMMO_LEADS ────────────────────────────────────────────────────────────
+export const kommoLeads = mysqlTable("16_kommo_leads", {
+  id: int("id").autoincrement().primaryKey(),
+  kommoLeadId: int("kommoLeadId").notNull().unique(),
+  nome: varchar("nome", { length: 300 }),
+  telefone: varchar("telefone", { length: 30 }),
+  status: varchar("status", { length: 100 }).default("novo"),
+  pipeline: varchar("pipeline", { length: 100 }),
+  origemCanal: varchar("origemCanal", { length: 100 }),
+  tipoServico: varchar("tipoServico", { length: 100 }),
+  placa: varchar("placa", { length: 15 }),
+  marca: varchar("marca", { length: 100 }),
+  modelo: varchar("modelo", { length: 200 }),
+  temperatura: varchar("temperatura", { length: 20 }).default("morno"), // quente | morno | frio
+  clienteId: int("clienteId"),
+  agendamentoId: int("agendamentoId"),
+  ultimaMensagem: text("ultimaMensagem"),
+  ultimaInteracao: timestamp("ultimaInteracao"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+export type KommoLead = typeof kommoLeads.$inferSelect;

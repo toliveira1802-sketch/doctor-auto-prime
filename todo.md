@@ -99,3 +99,15 @@
 - [x] Router: osAnexos.upload (base64 → Buffer → S3), osAnexos.list, osAnexos.delete
 - [x] Componente OSAnexos: drag-and-drop, preview de imagens, player de vídeo, lightbox
 - [x] Integrar OSAnexos no AdminOSDetalhes como seção colapsável "Fotos & Vídeos do Veículo"
+
+## Relatório de Campanhas (Em andamento)
+
+- [ ] Router: relatorios.campanhas — cruza origem do cliente com OS fechadas e faturamento
+- [ ] Página AdminRelatorioCampanhas: barras por canal, ticket médio, funil clientes → OS → faturamento
+- [ ] Rota /admin/relatorios/campanhas e link no sidebar
+
+## Dashboard Gestão Campanhas (Em andamento)
+
+- [ ] Router relatorios.campanhas: cruza origemCadastro × OS fechadas × faturamento × ticket médio
+- [ ] Página GestaoCampanhas: KPIs por canal, gráfico barras, tabela detalhada, filtro período
+- [ ] Rota /gestao/campanhas e item no sidebar Gestão

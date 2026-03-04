@@ -24,6 +24,7 @@ import {
 import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { storagePut } from "./storage";
 
@@ -1191,6 +1192,60 @@ export const appRouter = router({
         if (!db) throw new Error("DB unavailable");
         await db.delete(osAnexos).where(eq(osAnexos.id, input.id));
         return { success: true };
+      }),
+  }),
+
+  // ─── KOMMO INTEGRATION ────────────────────────────────────────────────────
+  kommo: router({
+    // Check OAuth connection status
+    status: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { connected: false, domain: null, isExpired: false };
+      const { kommoTokens } = await import("../drizzle/schema");
+      const tokens = await db.select().from(kommoTokens).limit(1);
+      if (!tokens.length) return { connected: false, domain: null, isExpired: false };
+      const token = tokens[0];
+      const isExpired = token.expiresAt ? token.expiresAt < Date.now() : false;
+      return {
+        connected: true,
+        domain: token.baseDomain,
+        expiresAt: token.expiresAt,
+        isExpired,
+      };
+    }),
+
+    // Get OAuth authorization URL
+    getAuthUrl: protectedProcedure
+      .input(z.object({ redirectUri: z.string() }))
+      .query(async ({ input }) => {
+        const clientId = process.env.KOMMO_CLIENT_ID;
+        const domain = process.env.KOMMO_DOMAIN || "doctorautobosch.kommo.com";
+        if (!clientId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "KOMMO_CLIENT_ID not configured" });
+        const fullUrl = `https://${domain}/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(input.redirectUri)}&response_type=code`;
+        return { authUrl: fullUrl };
+      }),
+
+    // Run reactivation campaign
+    runReactivation: protectedProcedure.mutation(async () => {
+      const { runReactivationCampaign } = await import("./kommoAgent");
+      const result = await runReactivationCampaign();
+      return result;
+    }),
+
+    // Qualify a lead message
+    qualifyLead: protectedProcedure
+      .input(z.object({
+        leadId: z.number(),
+        message: z.string(),
+        history: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).default([]),
+      }))
+      .mutation(async ({ input }) => {
+        const { qualifyLead } = await import("./kommoAgent");
+        const result = await qualifyLead(input.leadId, input.history, input.message);
+        return result;
       }),
   }),
 });
