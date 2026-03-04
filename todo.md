@@ -221,3 +221,18 @@
 - [x] Gráfico de linha histórico no card expandido do ScoreRow (LineChart recharts)
 - [x] Tooltip com data, score, tier e delta (variação vs anterior)
 - [x] Indicador de tendência: seta para cima/baixo com variação percentual
+
+## Integração Kommo API — Leads Reais
+
+- [ ] Auditar kommo.ts: verificar se OAuth token refresh está funcionando
+- [ ] Verificar credenciais KOMMO_CLIENT_ID, KOMMO_CLIENT_SECRET, KOMMO_DOMAIN no env
+- [ ] Corrigir/completar endpoint de busca de leads reais (GET /api/v4/leads)
+- [ ] Mapear campos Kommo → modelo LeadScore (nome, valor, temperatura, tags, responsável)
+- [ ] Testar pipeline: buscar leads → scoring IA → salvar em lead_scores + lead_score_history
+- [ ] Exibir leads reais no QG das IAs com score e tier
+- [ ] Página de status da conexão Kommo com botão de reconectar
+
+## Melhorias no Sidebar (Todos os Perfis)
+
+- [x] Adicionar "Melhorias" ao PERFIL_ACESSO: visível para consultor, admin, gestor
+- [x] Adicionar item "Melhorias" no grupo POMBAL do sidebar (após QG das IAs)

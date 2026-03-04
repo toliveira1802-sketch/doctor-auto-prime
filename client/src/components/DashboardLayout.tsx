@@ -86,7 +86,7 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/gestao/mecanicos": ["gestor", "admin"],
   "/gestao/metas": ["gestor", "admin"],
   "/gestao/relatorios": ["gestor", "admin"],
-  "/gestao/melhorias": ["gestor", "admin"],
+  "/gestao/melhorias": ["consultor", "gestor", "admin"],
   "/gestao/campanhas": ["gestor", "admin"],
   "/gestao/rh": ["gestor", "admin"],
   "/gestao/operacoes": ["gestor", "admin"],
@@ -140,6 +140,11 @@ const menuItems: MenuGroup[] = [
         icon: Brain,
         label: "QG das IAs",
         path: "/admin/ia-qg",
+      },
+      {
+        icon: Lightbulb,
+        label: "Melhorias",
+        path: "/gestao/melhorias",
       },
       {
         icon: Monitor,
