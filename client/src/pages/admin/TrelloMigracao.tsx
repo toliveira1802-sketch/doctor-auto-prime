@@ -108,7 +108,7 @@ export default function TrelloMigracao() {
         </div>
         <div className="flex items-center gap-3">
           <a
-            href={`https://trello.com/b/${process.env.TRELLO_BOARD_ID || "NkhINjF2"}`}
+            href="https://trello.com/b/NkhINjF2"
             target="_blank"
             rel="noopener noreferrer"
           >
