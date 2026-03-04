@@ -47,6 +47,10 @@ import {
   UserCog,
   Cog,
   Laptop,
+  FolderOpen,
+  ChevronRight,
+  Monitor,
+  Activity,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -56,7 +60,6 @@ import { Badge } from "./ui/badge";
 import { trpc } from "@/lib/trpc";
 
 // Mapeamento de itens visíveis por perfil
-// 'all' = todos os perfis vêem; lista de ids = apenas esses perfis vêem
 const PERFIL_ACESSO: Record<string, string[]> = {
   "/admin/dashboard": ["consultor", "admin"],
   "/admin/patio": ["consultor", "admin"],
@@ -86,26 +89,61 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/dev": ["admin"],
 };
 
-const menuItems = [
+// Estrutura de menu com suporte a submenus
+type MenuItem = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  path: string;
+  children?: MenuItem[];
+};
+
+type MenuGroup = {
+  group: string;
+  items: MenuItem[];
+};
+
+const menuItems: MenuGroup[] = [
   {
     group: "POMBAL",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+      { icon: Activity, label: "Visão Geral", path: "/gestao/visao-geral" },
       { icon: Car, label: "Pátio", path: "/admin/patio" },
-      { icon: ClipboardList, label: "Ordens de Serviço", path: "/admin/os" },
       { icon: CalendarClock, label: "Agenda", path: "/admin/agenda" },
-      { icon: Users, label: "Clientes", path: "/admin/clientes" },
-      { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
-      { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
-      { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
-      { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
-      { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
-      { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
-      { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
+      {
+        icon: FolderOpen,
+        label: "Cadastros",
+        path: "/_cadastros",
+        children: [
+          { icon: Users, label: "Clientes", path: "/admin/clientes" },
+          { icon: ClipboardList, label: "Ordens de Serviço", path: "/admin/os" },
+        ],
+      },
+      {
+        icon: FileText,
+        label: "Relatórios",
+        path: "/_relatorios",
+        children: [
+          { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
+          { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
+          { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
+          { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
+        ],
+      },
+      {
+        icon: Monitor,
+        label: "Sistema",
+        path: "/_sistema",
+        children: [
+          { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
+          { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
+          { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
+        ],
+      },
     ],
   },
   {
-    group: "Gestão",
+    group: "GESTÃO",
     items: [
       { icon: TrendingUp, label: "Visão Geral", path: "/gestao/visao-geral" },
       { icon: Wrench, label: "Operacional", path: "/gestao/operacional" },
@@ -204,8 +242,27 @@ function DashboardLayoutContent({
     }))
     .filter(group => group.items.length > 0);
 
-  const allItems = filteredMenuItems.flatMap(g => g.items);
-  const activeMenuItem = allItems.find(item => item.path === location || (item.path !== "/" && location.startsWith(item.path)));
+  // Track open submenus
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(() => {
+    // Auto-open submenu that contains the active path
+    const initial: Record<string, boolean> = {};
+    menuItems.forEach(group => {
+      group.items.forEach(item => {
+        if (item.children) {
+          const hasActive = item.children.some(c => location === c.path || (c.path !== "/" && location.startsWith(c.path)));
+          if (hasActive) initial[item.path] = true;
+        }
+      });
+    });
+    return initial;
+  });
+
+  const toggleSubmenu = (path: string) => {
+    setOpenSubmenus(prev => ({ ...prev, [path]: !prev[path] }));
+  };
+
+  const allItems = filteredMenuItems.flatMap(g => g.items.flatMap(i => i.children ? [i, ...i.children] : [i]));
+  const activeMenuItem = allItems.find(item => item.path === location || (item.path !== "/" && !item.path.startsWith("/_") && location.startsWith(item.path)));
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -283,6 +340,50 @@ function DashboardLayoutContent({
                 )}
                 <SidebarMenu className="px-2 pb-1">
                   {group.items.map(item => {
+                    if (item.children) {
+                      // Submenu item
+                      const isOpen = openSubmenus[item.path] ?? false;
+                      const hasActiveChild = item.children.some(c => location === c.path || (c.path !== "/" && location.startsWith(c.path)));
+                      return (
+                        <SidebarMenuItem key={item.path}>
+                          <SidebarMenuButton
+                            isActive={hasActiveChild}
+                            onClick={() => toggleSubmenu(item.path)}
+                            tooltip={item.label}
+                            className="h-9 transition-all font-normal"
+                          >
+                            <item.icon className={`h-4 w-4 shrink-0 ${hasActiveChild ? "text-primary" : ""}`} />
+                            <span className="flex-1">{item.label}</span>
+                            {!isCollapsed && (
+                              <ChevronRight
+                                className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
+                              />
+                            )}
+                          </SidebarMenuButton>
+                          {isOpen && !isCollapsed && (
+                            <div className="ml-4 mt-0.5 border-l border-border/50 pl-2 space-y-0.5">
+                              {item.children.map(child => {
+                                const isChildActive = location === child.path || (child.path !== "/" && location.startsWith(child.path));
+                                return (
+                                  <button
+                                    key={child.path}
+                                    onClick={() => setLocation(child.path)}
+                                    className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm transition-colors ${
+                                      isChildActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                    }`}
+                                  >
+                                    <child.icon className={`h-3.5 w-3.5 shrink-0 ${isChildActive ? "text-primary" : ""}`} />
+                                    <span>{child.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </SidebarMenuItem>
+                      );
+                    }
                     const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
                     return (
                       <SidebarMenuItem key={item.path}>
