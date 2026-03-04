@@ -453,13 +453,20 @@ export const appRouter = router({
         ano: z.number().optional(),
         combustivel: z.string().optional(),
         kmAtual: z.number().optional(),
+        cor: z.string().optional(),
+        ultimaRevisaoKm: z.number().optional(),
+        ultimaRevisaoData: z.string().optional(),
         origemContato: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-        const result = await db.insert(veiculos).values(input);
-        return { id: Number((result as any).insertId) };
+        const { ultimaRevisaoData, ...rest } = input;
+        const result = await db.insert(veiculos).values({
+          ...rest,
+          ultimaRevisaoData: ultimaRevisaoData ? new Date(ultimaRevisaoData) as any : undefined,
+        });
+        return { id: Number((result as any).insertId), placa: input.placa, kmAtual: input.kmAtual ?? 0, marca: input.marca, modelo: input.modelo, ano: input.ano };
       }),
   }),
 

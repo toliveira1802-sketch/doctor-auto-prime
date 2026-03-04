@@ -156,7 +156,10 @@ export const veiculos = mysqlTable("08_veiculos", {
   combustivel: varchar("combustivel", { length: 50 }),
   ultimoKm: int("ultimoKm").default(0),
   kmAtual: int("kmAtual").default(0),
+  ultimaRevisaoKm: int("ultimaRevisaoKm"),
+  ultimaRevisaoData: date("ultimaRevisaoData"),
   origemContato: varchar("origemContato", { length: 100 }),
+  cor: varchar("cor", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow(),
 });
 export type Veiculo = typeof veiculos.$inferSelect;

@@ -17,7 +17,7 @@ import {
   ArrowLeft, Save, Plus, Trash2, Phone, Car, User,
   DollarSign, FileText, Wrench, CheckCircle, XCircle,
   AlertTriangle, Clock, Loader2, Edit2, ClipboardCheck,
-  ChevronDown, ChevronUp, Send, Copy, Crown, Award, Medal, Star
+  ChevronDown, ChevronUp, Send, Copy, Crown, Award, Medal, Star, Printer
 } from "lucide-react";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -226,6 +226,50 @@ export default function AdminOSDetalhes() {
                 WhatsApp
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              onClick={() => {
+                const dataEntrada = os.dataEntrada ? new Date(os.dataEntrada).toLocaleDateString("pt-BR") : "—";
+                const kmAtual = (veiculo?.kmAtual ?? 0).toLocaleString("pt-BR");
+                const ultimaRevKm = veiculo?.ultimaRevisaoKm ? veiculo.ultimaRevisaoKm.toLocaleString("pt-BR") + " km" : "—";
+                const ultimaRevData = veiculo?.ultimaRevisaoData ? new Date(veiculo.ultimaRevisaoData).toLocaleDateString("pt-BR") : "—";
+                const win = window.open("", "_blank", "width=400,height=500");
+                if (!win) return;
+                win.document.write(`
+                  <html><head><title>Etiqueta Para-brisa</title>
+                  <style>
+                    body { font-family: monospace; padding: 20px; background: #fff; color: #000; }
+                    .box { border: 2px solid #000; padding: 16px; max-width: 320px; margin: 0 auto; }
+                    h2 { text-align: center; margin: 0 0 12px; font-size: 18px; border-bottom: 2px solid #000; padding-bottom: 8px; }
+                    .row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 13px; }
+                    .label { font-weight: bold; }
+                    .placa { text-align: center; font-size: 28px; font-weight: bold; border: 3px solid #000; padding: 8px; margin: 12px 0; letter-spacing: 4px; }
+                    .footer { text-align: center; font-size: 11px; margin-top: 12px; color: #555; }
+                    @media print { button { display: none; } }
+                  </style></head><body>
+                  <div class="box">
+                    <h2>DOCTOR AUTO PRIME</h2>
+                    <div class="placa">${veiculo?.placa ?? "—"}</div>
+                    <div class="row"><span class="label">OS:</span><span>${os.numeroOs}</span></div>
+                    <div class="row"><span class="label">Veículo:</span><span>${veiculo?.marca ?? ""} ${veiculo?.modelo ?? ""} ${veiculo?.ano ?? ""}</span></div>
+                    <div class="row"><span class="label">Cliente:</span><span>${cliente?.nomeCompleto ?? "—"}</span></div>
+                    <div class="row"><span class="label">Entrada:</span><span>${dataEntrada}</span></div>
+                    <div class="row"><span class="label">KM Entrada:</span><span>${kmAtual} km</span></div>
+                    <div class="row"><span class="label">Última Revisão:</span><span>${ultimaRevKm}</span></div>
+                    <div class="row"><span class="label">Data Rev.:</span><span>${ultimaRevData}</span></div>
+                    <div class="footer">Impresso em ${new Date().toLocaleDateString("pt-BR")}</div>
+                  </div>
+                  <br><button onclick="window.print()">🖨️ Imprimir</button>
+                  </body></html>
+                `);
+                win.document.close();
+              }}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Etiqueta
+            </Button>
             {isEditing ? (
               <>
                 <Button size="sm" variant="outline" onClick={() => setIsEditing(false)} className="border-slate-700 text-white hover:bg-white/10">

@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE `08_veiculos`\n  ADD COLUMN `ultimaRevisaoKm` INT NULL,\n  ADD COLUMN `ultimaRevisaoData` DATE NULL,\n  ADD COLUMN `cor` VARCHAR(50) NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nALTER TABLE `08_veiculos`\n  ADD COLUMN `ultimaRevisaoKm` INT NULL,\n  ADD COLUMN `ultimaRevisaoData` DATE NULL,\n  ADD COLUMN `cor` VARCHAR(50) NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 828
+}

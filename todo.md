@@ -81,3 +81,13 @@
 - [ ] Reescrever routers tRPC para novo schema
 - [ ] Corrigir fluxo Nova OS: todos os campos obrigatórios, criação inline de cliente/veículo
 - [ ] Atualizar Pátio, OsList, OsDetail, CRM, Financeiro, Produtividade para novo schema
+
+## Nova OS - Ajustes CRM (Em andamento)
+
+- [x] Aba 1: E-mail obrigatório com validação de formato
+- [x] Aba 1: CPF obrigatório com validação de formato
+- [x] Aba 1: Origem do Cadastro como rastreamento de campanha (dropdown de campanhas ativas)
+- [x] Aba Veículo: KM atual obrigatório (bloqueia avanço sem preenchimento)
+- [x] Aba Veículo: campo Última Revisão (data + km)
+- [x] Schema: adicionar ultimaRevisaoKm e ultimaRevisaoData em veículos
+- [x] Etiqueta de para-brisa: incluir Última Revisão nos dados gerados
