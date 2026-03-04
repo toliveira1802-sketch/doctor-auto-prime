@@ -405,3 +405,27 @@ export const trelloSyncLog = mysqlTable("18_trello_sync_log", {
   excelKey: varchar("excelKey", { length: 500 }),
 });
 export type TrelloSyncLog = typeof trelloSyncLog.$inferSelect;
+
+// ─── 19_TRELLO_CARD_OVERRIDES ─────────────────────────────────────────────────
+// Armazena edições manuais dos campos dos cards do Trello
+export const trelloCardOverrides = mysqlTable("19_trello_card_overrides", {
+  id: int("id").autoincrement().primaryKey(),
+  cardId: varchar("cardId", { length: 100 }).notNull().unique(),
+  nomeCliente: varchar("nomeCliente", { length: 255 }),
+  telefone: varchar("telefone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
+  placa: varchar("placa", { length: 20 }),
+  marca: varchar("marca", { length: 100 }),
+  modelo: varchar("modelo", { length: 100 }),
+  categoria: varchar("categoria", { length: 100 }),
+  mecanico: varchar("mecanico", { length: 100 }),
+  responsavel: varchar("responsavel", { length: 100 }),
+  valorAprovado: varchar("valorAprovado", { length: 50 }),
+  valorCusto: varchar("valorCusto", { length: 50 }),
+  km: varchar("km", { length: 20 }),
+  dataEntrada: varchar("dataEntrada", { length: 50 }),
+  previsaoEntrega: varchar("previsaoEntrega", { length: 50 }),
+  diagnostico: text("diagnostico"),
+  atualizadoEm: timestamp("atualizadoEm").defaultNow().onUpdateNow(),
+});
+export type TrelloCardOverride = typeof trelloCardOverrides.$inferSelect;

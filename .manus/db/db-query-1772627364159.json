@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `19_trello_card_overrides` (\n  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  `cardId` varchar(100) NOT NULL UNIQUE,\n  `nomeCliente` varchar(255),\n  `telefone` varchar(50),\n  `email` varchar(255),\n  `placa` varchar(20),\n  `marca` varchar(100),\n  `modelo` varchar(100),\n  `categoria` varchar(100),\n  `mecanico` varchar(100),\n  `responsavel` varchar(100),\n  `valorAprovado` varchar(50),\n  `valorCusto` varchar(50),\n  `km` varchar(20),\n  `dataEntrada` varchar(50),\n  `previsaoEntrega` varchar(50),\n  `diagnostico` text,\n  `atualizadoEm` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute CREATE TABLE IF NOT EXISTS `19_trello_card_overrides` (\n  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  `cardId` varchar(100) NOT NULL UNIQUE,\n  `nomeCliente` varchar(255),\n  `telefone` varchar(50),\n  `email` varchar(255),\n  `placa` varchar(20),\n  `marca` varchar(100),\n  `modelo` varchar(100),\n  `categoria` varchar(100),\n  `mecanico` varchar(100),\n  `responsavel` varchar(100),\n  `valorAprovado` varchar(50),\n  `valorCusto` varchar(50),\n  `km` varchar(20),\n  `dataEntrada` varchar(50),\n  `previsaoEntrega` varchar(50),\n  `diagnostico` text,\n  `atualizadoEm` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 473
+}

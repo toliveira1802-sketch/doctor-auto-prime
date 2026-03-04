@@ -21,6 +21,7 @@ import {
   osAnexos,
   systemConfig,
   trelloSyncLog,
+  trelloCardOverrides,
   veiculos,
 } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -1445,6 +1446,48 @@ export const appRouter = router({
         return results;
       }),
 
+    // Busca overrides salvos para mesclar com dados do Trello
+    getOverrides: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(trelloCardOverrides);
+    }),
+    // Salva edição manual de um campo de um card
+    updateCard: protectedProcedure
+      .input(z.object({
+        cardId: z.string(),
+        nomeCliente: z.string().optional(),
+        telefone: z.string().optional(),
+        email: z.string().optional(),
+        placa: z.string().optional(),
+        marca: z.string().optional(),
+        modelo: z.string().optional(),
+        categoria: z.string().optional(),
+        mecanico: z.string().optional(),
+        responsavel: z.string().optional(),
+        valorAprovado: z.string().optional(),
+        valorCusto: z.string().optional(),
+        km: z.string().optional(),
+        dataEntrada: z.string().optional(),
+        previsaoEntrega: z.string().optional(),
+        diagnostico: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { cardId, ...fields } = input;
+        const data: Record<string, string> = {};
+        for (const [k, v] of Object.entries(fields)) {
+          if (v !== undefined) data[k] = String(v);
+        }
+        const existing = await db.select().from(trelloCardOverrides).where(eq(trelloCardOverrides.cardId, cardId)).limit(1);
+        if (existing.length > 0) {
+          await db.update(trelloCardOverrides).set(data).where(eq(trelloCardOverrides.cardId, cardId));
+        } else {
+          await db.insert(trelloCardOverrides).values({ cardId, ...data });
+        }
+        return { success: true };
+      }),
     boardStatus: protectedProcedure.query(async () => {
       const apiKey = process.env.TRELLO_API_KEY || "";
       const token = process.env.TRELLO_TOKEN || "";

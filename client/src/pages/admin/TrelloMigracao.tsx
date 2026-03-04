@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   FileSpreadsheet,
   RefreshCw,
@@ -34,6 +35,9 @@ import {
   Trello,
   ExternalLink,
   Database,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -71,6 +75,90 @@ export default function TrelloMigracao() {
   } | null>(null);
 
   const utils = trpc.useUtils();
+
+  // Overrides do banco
+  const { data: overridesData, refetch: refetchOverrides } = trpc.trello.getOverrides.useQuery();
+  const overridesMap = Object.fromEntries((overridesData ?? []).map((o) => [o.cardId, o]));
+
+  // Mutation para salvar edições
+  const updateCardMutation = trpc.trello.updateCard.useMutation({
+    onSuccess: () => {
+      refetchOverrides();
+      toast.success("Campo salvo!");
+    },
+    onError: (err) => toast.error(`Erro ao salvar: ${err.message}`),
+  });
+
+  // Estado de edição inline: { cardId_field: value }
+  const [editingCell, setEditingCell] = useState<{ cardId: string; field: string } | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = useCallback((cardId: string, field: string, currentValue: string) => {
+    setEditingCell({ cardId, field });
+    setEditValue(currentValue);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
+
+  const commitEdit = useCallback((cardId: string, field: string) => {
+    updateCardMutation.mutate({ cardId, [field]: editValue });
+    setEditingCell(null);
+  }, [editValue, updateCardMutation]);
+
+  const cancelEdit = useCallback(() => {
+    setEditingCell(null);
+    setEditValue("");
+  }, []);
+
+  // Helper: retorna valor com override aplicado
+  const getVal = (cardId: string, field: string, fallback: string | null | undefined) => {
+    const ov = overridesMap[cardId] as unknown as Record<string, string | null> | undefined;
+    if (ov && ov[field] != null) {
+      return ov[field] as string;
+    }
+    return fallback ?? "";
+  };
+
+  // Componente de célula editável
+  const EditableCell = ({ cardId, field, value, className = "" }: { cardId: string; field: string; value: string; className?: string }) => {
+    const isEditing = editingCell?.cardId === cardId && editingCell?.field === field;
+    const ovRecord = overridesMap[cardId] as unknown as Record<string, string | null> | undefined;
+    const hasOverride = ovRecord && ovRecord[field] != null;
+    if (isEditing) {
+      return (
+        <div className="flex items-center gap-1 min-w-[120px]">
+          <Input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitEdit(cardId, field);
+              if (e.key === "Escape") cancelEdit();
+            }}
+            className="h-7 text-xs bg-gray-900 border-blue-500 text-white px-2 py-1"
+          />
+          <button onClick={() => commitEdit(cardId, field)} className="text-green-400 hover:text-green-300">
+            <Check className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={cancelEdit} className="text-red-400 hover:text-red-300">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div
+        className={`group flex items-center gap-1 cursor-pointer hover:bg-white/5 rounded px-1 py-0.5 ${className}`}
+        onClick={() => startEdit(cardId, field, value)}
+        title="Clique para editar"
+      >
+        <span className={`text-sm ${value ? (hasOverride ? "text-yellow-300" : "text-white") : "text-gray-500"}`}>
+          {value || "—"}
+        </span>
+        <Pencil className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+      </div>
+    );
+  };
 
   const importMutation = trpc.trello.importFromTrello.useMutation({
     onSuccess: (data) => {
@@ -414,70 +502,72 @@ export default function TrelloMigracao() {
                   <Table>
                     <TableHeader>
                       <TableRow className="border-gray-800 hover:bg-transparent">
-                        <TableHead className="text-gray-400">Placa</TableHead>
-                        <TableHead className="text-gray-400">Cliente</TableHead>
-                        <TableHead className="text-gray-400">Marca/Modelo</TableHead>
-                        <TableHead className="text-gray-400">Mecânico</TableHead>
-                        <TableHead className="text-gray-400">Responsável</TableHead>
-                        <TableHead className="text-gray-400">Categoria</TableHead>
-                        <TableHead className="text-gray-400 text-right">Valor</TableHead>
-                        <TableHead className="text-gray-400">Entrega</TableHead>
-                        <TableHead className="text-gray-400">Origem</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Placa</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Cliente</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Tel / Email</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Marca</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Modelo</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Mecânico</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Responsável</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Categoria</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Valor Aprov.</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Custo OS</TableHead>
+                        <TableHead className="text-gray-400 text-xs">KM</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Entrada</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Previsão</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Diagnóstico</TableHead>
+                        <TableHead className="text-gray-400 text-xs">Origem</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {cards.map((card) => (
                         <TableRow key={card.id} className="border-gray-800 hover:bg-white/5">
-                          <TableCell>
-                            <span className="font-mono text-sm font-bold text-white bg-gray-800 px-2 py-1 rounded">
-                              {card.placa || "—"}
-                            </span>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="placa" value={getVal(card.id, "placa", card.placa)} className="font-mono font-bold" />
                           </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="text-white text-sm font-medium">{card.nomeCliente || card.nomeCard}</p>
-                              {card.telefone && (
-                                <p className="text-xs text-gray-500">{card.telefone}</p>
-                              )}
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="nomeCliente" value={getVal(card.id, "nomeCliente", card.nomeCliente || card.nomeCard)} />
+                          </TableCell>
+                          <TableCell className="p-1">
+                            <div className="space-y-0.5">
+                              <EditableCell cardId={card.id} field="telefone" value={getVal(card.id, "telefone", card.telefone)} />
+                              <EditableCell cardId={card.id} field="email" value={getVal(card.id, "email", card.email)} />
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="text-white text-sm">{card.marca || "—"}</p>
-                              <p className="text-xs text-gray-500">{card.modelo || "—"}</p>
-                            </div>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="marca" value={getVal(card.id, "marca", card.marca)} />
                           </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-gray-300">{card.mecanico || "—"}</span>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="modelo" value={getVal(card.id, "modelo", card.modelo)} />
                           </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-gray-300">{card.responsavel || "—"}</span>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="mecanico" value={getVal(card.id, "mecanico", card.mecanico)} />
                           </TableCell>
-                          <TableCell>
-                            {card.categoria ? (
-                              <span className={`text-xs px-2 py-1 rounded-full ${CATEGORIA_COLORS[card.categoria] || "bg-gray-700 text-gray-300"}`}>
-                                {card.categoria.split("(")[0].trim()}
-                              </span>
-                            ) : (
-                              <span className="text-gray-500 text-xs">—</span>
-                            )}
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="responsavel" value={getVal(card.id, "responsavel", card.responsavel)} />
                           </TableCell>
-                          <TableCell className="text-right">
-                            {card.valorAprovado > 0 ? (
-                              <div>
-                                <p className="text-green-400 font-medium text-sm">{formatCurrency(card.valorAprovado)}</p>
-                                {card.margem > 0 && (
-                                  <p className="text-xs text-gray-500">{card.margem}% margem</p>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-gray-500 text-sm">—</span>
-                            )}
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="categoria" value={getVal(card.id, "categoria", card.categoria)} />
                           </TableCell>
-                          <TableCell>
-                            <span className="text-xs text-gray-400">{formatDate(card.dataEntregaReal)}</span>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="valorAprovado" value={getVal(card.id, "valorAprovado", card.valorAprovado > 0 ? String(card.valorAprovado) : "")} />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="valorCusto" value={getVal(card.id, "valorCusto", card.valorCusto > 0 ? String(card.valorCusto) : "")} />
+                          </TableCell>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="km" value={getVal(card.id, "km", card.km > 0 ? String(card.km) : "")} />
+                          </TableCell>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="dataEntrada" value={getVal(card.id, "dataEntrada", card.dataEntrada)} />
+                          </TableCell>
+                          <TableCell className="p-1">
+                            <EditableCell cardId={card.id} field="previsaoEntrega" value={getVal(card.id, "previsaoEntrega", card.previsaoEntrega)} />
+                          </TableCell>
+                          <TableCell className="p-1 max-w-[200px]">
+                            <EditableCell cardId={card.id} field="diagnostico" value={getVal(card.id, "diagnostico", "")} />
+                          </TableCell>
+                          <TableCell className="p-1">
                             <Badge
                               variant="outline"
                               className={
