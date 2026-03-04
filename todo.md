@@ -111,3 +111,19 @@
 - [ ] Router relatorios.campanhas: cruza origemCadastro × OS fechadas × faturamento × ticket médio
 - [ ] Página GestaoCampanhas: KPIs por canal, gráfico barras, tabela detalhada, filtro período
 - [ ] Rota /gestao/campanhas e item no sidebar Gestão
+
+## Wave 2: Gestão + Trello Migration (Concluído)
+
+- [x] Tabela melhorias (17_melhorias): criada no banco com campos titulo, descricao, status, votos, categoria, criadoPor
+- [x] Tabela trello_sync_log (18_trello_sync_log): criada para histórico de sincronizações
+- [x] trelloService.ts: serviço completo para buscar cards Trello, calcular stats e gerar XLSX
+- [x] Router trello: fetchEntregues, gerarPlanilha (S3 upload), historico, boardStatus
+- [x] Router melhorias: list, create, vote, updateStatus
+- [x] TrelloMigracao.tsx: página completa com board status, cards table, stats, download Excel
+- [x] GestaoMelhorias.tsx: board de sugestões com votos, status, categorias e criação inline
+- [x] GestaoCampanhas.tsx: ROI por canal, funil de conversão, insights automáticos
+- [x] GestaoRH.tsx: equipe mecânicos com score, ranking performance, colaboradores admin
+- [x] GestaoOperacoes.tsx: distribuição OS por status, carga por mecânico, agendamentos hoje, OS em atraso
+- [x] GestaoTecnologia.tsx: status integrações, stack tecnológico, roadmap expansão 2026-2028
+- [x] DashboardLayout: adicionados Trello, Melhorias, Campanhas, RH, Operações, Tecnologia no sidebar
+- [x] App.tsx: rotas /admin/trello-migracao, /gestao/melhorias, /gestao/campanhas, /gestao/rh, /gestao/operacoes, /gestao/tecnologia

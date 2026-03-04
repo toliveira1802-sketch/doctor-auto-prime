@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `17_melhorias` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `titulo` varchar(300) NOT NULL,\n  `descricao` text,\n  `categoria` varchar(100) DEFAULT 'sistema',\n  `status` varchar(50) DEFAULT 'pendente',\n  `votos` int DEFAULT 0,\n  `criadoPor` varchar(200),\n  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute CREATE TABLE IF NOT EXISTS `17_melhorias` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `titulo` varchar(300) NOT NULL,\n  `descricao` text,\n  `categoria` varchar(100) DEFAULT 'sistema',\n  `status` varchar(50) DEFAULT 'pendente',\n  `votos` int DEFAULT 0,\n  `criadoPor` varchar(200),\n  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1053
+}

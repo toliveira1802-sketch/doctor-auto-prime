@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
@@ -25,6 +25,7 @@ import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
 import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
+import TrelloMigracao from "./pages/admin/TrelloMigracao";
 
 // Gestão pages
 import GestaoVisaoGeral from "./pages/gestao/GestaoVisaoGeral";
@@ -35,6 +36,11 @@ import GestaoColaboradores from "./pages/gestao/GestaoColaboradores";
 import GestaoMecanicos from "./pages/gestao/GestaoMecanicos";
 import GestaoMetas from "./pages/gestao/GestaoMetas";
 import GestaoRelatorios from "./pages/gestao/GestaoRelatorios";
+import GestaoMelhorias from "./pages/gestao/GestaoMelhorias";
+import GestaoCampanhas from "./pages/gestao/GestaoCampanhas";
+import GestaoRH from "./pages/gestao/GestaoRH";
+import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
+import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -70,7 +76,7 @@ function Router() {
         <WithLayout><AdminNovaOS /></WithLayout>
       </Route>
       <Route path="/admin/os/:id">
-        {(params) => <WithLayout><AdminOSDetalhes /></WithLayout>}
+        {() => <WithLayout><AdminOSDetalhes /></WithLayout>}
       </Route>
       <Route path="/admin/os">
         <WithLayout><AdminOrdensServico /></WithLayout>
@@ -79,7 +85,7 @@ function Router() {
         <WithLayout><AdminAgendamentos /></WithLayout>
       </Route>
       <Route path="/admin/clientes/:id">
-        {(params) => <WithLayout><AdminClienteDetalhe /></WithLayout>}
+        {() => <WithLayout><AdminClienteDetalhe /></WithLayout>}
       </Route>
       <Route path="/admin/clientes">
         <WithLayout><AdminClientes /></WithLayout>
@@ -101,6 +107,9 @@ function Router() {
       </Route>
       <Route path="/admin/integracoes">
         <WithLayout><AdminIntegracoes /></WithLayout>
+      </Route>
+      <Route path="/admin/trello-migracao">
+        <WithLayout><TrelloMigracao /></WithLayout>
       </Route>
 
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}
@@ -127,6 +136,21 @@ function Router() {
       </Route>
       <Route path="/gestao/relatorios">
         <WithLayout><GestaoRelatorios /></WithLayout>
+      </Route>
+      <Route path="/gestao/melhorias">
+        <WithLayout><GestaoMelhorias /></WithLayout>
+      </Route>
+      <Route path="/gestao/campanhas">
+        <WithLayout><GestaoCampanhas /></WithLayout>
+      </Route>
+      <Route path="/gestao/rh">
+        <WithLayout><GestaoRH /></WithLayout>
+      </Route>
+      <Route path="/gestao/operacoes">
+        <WithLayout><GestaoOperacoes /></WithLayout>
+      </Route>
+      <Route path="/gestao/tecnologia">
+        <WithLayout><GestaoTecnologia /></WithLayout>
       </Route>
 
       {/* 404 */}

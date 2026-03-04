@@ -10,6 +10,7 @@ import {
   faturamento,
   listaStatus,
   mecanicos,
+  melhorias,
   ordensServico,
   osHistorico,
   osItens,
@@ -19,6 +20,7 @@ import {
   mecanicoFeedback,
   osAnexos,
   systemConfig,
+  trelloSyncLog,
   veiculos,
 } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -1246,6 +1248,118 @@ export const appRouter = router({
         const { qualifyLead } = await import("./kommoAgent");
         const result = await qualifyLead(input.leadId, input.history, input.message);
         return result;
+      }),
+  }),
+
+  // ─── TRELLO MIGRATION ──────────────────────────────────────────────────────
+  trello: router({
+    fetchEntregues: protectedProcedure
+      .input(z.object({ incluirFevereiro: z.boolean().default(true) }).optional())
+      .query(async ({ input }) => {
+        const { fetchEntregueCards, calcStats } = await import("./trelloService");
+        const cards = await fetchEntregueCards(input?.incluirFevereiro ?? true);
+        const stats = calcStats(cards);
+        return { cards, stats, total: cards.length };
+      }),
+
+    gerarPlanilha: protectedProcedure
+      .input(z.object({ incluirFevereiro: z.boolean().default(true) }).optional())
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        try {
+          const { fetchEntregueCards, generateExcelBuffer, calcStats } = await import("./trelloService");
+          const cards = await fetchEntregueCards(input?.incluirFevereiro ?? true);
+          const stats = calcStats(cards);
+          const buffer = generateExcelBuffer(cards);
+          const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+          const fileKey = `trello-exports/entregues-${timestamp}.xlsx`;
+          const { url } = await storagePut(fileKey, buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+          await db.insert(trelloSyncLog).values({
+            totalCards: cards.length,
+            totalEntregue: cards.filter((c) => c.listaOrigem === "Entregue").length,
+            totalFevereiro: cards.filter((c) => c.listaOrigem === "Entregue Fevereiro").length,
+            faturamentoTotal: stats.totalFaturamento.toFixed(2),
+            ticketMedio: stats.ticketMedio.toFixed(2),
+            margemMedia: stats.margemMedia.toFixed(2),
+            status: "sucesso",
+            excelUrl: url,
+            excelKey: fileKey,
+          });
+          return { url, fileKey, stats, totalCards: cards.length };
+        } catch (err: any) {
+          await db.insert(trelloSyncLog).values({ status: "erro", erro: err.message });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.message });
+        }
+      }),
+
+    historico: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(trelloSyncLog).orderBy(desc(trelloSyncLog.executadoEm)).limit(20);
+    }),
+
+    boardStatus: protectedProcedure.query(async () => {
+      const apiKey = process.env.TRELLO_API_KEY || "";
+      const token = process.env.TRELLO_TOKEN || "";
+      const boardId = process.env.TRELLO_BOARD_ID || "NkhINjF2";
+      if (!apiKey || !token) return { connected: false, lists: [] };
+      try {
+        const res = await fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${apiKey}&token=${token}`);
+        if (!res.ok) return { connected: false, lists: [] };
+        const lists = await res.json();
+        const listsWithCount = await Promise.all(
+          lists.map(async (list: any) => {
+            const cardsRes = await fetch(`https://api.trello.com/1/lists/${list.id}/cards?key=${apiKey}&token=${token}&fields=id`);
+            const cards = cardsRes.ok ? await cardsRes.json() : [];
+            return { id: list.id, name: list.name, totalCards: cards.length };
+          })
+        );
+        return { connected: true, lists: listsWithCount };
+      } catch {
+        return { connected: false, lists: [] };
+      }
+    }),
+  }),
+
+  // ─── MELHORIAS / SUGESTÕES ─────────────────────────────────────────────────
+  melhorias: router({
+    list: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(melhorias).orderBy(desc(melhorias.votos));
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        titulo: z.string().min(3),
+        descricao: z.string().optional(),
+        categoria: z.string().default("sistema"),
+        criadoPor: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const result = await db.insert(melhorias).values(input);
+        return { id: Number((result as any).insertId) };
+      }),
+
+    vote: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.update(melhorias).set({ votos: sql`${melhorias.votos} + 1` }).where(eq(melhorias.id, input.id));
+        return { success: true };
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["pendente", "em_analise", "aprovada", "implementada"]) }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.update(melhorias).set({ status: input.status }).where(eq(melhorias.id, input.id));
+        return { success: true };
       }),
   }),
 });

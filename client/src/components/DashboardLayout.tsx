@@ -41,6 +41,12 @@ import {
   Code2,
   ThumbsUp,
   Zap,
+  Trello,
+  Lightbulb,
+  Megaphone,
+  UserCog,
+  Cog,
+  Laptop,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -64,6 +70,7 @@ const menuItems = [
       { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
       { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
       { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
+      { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
     ],
   },
   {
@@ -77,6 +84,11 @@ const menuItems = [
       { icon: Wrench, label: "Mecânicos", path: "/gestao/mecanicos" },
       { icon: Target, label: "Metas", path: "/gestao/metas" },
       { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
+      { icon: Lightbulb, label: "Melhorias", path: "/gestao/melhorias" },
+      { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },
+      { icon: UserCog, label: "RH", path: "/gestao/rh" },
+      { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
+      { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
     ],
   },
   {

@@ -373,3 +373,35 @@ export const kommoLeads = mysqlTable("16_kommo_leads", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 });
 export type KommoLead = typeof kommoLeads.$inferSelect;
+
+// ─── 17_MELHORIAS ─────────────────────────────────────────────────────────────
+export const melhorias = mysqlTable("17_melhorias", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 300 }).notNull(),
+  descricao: text("descricao"),
+  categoria: varchar("categoria", { length: 100 }).default("sistema"),
+  status: varchar("status", { length: 50 }).default("pendente"),
+  votos: int("votos").default(0),
+  criadoPor: varchar("criadoPor", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+export type Melhoria = typeof melhorias.$inferSelect;
+export type InsertMelhoria = typeof melhorias.$inferInsert;
+
+// ─── 18_TRELLO_SYNC_LOG ───────────────────────────────────────────────────────
+export const trelloSyncLog = mysqlTable("18_trello_sync_log", {
+  id: int("id").autoincrement().primaryKey(),
+  executadoEm: timestamp("executadoEm").defaultNow(),
+  totalCards: int("totalCards").default(0),
+  totalEntregue: int("totalEntregue").default(0),
+  totalFevereiro: int("totalFevereiro").default(0),
+  faturamentoTotal: decimal("faturamentoTotal", { precision: 12, scale: 2 }).default("0"),
+  ticketMedio: decimal("ticketMedio", { precision: 10, scale: 2 }).default("0"),
+  margemMedia: decimal("margemMedia", { precision: 5, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("sucesso"),
+  erro: text("erro"),
+  excelUrl: varchar("excelUrl", { length: 1000 }),
+  excelKey: varchar("excelKey", { length: 500 }),
+});
+export type TrelloSyncLog = typeof trelloSyncLog.$inferSelect;
