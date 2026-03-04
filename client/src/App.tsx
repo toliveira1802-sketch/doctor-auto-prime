@@ -47,6 +47,7 @@ import SelecionarPerfil from "./pages/SelecionarPerfil";
 import MecanicoView from "./pages/MecanicoView";
 import Login from "./pages/Login";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import IaQG from "./pages/admin/IaQG";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -147,6 +148,9 @@ function Router() {
       </Route>
       <Route path="/admin/agenda-mecanicos">
         <WithLayout><AdminAgendaMecanicos /></WithLayout>
+      </Route>
+      <Route path="/admin/ia-qg">
+        <WithLayout><IaQG /></WithLayout>
       </Route>
 
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}

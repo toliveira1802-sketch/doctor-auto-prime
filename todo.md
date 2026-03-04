@@ -156,3 +156,30 @@
 - [x] Componente MapaOficina: layout CSS grid fiel à imagem com cores por status
 - [x] Toggle Kanban/Mapa na página AdminPatio
 - [x] Vagas mostram placa + status da OS em tempo real
+
+## Preparação para Lançamento
+
+- [ ] Ocultar seção Gestão do sidebar (visível apenas para owner/dev)
+- [ ] Ocultar seção Dev do sidebar (visível apenas para owner/dev)
+- [ ] Publicar sistema no domínio docautoprime-s6kxius3.manus.space
+
+## Integração Kommo + IA — Análise de Leads
+
+- [ ] Ocultar GESTÃO e Dev do sidebar (visível só para owner)
+- [ ] Página /admin/kommo-leads: listar leads do Kommo com score IA
+- [ ] Router: kommo.leads.list — buscar leads via API Kommo
+- [ ] Router: kommo.leads.analisar — invocar LLM para classificar lead (quente/morno/frio + resumo)
+- [ ] Router: kommo.leads.distribuir — atribuir lead a consultor e notificar
+- [ ] Salvar classificações na tabela crm/leads do banco
+- [ ] Link "Leads Kommo" no sidebar (seção POMBAL)
+
+## QG das IAs
+
+- [x] Página /admin/ia-qg: painel central com cards de todos os agentes IA
+- [x] Card Agente Ana: qualificação de leads Kommo (quente/morno/frio)
+- [x] Card Reativação: campanha de clientes inativos 90d+
+- [x] Card Análise de Leads: varrer leads Kommo e distribuir para consultores
+- [x] Router: kommo.leads.list — buscar leads via API Kommo com filtros
+- [x] Router: kommo.leads.analisarLote — IA classifica todos os leads pendentes
+- [x] Router: kommo.leads.distribuir — atribuir lead a consultor + notificar
+- [x] Link "QG das IAs" no sidebar POMBAL com ícone de IA

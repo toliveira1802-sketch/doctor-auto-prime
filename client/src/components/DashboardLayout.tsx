@@ -51,6 +51,7 @@ import {
   ChevronRight,
   Monitor,
   Activity,
+  Brain,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -76,6 +77,7 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/admin/usuarios": ["admin"],
   "/admin/agenda-mecanicos": ["consultor", "admin"],
   "/admin/operacional": ["consultor", "admin"],
+  "/admin/ia-qg": ["admin"],
   "/gestao/visao-geral": ["gestor", "admin"],
   "/gestao/operacional": ["gestor", "admin"],
   "/gestao/financeiro": ["gestor", "admin"],
@@ -133,6 +135,11 @@ const menuItems: MenuGroup[] = [
           { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
           { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
         ],
+      },
+      {
+        icon: Brain,
+        label: "QG das IAs",
+        path: "/admin/ia-qg",
       },
       {
         icon: Monitor,
@@ -236,7 +243,11 @@ function DashboardLayoutContent({
 
   // Filtra menu por perfil selecionado (salvo em sessionStorage)
   const perfilAtual = sessionStorage.getItem("perfil_selecionado") ?? "admin";
+  // Grupos ocultos no lançamento — visíveis apenas com flag de owner no localStorage
+  const HIDDEN_GROUPS = ["GESTÃO", "Dev"];
+  const showHiddenGroups = localStorage.getItem("dap_show_all") === "1";
   const filteredMenuItems = menuItems
+    .filter(group => showHiddenGroups || !HIDDEN_GROUPS.includes(group.group))
     .map(group => ({
       ...group,
       items: group.items.filter(item => {

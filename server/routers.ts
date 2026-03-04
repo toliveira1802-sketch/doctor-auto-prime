@@ -1422,6 +1422,124 @@ export const appRouter = router({
         const result = await qualifyLead(input.leadId, input.history, input.message);
         return result;
       }),
+
+    // ─── Leads: listar do Kommo ───────────────────────────────────────────
+    leads: protectedProcedure
+      .input(z.object({
+        limit: z.number().default(50),
+        page: z.number().default(1),
+      }).optional())
+      .query(async ({ input }) => {
+        const { kommoGet } = await import("./kommo");
+        const limit = input?.limit ?? 50;
+        const page = input?.page ?? 1;
+        const params = new URLSearchParams({
+          limit: String(limit),
+          page: String(page),
+          order: "created_at",
+          with: "contacts",
+        });
+        try {
+          const data = await kommoGet(`/leads?${params.toString()}`);
+          const leads = data?._embedded?.leads ?? [];
+          return {
+            leads: leads.map((l: any) => ({
+              id: l.id,
+              name: l.name,
+              price: l.price,
+              status_id: l.status_id,
+              pipeline_id: l.pipeline_id,
+              created_at: l.created_at,
+              updated_at: l.updated_at,
+              responsible_user_id: l.responsible_user_id,
+              contacts: l._embedded?.contacts ?? [],
+              tags: l._embedded?.tags ?? [],
+            })),
+            total: data?.total_items ?? leads.length,
+          };
+        } catch (err: any) {
+          if (err.message?.includes("not connected")) return { leads: [], total: 0, notConnected: true };
+          throw err;
+        }
+      }),
+
+    // ─── Leads: analisar em lote com IA ──────────────────────────────────
+    analisarLote: protectedProcedure
+      .input(z.object({ leadIds: z.array(z.number()) }))
+      .mutation(async ({ input }) => {
+        const { kommoGet } = await import("./kommo");
+        const { updateKommoLeadTemperature } = await import("./kommoAgent");
+        const { invokeLLM } = await import("./_core/llm");
+        const results: Array<{
+          leadId: number; name: string; temperature: string;
+          serviceType: string; resumo: string; nextAction: string;
+        }> = [];
+        for (const leadId of input.leadIds) {
+          try {
+            const lead = await kommoGet(`/leads/${leadId}?with=contacts,notes`);
+            const notes = (lead?._embedded?.notes ?? []) as any[];
+            const contacts = (lead?._embedded?.contacts ?? []) as any[];
+            const history = notes
+              .filter((n: any) => n.note_type === "common" || n.note_type === "amocrm_widget_message")
+              .slice(-10)
+              .map((n: any) => n.params?.text ?? n.params?.message ?? "")
+              .filter(Boolean);
+            const ctx = `Lead: ${lead.name || "Sem nome"}\nValor: R$${lead.price || 0}\nContatos: ${contacts.map((c: any) => c.name).join(", ")}\nNotas: ${history.join(" | ") || "Nenhuma"}`;
+            const resp = await invokeLLM({
+              messages: [
+                { role: "system", content: `Você é a Ana, especialista em leads automotivos da Doctor Auto Prime (VW/Audi, remap e performance).\nAnalise o lead e retorne JSON com:\n- temperature: quente|morno|frio\n- serviceType: rapido|medio|projeto|indefinido\n- resumo: 1 frase do que o cliente quer\n- nextAction: schedule|handoff_consultant|nurture` },
+                { role: "user", content: ctx },
+              ],
+              response_format: {
+                type: "json_schema",
+                json_schema: {
+                  name: "lead_analysis", strict: true,
+                  schema: {
+                    type: "object",
+                    properties: {
+                      temperature: { type: "string", enum: ["quente", "morno", "frio"] },
+                      serviceType: { type: "string", enum: ["rapido", "medio", "projeto", "indefinido"] },
+                      resumo: { type: "string" },
+                      nextAction: { type: "string", enum: ["schedule", "handoff_consultant", "nurture"] },
+                    },
+                    required: ["temperature", "serviceType", "resumo", "nextAction"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            });
+            const analysis = JSON.parse(resp.choices[0].message.content as string);
+            await updateKommoLeadTemperature(leadId, analysis.temperature, analysis.resumo);
+            results.push({ leadId, name: lead.name || "Sem nome", ...analysis });
+          } catch (err: any) {
+            results.push({ leadId, name: "Erro", temperature: "frio", serviceType: "indefinido", resumo: err.message, nextAction: "nurture" });
+          }
+        }
+        return { results, total: results.length };
+      }),
+
+    // ─── Leads: distribuir para consultor ────────────────────────────────
+    distribuir: protectedProcedure
+      .input(z.object({
+        leadId: z.number(),
+        leadName: z.string(),
+        consultorId: z.number(),
+        temperatura: z.string(),
+        resumo: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        const consultor = await db.select().from(colaboradores).where(eq(colaboradores.id, input.consultorId)).limit(1);
+        if (!consultor.length) throw new TRPCError({ code: "NOT_FOUND", message: "Consultor não encontrado" });
+        const { notifyOwner } = await import("./_core/notification");
+        const tempEmoji: Record<string, string> = { quente: "🔥", morno: "🌡️", frio: "❄️" };
+        await notifyOwner({
+          title: `${tempEmoji[input.temperatura] ?? ""} Lead distribuído para ${consultor[0].nome}`,
+          content: `Lead: ${input.leadName}\nTemperatura: ${input.temperatura}\nResumo: ${input.resumo}\nConsultor: ${consultor[0].nome}`,
+        });
+        return { success: true, consultor: consultor[0].nome };
+      }),
   }),
 
   // ─── TRELLO MIGRATION ──────────────────────────────────────────────────────
