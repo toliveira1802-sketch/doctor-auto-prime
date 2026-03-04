@@ -26,6 +26,8 @@ import AdminMechanicAnalytics from "./pages/admin/AdminMechanicAnalytics";
 import AdminMechanicFeedback from "./pages/admin/AdminMechanicFeedback";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import TrelloMigracao from "./pages/admin/TrelloMigracao";
+import Operacional from "./pages/admin/Operacional";
+import AdminAgendaMecanicos from "./pages/admin/AdminAgendaMecanicos";
 
 // Gestão pages
 import GestaoVisaoGeral from "./pages/gestao/GestaoVisaoGeral";
@@ -85,6 +87,9 @@ function Router() {
       <Route path="/admin/dashboard">
         <WithLayout><AdminDashboard /></WithLayout>
       </Route>
+      <Route path="/admin/operacional">
+        <WithLayout><Operacional /></WithLayout>
+      </Route>
       <Route path="/admin/patio">
         <WithLayout><AdminPatio /></WithLayout>
       </Route>
@@ -129,6 +134,9 @@ function Router() {
       </Route>
       <Route path="/admin/trello-migracao">
         <WithLayout><TrelloMigracao /></WithLayout>
+      </Route>
+      <Route path="/admin/agenda-mecanicos">
+        <WithLayout><AdminAgendaMecanicos /></WithLayout>
       </Route>
 
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}

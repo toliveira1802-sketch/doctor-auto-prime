@@ -178,18 +178,54 @@ export const appRouter = router({
           });
         }
 
+        // Extra fields for the new Financeiro dashboard
+        const [aprovadoRow] = await db
+          .select({ total: sql<number>`COALESCE(SUM(${ordensServico.valorTotalOs}), 0)` })
+          .from(ordensServico)
+          .where(sql`${ordensServico.status} NOT IN ('Entregue','Cancelada')`);
+        const today2 = new Date(); today2.setHours(0,0,0,0);
+        const tomorrow2 = new Date(today2); tomorrow2.setDate(tomorrow2.getDate()+1);
+        const [saidaHojeRow] = await db
+          .select({ total: sql<number>`COALESCE(SUM(${ordensServico.valorTotalOs}), 0)`, count: sql<number>`count(*)` })
+          .from(ordensServico)
+          .where(and(eq(ordensServico.status, "Entregue"), gte(ordensServico.dataSaida, today2), lte(ordensServico.dataSaida, tomorrow2)));
+        const diasNoMes = new Date(ano, mes, 0).getDate();
+        const diasPassados = Math.max(1, new Date().getDate());
+        const diasRestantes = Math.max(1, diasNoMes - diasPassados);
+        const mediaDia = totalFat > 0 ? totalFat / diasPassados : 0;
+        const mediaDiaParaAtingir = metaMes > totalFat ? (metaMes - totalFat) / diasRestantes : 0;
+        const [presosRow] = await db
+          .select({ count: sql<number>`count(*)`, total: sql<number>`COALESCE(SUM(${ordensServico.valorTotalOs}), 0)` })
+          .from(ordensServico)
+          .where(eq(ordensServico.status, "Aguard. Pecas"));
+        const [atrasadosRow] = await db
+          .select({ count: sql<number>`count(*)`, total: sql<number>`COALESCE(SUM(${ordensServico.valorTotalOs}), 0)` })
+          .from(ordensServico)
+          .where(and(sql`${ordensServico.status} NOT IN ('Entregue','Cancelada')`, lte(ordensServico.createdAt, new Date(Date.now() - 3*24*60*60*1000))));
         return {
           fatMensal: totalFat,
           metaMes,
           percentual: metaMes > 0 ? Math.round((totalFat / metaMes) * 100) : 0,
           ticketMedio,
           totalOS: totalOSCount,
+          aprovadoPatio: Number(aprovadoRow?.total ?? 0),
+          saidaHoje: Number(saidaHojeRow?.total ?? 0),
+          saidaHojeCount: Number(saidaHojeRow?.count ?? 0),
+          atrasadosCount: Number(atrasadosRow?.count ?? 0),
+          atrasadosValor: Number(atrasadosRow?.total ?? 0),
+          presosCount: Number(presosRow?.count ?? 0),
+          presosValor: Number(presosRow?.total ?? 0),
+          entreguesMes: totalOSCount,
+          mediaDia,
+          mediaDiaParaAtingir,
+          diasRestantes,
+          projecaoFechamento: mediaDia * diasNoMes,
           mixServicos: mixServicos.map((m) => ({ tipo: m.motivoVisita ?? "Outros", count: Number(m.count) })),
           topOS: osEntregues.map((r) => ({
             id: r.os.id,
             numeroOs: r.os.numeroOs,
-            cliente: r.cliente?.nomeCompleto ?? "—",
-            placa: r.os.placa ?? "—",
+            cliente: r.cliente?.nomeCompleto ?? "--",
+            placa: r.os.placa ?? "--",
             valor: Number(r.os.valorTotalOs ?? 0),
             status: r.os.status,
           })),

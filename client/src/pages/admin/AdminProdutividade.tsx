@@ -1,172 +1,181 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Wrench, Trophy, TrendingUp, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshCw, TrendingUp } from "lucide-react";
 
-const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const WEEKS = ["Semana 1", "Semana 2", "Semana 3", "Semana 4"];
+const RANK_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"];
+const RANK_EMOJI = ["🥇", "🥈", "🥉"];
 
-const GRAU_COLORS: Record<string, string> = {
-  "Junior": "bg-blue-500/20 text-blue-400",
-  "Pleno": "bg-amber-500/20 text-amber-400",
-  "Senior": "bg-green-500/20 text-green-400",
-  "Especialista": "bg-purple-500/20 text-purple-400",
-};
+function fmt(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
 export default function AdminProdutividade() {
   const now = new Date();
-  const [mes, setMes] = useState(now.getMonth() + 1);
-  const [ano, setAno] = useState(now.getFullYear());
+  const [mes] = useState(now.getMonth() + 1);
+  const [ano] = useState(now.getFullYear());
+  const [selectedMecanico, setSelectedMecanico] = useState("todos");
+  const [selectedCategoria, setSelectedCategoria] = useState("todas");
+  const [selectedSemana, setSelectedSemana] = useState<string | null>(null);
 
-  const { data, isLoading } = trpc.dashboard.produtividade.useQuery({ mes, ano });
-
+  const { data, isLoading, refetch } = trpc.dashboard.produtividade.useQuery({ mes, ano });
   const d = data as any;
   const ranking: any[] = d?.ranking ?? [];
-
-  const prevMonth = () => {
-    if (mes === 1) { setMes(12); setAno(y => y - 1); }
-    else setMes(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (mes === 12) { setMes(1); setAno(y => y + 1); }
-    else setMes(m => m + 1);
-  };
-
-  const chartData = ranking.slice(0, 10).map(r => ({ nome: r.nome.split(" ")[0], os: r.totalOS }));
+  const metaOsSemana = d?.metaOsSemana ?? 15;
+  const totalOsMes = d?.totalOsMes ?? 0;
+  const metaMensal = metaOsSemana * 4 * Math.max(1, ranking.length);
+  const percentual = metaMensal > 0 ? Math.round((totalOsMes / metaMensal) * 100) : 0;
+  const projecao = totalOsMes > 0 ? Math.round((totalOsMes / Math.max(1, now.getDate())) * new Date(ano, mes, 0).getDate()) : 0;
+  const diasRestantes = new Date(ano, mes, 0).getDate() - now.getDate();
+  const filteredRanking = ranking.filter((m: any) => {
+    if (selectedMecanico !== "todos" && String(m.id) !== selectedMecanico) return false;
+    if (selectedCategoria !== "todas" && m.especialidade !== selectedCategoria) return false;
+    return true;
+  });
+  const especialidades = Array.from(new Set(ranking.map((m: any) => m.especialidade).filter(Boolean)));
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Produtividade</h1>
-          <p className="text-muted-foreground text-sm">Ranking e desempenho dos mecânicos</p>
+    <div className="p-6 space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <TrendingUp className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-xl font-bold">Dashboard de Produtividade</h1>
+            <p className="text-xs text-muted-foreground">Métricas individuais e por recurso</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="text-sm font-medium w-28 text-center">{MONTHS[mes - 1]} {ano}</span>
-          <Button variant="outline" size="icon" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
+          <span className="text-xs text-muted-foreground">Última atualização: {new Date().toLocaleTimeString("pt-BR")}</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-muted-foreground text-sm">Carregando dados de produtividade...</div>
-      ) : (
-        <>
-          {/* KPI Summary */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-muted-foreground">Total OS no Mês</span>
-                  <Wrench className="h-4 w-4 text-primary" />
-                </div>
-                <div className="text-2xl font-bold">{d?.totalOsMes ?? 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-muted-foreground">Meta OS/Semana</span>
-                  <TrendingUp className="h-4 w-4 text-amber-400" />
-                </div>
-                <div className="text-2xl font-bold">{d?.metaOsSemana ?? 15}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-muted-foreground">Mecânicos Ativos</span>
-                  <Trophy className="h-4 w-4 text-yellow-400" />
-                </div>
-                <div className="text-2xl font-bold">{ranking.length}</div>
-              </CardContent>
-            </Card>
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <p className="font-semibold">Termômetro de Meta Mensal</p>
           </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">Progresso</span>
+            <span className={`text-xl font-bold ${percentual >= 100 ? "text-green-400" : percentual >= 70 ? "text-amber-400" : "text-red-400"}`}>
+              {percentual.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+        <div className="w-full bg-muted rounded-full h-3 mb-5 mt-3">
+          <div
+            className={`h-3 rounded-full transition-all ${percentual >= 100 ? "bg-green-500" : percentual >= 70 ? "bg-amber-500" : "bg-primary"}`}
+            style={{ width: `${Math.min(percentual, 100)}%` }}
+          />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-border">
+          <div className="pr-4">
+            <p className="text-xs text-muted-foreground">Meta</p>
+            <p className="text-xl font-bold mt-1">{fmt(metaMensal)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{metaOsSemana} OS/sem/mecânico</p>
+          </div>
+          <div className="px-4">
+            <p className="text-xs text-muted-foreground">Realizado</p>
+            <p className="text-xl font-bold mt-1">{fmt(ranking.reduce((s: number, r: any) => s + r.totalValor, 0))}</p>
+            <p className="text-xs text-muted-foreground mt-1">{totalOsMes} OS no mês</p>
+          </div>
+          <div className="px-4">
+            <p className="text-xs text-green-400">Projeção</p>
+            <p className={`text-xl font-bold mt-1 ${projecao >= metaMensal ? "text-green-400" : "text-amber-400"}`}>{projecao} OS</p>
+            <p className="text-xs text-muted-foreground mt-1">{projecao > 0 && metaMensal > 0 ? ((projecao / metaMensal) * 100).toFixed(1) : "0.0"}% da meta</p>
+          </div>
+          <div className="pl-4">
+            <p className="text-xs text-muted-foreground">Faltam</p>
+            <p className="text-xl font-bold mt-1">{Math.max(0, metaMensal - totalOsMes)} OS</p>
+            <p className="text-xs text-muted-foreground mt-1">{diasRestantes} dias restantes</p>
+          </div>
+        </div>
+      </div>
 
-          {/* Chart */}
-          {chartData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">OS por Mecânico (Top 10)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={chartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: "#888" }} />
-                    <YAxis dataKey="nome" type="category" tick={{ fontSize: 11, fill: "#888" }} width={70} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
-                      formatter={(v: any) => [v, "OS"]}
-                    />
-                    <Bar dataKey="os" fill="#6366f1" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Select value={selectedMecanico} onValueChange={setSelectedMecanico}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Todos Mecânicos" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos Mecânicos</SelectItem>
+            {ranking.map((m: any) => (<SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>))}
+          </SelectContent>
+        </Select>
+        <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Todas Categorias" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas Categorias</SelectItem>
+            {(especialidades as string[]).map((e: string) => (<SelectItem key={e} value={e}>{e}</SelectItem>))}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-1">
+          {WEEKS.map(w => (
+            <Button key={w} variant={selectedSemana === w ? "default" : "outline"} size="sm"
+              onClick={() => setSelectedSemana(selectedSemana === w ? null : w)}>{w}</Button>
+          ))}
+        </div>
+      </div>
 
-          {/* Ranking Table */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Ranking de Mecânicos</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {ranking.length === 0 ? (
-                <div className="text-sm text-muted-foreground text-center py-8">Nenhum dado disponível</div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {ranking.map((r: any, i: number) => {
-                    const initials = r.nome.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase();
-                    return (
-                      <div key={r.id} className="flex items-center gap-4 px-4 py-3">
-                        <div className={`text-sm font-bold w-6 text-center ${i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}>
-                          {i + 1}
-                        </div>
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">{initials}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm">{r.nome}</div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-muted-foreground">{r.especialidade}</span>
-                            <Badge className={`text-xs ${GRAU_COLORS[r.grau] ?? "bg-muted text-muted-foreground"}`}>{r.grau}</Badge>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="text-center">
-                            <div className="font-bold text-primary">{r.totalOS}</div>
-                            <div className="text-xs text-muted-foreground">OS</div>
-                          </div>
-                          {r.totalValor > 0 && (
-                            <div className="text-center hidden md:block">
-                              <div className="font-bold text-green-400">
-                                R${r.totalValor >= 1000 ? `${(r.totalValor / 1000).toFixed(1)}k` : r.totalValor}
-                              </div>
-                              <div className="text-xs text-muted-foreground">Valor</div>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-xs text-green-400">
-                              <ThumbsUp className="h-3 w-3" />{r.positivos}
-                            </span>
-                            <span className="flex items-center gap-1 text-xs text-red-400">
-                              <ThumbsDown className="h-3 w-3" />{r.negativos}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-lg">🏆</span>
+          <h2 className="font-semibold">Ranking de Mecânicos</h2>
+        </div>
+        {isLoading ? (
+          <div className="text-sm text-muted-foreground">Carregando ranking...</div>
+        ) : filteredRanking.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">Nenhum mecânico encontrado</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredRanking.map((m: any, i: number) => {
+              const metaInd = metaOsSemana * 4;
+              const pct = metaInd > 0 ? Math.min(100, Math.round((m.totalOS / metaInd) * 100)) : 0;
+              const isTop3 = i < 3;
+              const ticket = m.totalOS > 0 ? m.totalValor / m.totalOS : 0;
+              return (
+                <div key={m.id} className="rounded-xl border bg-card p-4 relative overflow-hidden"
+                  style={{ borderColor: isTop3 ? RANK_COLORS[i] + "40" : undefined }}>
+                  {isTop3 && <div className="absolute top-0 left-0 right-0 h-0.5" style={{ backgroundColor: RANK_COLORS[i] }} />}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">{isTop3 ? RANK_EMOJI[i] : `#${i+1}`}</span>
+                    <div>
+                      <p className="font-semibold text-sm">{m.nome}</p>
+                      <p className="text-xs text-muted-foreground">{m.especialidade} · {m.grau}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">$ Valor Produzido</span><span className="font-bold">{fmt(m.totalValor)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">🚗 Carros Atendidos</span><span className="font-bold">{m.totalOS}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">$ Ticket Médio</span><span className="font-bold">{fmt(ticket)}</span></div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">Meta Mensal</span>
+                      <span className={pct >= 100 ? "text-green-400" : pct >= 70 ? "text-amber-400" : "text-red-400"}>{pct}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1.5">
+                      <div className={`h-1.5 rounded-full ${pct >= 100 ? "bg-green-500" : pct >= 70 ? "bg-amber-500" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span className="text-muted-foreground">{fmt(m.totalValor)}</span>
+                      <span className="text-muted-foreground">Meta: R$ {(metaOsSemana * 4 * 60000).toLocaleString("pt-BR")}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex gap-3 text-xs">
+                    <span className="text-green-400">👍 {m.positivos}</span>
+                    <span className="text-red-400">👎 {m.negativos}</span>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

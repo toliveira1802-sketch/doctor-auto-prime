@@ -73,6 +73,8 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/admin/configuracoes": ["admin"],
   "/admin/integracoes": ["admin"],
   "/admin/trello-migracao": ["admin"],
+  "/admin/agenda-mecanicos": ["consultor", "admin"],
+  "/admin/operacional": ["consultor", "admin"],
   "/gestao/visao-geral": ["gestor", "admin"],
   "/gestao/operacional": ["gestor", "admin"],
   "/gestao/financeiro": ["gestor", "admin"],
@@ -126,6 +128,7 @@ const menuItems: MenuGroup[] = [
         children: [
           { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
           { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
+          { icon: CalendarClock, label: "Agenda Mec.", path: "/admin/agenda-mecanicos" },
           { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
           { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
         ],

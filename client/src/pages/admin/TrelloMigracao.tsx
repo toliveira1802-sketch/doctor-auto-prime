@@ -46,7 +46,7 @@ function formatCurrency(v: number) {
 }
 
 function formatDate(d: string | null | undefined) {
-  if (!d) return "—";
+  if (!d) return "--";
   return d;
 }
 
@@ -153,7 +153,7 @@ export default function TrelloMigracao() {
         title="Clique para editar"
       >
         <span className={`text-sm ${value ? (hasOverride ? "text-yellow-300" : "text-white") : "text-gray-500"}`}>
-          {value || "—"}
+          {value || "--"}
         </span>
         <Pencil className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
       </div>
@@ -170,7 +170,7 @@ export default function TrelloMigracao() {
         utils.os.patio.invalidate();
         utils.dashboard.kpis.invalidate();
       } else {
-        toast.info("Nenhuma OS nova para importar — todos os cards já estão no sistema.");
+        toast.info("Nenhuma OS nova para importar -- todos os cards já estão no sistema.");
       }
     },
     onError: (err) => {
@@ -600,7 +600,7 @@ export default function TrelloMigracao() {
         <TabsContent value="mecanicos">
           <Card className="bg-[#1a1f26] border-gray-800">
             <CardHeader>
-              <CardTitle className="text-white text-base">Ranking de Mecânicos — Veículos Entregues</CardTitle>
+              <CardTitle className="text-white text-base">Ranking de Mecânicos -- Veículos Entregues</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -628,7 +628,7 @@ export default function TrelloMigracao() {
                     <div className="text-right">
                       <p className="text-green-400 font-medium">{formatCurrency(m.valor)}</p>
                       <p className="text-xs text-gray-500">
-                        {m.qtd > 0 ? formatCurrency(m.valor / m.qtd) : "—"} / OS
+                        {m.qtd > 0 ? formatCurrency(m.valor / m.qtd) : "--"} / OS
                       </p>
                     </div>
                   </div>
@@ -645,7 +645,7 @@ export default function TrelloMigracao() {
         <TabsContent value="marcas">
           <Card className="bg-[#1a1f26] border-gray-800">
             <CardHeader>
-              <CardTitle className="text-white text-base">Mix por Marca — Veículos Entregues</CardTitle>
+              <CardTitle className="text-white text-base">Mix por Marca -- Veículos Entregues</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -689,7 +689,7 @@ export default function TrelloMigracao() {
                         <p className="text-sm text-white">
                           {log.executadoEm
                             ? new Date(log.executadoEm).toLocaleString("pt-BR")
-                            : "—"}
+                            : "--"}
                         </p>
                         <p className="text-xs text-gray-500">
                           {log.totalCards} cards · {formatCurrency(Number(log.faturamentoTotal))} · Ticket {formatCurrency(Number(log.ticketMedio))}

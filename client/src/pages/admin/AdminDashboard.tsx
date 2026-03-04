@@ -187,7 +187,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            href: "/admin/patio",
+            href: "/admin/operacional",
             label: "Operacional",
             desc: "Pátio e OS em andamento",
             icon: Wrench,
@@ -211,9 +211,9 @@ export default function AdminDashboard() {
             iconColor: "text-blue-400",
           },
           {
-            href: "/admin/agenda",
+            href: "/admin/agenda-mecanicos",
             label: "Agenda do Dia",
-            desc: "Agendamentos e visitas",
+            desc: "Grade horária dos mecânicos",
             icon: Calendar,
             accent: "from-amber-500/20 to-amber-500/5 border-amber-500/30 hover:border-amber-500/60",
             iconColor: "text-amber-400",
