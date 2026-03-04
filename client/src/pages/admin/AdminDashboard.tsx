@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import {
   Plus, CheckCircle, Clock, AlertTriangle, ChevronRight,
-  Car, Calendar, DollarSign, Wrench,
+  Car, Calendar, DollarSign, Wrench, BarChart3, TrendingUp,
 } from "lucide-react";
 
 const PRIORIDADE_COLORS: Record<string, string> = {
@@ -182,6 +182,61 @@ export default function AdminDashboard() {
             ))
           )}
         </div>
+      </div>
+      {/* ─── 4 Cards de Acesso Rápido ──────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            href: "/admin/patio",
+            label: "Operacional",
+            desc: "Pátio e OS em andamento",
+            icon: Wrench,
+            accent: "from-primary/20 to-primary/5 border-primary/30 hover:border-primary/60",
+            iconColor: "text-primary",
+          },
+          {
+            href: "/admin/financeiro",
+            label: "Financeiro",
+            desc: "Faturamento e metas",
+            icon: DollarSign,
+            accent: "from-green-500/20 to-green-500/5 border-green-500/30 hover:border-green-500/60",
+            iconColor: "text-green-400",
+          },
+          {
+            href: "/admin/produtividade",
+            label: "Produtividade",
+            desc: "Ranking e performance",
+            icon: BarChart3,
+            accent: "from-blue-500/20 to-blue-500/5 border-blue-500/30 hover:border-blue-500/60",
+            iconColor: "text-blue-400",
+          },
+          {
+            href: "/admin/agenda",
+            label: "Agenda do Dia",
+            desc: "Agendamentos e visitas",
+            icon: Calendar,
+            accent: "from-amber-500/20 to-amber-500/5 border-amber-500/30 hover:border-amber-500/60",
+            iconColor: "text-amber-400",
+          },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href}>
+              <div
+                className={`relative flex flex-col gap-3 p-5 rounded-xl border bg-gradient-to-br cursor-pointer transition-all duration-200 hover:scale-[1.02] ${item.accent}`}
+              >
+                <div className={`w-10 h-10 rounded-lg bg-black/30 flex items-center justify-center`}>
+                  <Icon className={`h-5 w-5 ${item.iconColor}`} />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                </div>
+                <ChevronRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/50" />
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
