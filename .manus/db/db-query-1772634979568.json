@@ -1,0 +1,94 @@
+{
+  "query": "\n-- Insert \"Teste\" after \"Em Execução\" (order 6), shifting Pronto and above\nUPDATE `04_lista_status` SET ordem = ordem + 1 WHERE ordem >= 7;\n\n-- Insert Teste at order 7\nINSERT INTO `04_lista_status` (status, ordem, cor, ativo) VALUES ('Teste', 7, '#F97316', 1);\n\n-- Now Pronto is at 8, Aguardando Retirada at 9, Entregue at 10\n-- Add Agendado at 11 and Cancelado at 12\nINSERT INTO `04_lista_status` (status, ordem, cor, ativo) VALUES ('Agendado', 11, '#6366F1', 1);\nINSERT INTO `04_lista_status` (status, ordem, cor, ativo) VALUES ('Cancelado', 12, '#6B7280', 1);\n\n-- Verify\nSELECT * FROM `04_lista_status` ORDER BY ordem;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \n-- Insert \"Teste\" after \"Em Execução\" (order 6), shifting Pronto and above\nUPDATE `04_lista_status` SET ordem = ordem + 1 WHERE ordem >= 7;\n\n-- Insert Teste at order 7\nINSERT INTO `04_lista_status` (status, ordem, cor, ativo) VALUES ('Teste', 7, '#F97316', 1);\n\n-- Now Pronto is at 8, Aguardando Retirada at 9, Entregue at 10\n-- Add Agendado at 11 and Cancelado at 12\nINSERT INTO `04_lista_status` (status, ordem, cor, ativo) VALUES ('Agendado', 11, '#6366F1', 1);\nINSERT INTO `04_lista_status` (status, ordem, cor, ativo) VALUES ('Cancelado', 12, '#6B7280', 1);\n\n-- Verify\nSELECT * FROM `04_lista_status` ORDER BY ordem;\n",
+  "rows": [
+    {
+      "id": "1",
+      "status": "Diagnóstico",
+      "ordem": "1",
+      "cor": "#3B82F6",
+      "ativo": "1"
+    },
+    {
+      "id": "2",
+      "status": "Orçamento",
+      "ordem": "2",
+      "cor": "#8B5CF6",
+      "ativo": "1"
+    },
+    {
+      "id": "3",
+      "status": "Aguardando Aprovação",
+      "ordem": "3",
+      "cor": "#F59E0B",
+      "ativo": "1"
+    },
+    {
+      "id": "4",
+      "status": "Aguardando Peça",
+      "ordem": "4",
+      "cor": "#EF4444",
+      "ativo": "1"
+    },
+    {
+      "id": "5",
+      "status": "Pronto para Iniciar",
+      "ordem": "5",
+      "cor": "#10B981",
+      "ativo": "1"
+    },
+    {
+      "id": "6",
+      "status": "Em Execução",
+      "ordem": "6",
+      "cor": "#06B6D4",
+      "ativo": "1"
+    },
+    {
+      "id": "30002",
+      "status": "Teste",
+      "ordem": "7",
+      "cor": "#F97316",
+      "ativo": "1"
+    },
+    {
+      "id": "7",
+      "status": "Pronto",
+      "ordem": "8",
+      "cor": "#22C55E",
+      "ativo": "1"
+    },
+    {
+      "id": "8",
+      "status": "Aguardando Retirada",
+      "ordem": "9",
+      "cor": "#84CC16",
+      "ativo": "1"
+    },
+    {
+      "id": "9",
+      "status": "Entregue",
+      "ordem": "10",
+      "cor": "#6B7280",
+      "ativo": "1"
+    },
+    {
+      "id": "30003",
+      "status": "Agendado",
+      "ordem": "11",
+      "cor": "#6366F1",
+      "ativo": "1"
+    },
+    {
+      "id": "30004",
+      "status": "Cancelado",
+      "ordem": "12",
+      "cor": "#6B7280",
+      "ativo": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tstatus\tordem\tcor\tativo\n1\tDiagnóstico\t1\t#3B82F6\t1\n2\tOrçamento\t2\t#8B5CF6\t1\n3\tAguardando Aprovação\t3\t#F59E0B\t1\n4\tAguardando Peça\t4\t#EF4444\t1\n5\tPronto para Iniciar\t5\t#10B981\t1\n6\tEm Execução\t6\t#06B6D4\t1\n30002\tTeste\t7\t#F97316\t1\n7\tPronto\t8\t#22C55E\t1\n8\tAguardando Retirada\t9\t#84CC16\t1\n9\tEntregue\t10\t#6B7280\t1\n30003\tAgendado\t11\t#6366F1\t1\n30004\tCancelado\t12\t#6B7280\t1\n",
+  "stderr": "",
+  "execution_time_ms": 636
+}

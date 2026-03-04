@@ -140,3 +140,19 @@
 - [x] Rota /admin/usuarios registrada no App.tsx
 - [x] Link "Usuários" adicionado ao submenu Sistema no DashboardLayout (acesso: admin)
 - [x] Vitest: 10 testes para colaboradores.crud passando
+
+## Kanban Pátio - Novas Colunas
+
+- [x] Adicionar status "Teste" (após Em Execução) no schema/enum e banco
+- [x] Adicionar status "Agendado" e "Cancelado" como colunas finais no Kanban
+- [x] Atualizar lista de status no Pátio Kanban na ordem correta
+- [x] Atualizar filtros e dashboards para incluir os novos status
+
+## Mapa da Oficina (Segunda Visão do Pátio)
+
+- [x] Schema: tabela oficina_vagas (id, nome, tipo, posicaoX, posicaoY, largura, altura, osId FK)
+- [x] SQL migration: criar tabela oficina_vagas e popular com as 14 vagas da imagem
+- [x] Router: vagas.list (com OS alocada), vagas.alocar (associar OS a vaga), vagas.liberar
+- [x] Componente MapaOficina: layout CSS grid fiel à imagem com cores por status
+- [x] Toggle Kanban/Mapa na página AdminPatio
+- [x] Vagas mostram placa + status da OS em tempo real

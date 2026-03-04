@@ -429,3 +429,18 @@ export const trelloCardOverrides = mysqlTable("19_trello_card_overrides", {
   atualizadoEm: timestamp("atualizadoEm").defaultNow().onUpdateNow(),
 });
 export type TrelloCardOverride = typeof trelloCardOverrides.$inferSelect;
+
+// ─── 20_OFICINA_VAGAS ─────────────────────────────────────────────────────────
+// Vagas físicas da oficina (elevadores, boxes, rampas) para o Mapa da Oficina
+export const oficinaVagas = mysqlTable("20_oficina_vagas", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 100 }).notNull(),
+  tipo: varchar("tipo", { length: 50 }).default("elevador"),
+  colStart: int("colStart").notNull(),
+  rowStart: int("rowStart").notNull(),
+  colSpan: int("colSpan").default(1),
+  rowSpan: int("rowSpan").default(1),
+  osId: int("osId"),
+  ativo: boolean("ativo").default(true),
+});
+export type OficinaVaga = typeof oficinaVagas.$inferSelect;

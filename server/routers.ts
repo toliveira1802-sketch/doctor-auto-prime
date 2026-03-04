@@ -24,6 +24,7 @@ import {
   trelloSyncLog,
   trelloCardOverrides,
   veiculos,
+  oficinaVagas,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -465,6 +466,53 @@ export const appRouter = router({
       if (!db) return [];
       return db.select().from(recursos).where(eq(recursos.ativo, true));
     }),
+  }),
+
+  // ─── OFICINA VAGAS (Mapa da Oficina) ────────────────────────────────────────
+  vagas: router({
+    // List all vagas with their current OS (if occupied)
+    list: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const vagasList = await db.select().from(oficinaVagas).where(eq(oficinaVagas.ativo, true)).orderBy(oficinaVagas.rowStart, oficinaVagas.colStart);
+      // For occupied vagas, fetch the OS details
+      const osIds = vagasList.map(v => v.osId).filter(Boolean) as number[];
+      let osMap: Record<number, { placa: string | null; status: string | null; numeroOs: string | null; mecanicoId: number | null }> = {};
+      if (osIds.length > 0) {
+        const osList = await db.select({
+          id: ordensServico.id,
+          placa: ordensServico.placa,
+          status: ordensServico.status,
+          numeroOs: ordensServico.numeroOs,
+          mecanicoId: ordensServico.mecanicoId,
+        }).from(ordensServico).where(sql`${ordensServico.id} IN (${sql.join(osIds.map(id => sql`${id}`), sql`, `)})`);
+        osMap = Object.fromEntries(osList.map(o => [o.id, o]));
+      }
+      return vagasList.map(v => ({
+        ...v,
+        os: v.osId ? osMap[v.osId] ?? null : null,
+      }));
+    }),
+
+    // Alocar uma OS a uma vaga
+    alocar: protectedProcedure
+      .input(z.object({ vagaId: z.number(), osId: z.number().nullable() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.update(oficinaVagas).set({ osId: input.osId }).where(eq(oficinaVagas.id, input.vagaId));
+        return { success: true };
+      }),
+
+    // Liberar uma vaga (set osId = null)
+    liberar: protectedProcedure
+      .input(z.object({ vagaId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.update(oficinaVagas).set({ osId: null }).where(eq(oficinaVagas.id, input.vagaId));
+        return { success: true };
+      }),
   }),
 
   // ─── LISTA STATUS ──────────────────────────────────────────────────────────
