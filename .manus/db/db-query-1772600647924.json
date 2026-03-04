@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, numeroOs, status, clienteId, veiculoId, placa FROM `09_ordens_servico` ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, numeroOs, status, clienteId, veiculoId, placa FROM `09_ordens_servico` ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "numeroOs": "OS-00001",
+      "status": "Diagnóstico",
+      "clienteId": "67231",
+      "veiculoId": "30002",
+      "placa": "BRA2E19"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnumeroOs\tstatus\tclienteId\tveiculoId\tplaca\n1\tOS-00001\tDiagnóstico\t67231\t30002\tBRA2E19\n",
+  "stderr": "",
+  "execution_time_ms": 346
+}

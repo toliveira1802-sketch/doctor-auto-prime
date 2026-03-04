@@ -689,24 +689,40 @@ export const appRouter = router({
           observacao: input.observacao ?? null,
         });
 
-        // If delivered, record faturamento
-        if (input.status === "Entregue" && input.valorTotalOs && input.valorTotalOs > 0) {
-          await db.insert(faturamento).values({
-            ordemServicoId: input.id,
-            clienteId: current.clienteId,
-            dataEntrega: new Date(),
-            valor: input.valorTotalOs.toString(),
-          });
+         // If delivered, record faturamento and update client stats
+        if (input.status === "Entregue") {
+          if (input.valorTotalOs && input.valorTotalOs > 0) {
+            await db.insert(faturamento).values({
+              ordemServicoId: input.id,
+              clienteId: current.clienteId,
+              dataEntrega: new Date(),
+              valor: input.valorTotalOs.toString(),
+            });
+          }
+          // Update client totalOsRealizadas and totalGasto, then recalculate nivelFidelidade
+          const [clienteData] = await db.select().from(clientes).where(eq(clientes.id, current.clienteId));
+          if (clienteData) {
+            const newTotal = (clienteData.totalOsRealizadas ?? 0) + 1;
+            const newGasto = parseFloat(String(clienteData.totalGasto ?? 0)) + (input.valorTotalOs ?? 0);
+            let nivel = "Bronze";
+            if (newTotal >= 15 || newGasto >= 20000) nivel = "VIP";
+            else if (newTotal >= 8 || newGasto >= 10000) nivel = "Ouro";
+            else if (newTotal >= 3 || newGasto >= 3000) nivel = "Prata";
+            await db.update(clientes).set({
+              totalOsRealizadas: newTotal,
+              totalGasto: newGasto.toFixed(2),
+              nivelFidelidade: nivel,
+            }).where(eq(clientes.id, current.clienteId));
+          }
           // Update CRM
           const [crmRecord] = await db.select().from(crm).where(eq(crm.clienteId, current.clienteId));
           if (crmRecord) {
             await db.update(crm).set({
-              totalGasto: sql`${crm.totalGasto} + ${input.valorTotalOs}`,
+              totalGasto: sql`${crm.totalGasto} + ${input.valorTotalOs ?? 0}`,
               ultimaPassagem: new Date(),
             }).where(eq(crm.clienteId, current.clienteId));
           }
         }
-
         return { success: true };
       }),
 

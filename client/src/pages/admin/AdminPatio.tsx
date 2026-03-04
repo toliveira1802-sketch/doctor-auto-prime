@@ -97,22 +97,21 @@ export default function AdminPatio() {
                   const hoursAgo = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / 3600000) : 0;
 
                   return (
-                    <Card key={os.id} className="cursor-pointer hover:shadow-md transition-shadow bg-card/80 border-border/50"
-                      onClick={() => navigate(`/admin/os/${os.id}`)}>
+                    <Card key={os.id} className="hover:shadow-md transition-shadow bg-card/80 border-border/50">
                       <CardContent className="p-3 space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between cursor-pointer" onClick={() => navigate(`/admin/os/${os.id}`)}>                          
                           <span className="text-xs font-mono text-primary font-bold">{os.numeroOs}</span>
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />{hoursAgo}h
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs">
+                        <div className="flex items-center gap-1 text-xs cursor-pointer" onClick={() => navigate(`/admin/os/${os.id}`)}>                          
                           <Car className="h-3 w-3 text-muted-foreground" />
                           <span className="font-mono font-semibold">{veiculo?.placa ?? os.placa ?? "—"}</span>
                           <span className="text-muted-foreground">· {veiculo?.modelo ?? os.modelo ?? ""}</span>
                         </div>
                         {cliente && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer" onClick={() => navigate(`/admin/os/${os.id}`)}>                            
                             <User className="h-3 w-3" />{cliente.nomeCompleto ?? cliente.nome ?? "—"}
                           </div>
                         )}
@@ -126,7 +125,7 @@ export default function AdminPatio() {
                             Consultor: {colaborador.nome ?? "—"}
                           </div>
                         )}
-                        <div className="flex gap-1 pt-1" onClick={e => e.stopPropagation()}>
+                        <div className="flex gap-1 pt-1">
                           {STATUS_PREV[status] && (
                             <Button size="sm" variant="outline" className="h-6 px-2 text-xs flex-1"
                               onClick={() => handleMove(os.id, status, "prev")} disabled={updateStatus.isPending}>
