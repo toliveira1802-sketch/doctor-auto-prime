@@ -210,8 +210,8 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    // Redireciona para tela de seleção de perfil em vez de mostrar botão de login direto
-    window.location.replace("/selecionar-perfil");
+    // Redireciona para tela de login local
+    window.location.replace("/login");
     return null;
   }
 

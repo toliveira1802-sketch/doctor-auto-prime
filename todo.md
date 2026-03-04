@@ -236,3 +236,13 @@
 
 - [x] Adicionar "Melhorias" ao PERFIL_ACESSO: visível para consultor, admin, gestor
 - [x] Adicionar item "Melhorias" no grupo POMBAL do sidebar (após QG das IAs)
+
+## Logins com Senha (João, Pedro, Sophia)
+
+- [ ] Adicionar colunas username, senha_hash, primeiro_acesso na tabela colaboradores
+- [ ] Setar doctor_joao/123456, doctor_pedro/123456, doctor_sophia/123456 no banco
+- [ ] Marcar primeiroAcesso=true para Sophia
+- [ ] Tela de login: modo seleção rápida (sem senha) + modo login com usuário+senha
+- [ ] Rota POST /api/auth/local-login aceitar username+senha além de colaboradorId
+- [ ] Tela /trocar-senha: obrigatória no primeiro acesso antes de acessar o sistema
+- [ ] Rota POST /api/auth/change-password para atualizar senha e limpar primeiroAcesso

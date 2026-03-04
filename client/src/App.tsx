@@ -71,7 +71,7 @@ function Router() {
         <MecanicoView />
       </Route>
 
-      {/* Root: após OAuth callback redireciona para o perfil salvo, senão vai ao dashboard */}
+      {/* Root: redireciona para login se não houver perfil salvo */}
       <Route path="/">
         {() => {
           const perfilRedirect = sessionStorage.getItem("perfil_redirect");
@@ -80,7 +80,7 @@ function Router() {
             sessionStorage.removeItem("perfil_selecionado");
             window.location.replace(perfilRedirect);
           } else {
-            window.location.replace("/admin/dashboard");
+            window.location.replace("/login");
           }
           return null;
         }}

@@ -201,15 +201,16 @@ export default function TrelloMigracao() {
   };
 
   const { data: boardStatus, isLoading: loadingBoard } = trpc.trello.boardStatus.useQuery(undefined, {
-    refetchInterval: 60_000,
+    staleTime: 300_000,
+    refetchInterval: 300_000, // 5 minutos
   });
 
   const { data: cardsData, isLoading: loadingCards, refetch: refetchCards } = trpc.trello.fetchEntregues.useQuery(
     { incluirFevereiro },
-    { refetchOnWindowFocus: false }
+    { refetchOnWindowFocus: false, staleTime: 120_000 }
   );
 
-  const { data: historico } = trpc.trello.historico.useQuery();
+  const { data: historico } = trpc.trello.historico.useQuery(undefined, { staleTime: 120_000 });
 
   const gerarPlanilha = trpc.trello.gerarPlanilha.useMutation({
     onSuccess: (data) => {

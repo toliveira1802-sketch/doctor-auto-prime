@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE `01_colaboradores` ADD COLUMN IF NOT EXISTS `username` VARCHAR(100) NULL AFTER `email`;\n\nUPDATE `01_colaboradores` SET username = 'doctor_joao',   primeiroAcesso = 0 WHERE id = 6;\nUPDATE `01_colaboradores` SET username = 'doctor_pedro',  primeiroAcesso = 0 WHERE id = 5;\nUPDATE `01_colaboradores` SET username = 'doctor_sophia', primeiroAcesso = 1 WHERE id = 2;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nALTER TABLE `01_colaboradores` ADD COLUMN IF NOT EXISTS `username` VARCHAR(100) NULL AFTER `email`;\n\nUPDATE `01_colaboradores` SET username = 'doctor_joao',   primeiroAcesso = 0 WHERE id = 6;\nUPDATE `01_colaboradores` SET username = 'doctor_pedro',  primeiroAcesso = 0 WHERE id = 5;\nUPDATE `01_colaboradores` SET username = 'doctor_sophia', primeiroAcesso = 1 WHERE id = 2;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 770
+}
