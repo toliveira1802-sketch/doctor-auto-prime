@@ -200,3 +200,14 @@
 - [x] Remover campo senha do frontend Login.tsx
 - [x] Remover validação de senha na rota /api/auth/local-login
 - [x] Login por seleção de nome/perfil apenas (sem senha)
+
+## Lead Scoring Dashboard (QG das IAs)
+
+- [x] Schema: tabela lead_scores (leadId, score, tier, breakdown JSON, scoredAt, consultorId)
+- [x] Engine de scoring: 7 dimensões (valor, temperatura, engajamento, veículo, serviço, recência, completude de dados)
+- [x] Router: leadScoring.scoreLeads — pontuar leads em lote e salvar no banco
+- [x] Router: leadScoring.list — listar scores salvos com ranking e histórico
+- [x] Dashboard Lead Scoring no QG das IAs: KPIs, gráfico de temperatura (pizza), gráfico de tier (barras), radar de engajamento, ranking de leads
+- [x] Badges de tier: S (90+), A (75-89), B (55-74), C (35-54), D (<35)
+- [x] Filtro por consultor e tier
+- [x] Alerta automático para leads S-Tier (notificação owner)

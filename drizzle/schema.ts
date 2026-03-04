@@ -444,3 +444,32 @@ export const oficinaVagas = mysqlTable("20_oficina_vagas", {
   ativo: boolean("ativo").default(true),
 });
 export type OficinaVaga = typeof oficinaVagas.$inferSelect;
+
+// ─── 21_LEAD_SCORES ───────────────────────────────────────────────────────────
+// Pontuações de leads do Kommo geradas pela IA (Lead Scoring)
+export const leadScores = mysqlTable("21_lead_scores", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  leadName: varchar("leadName", { length: 255 }),
+  score: int("score").notNull(),                             // 0-100
+  tier: varchar("tier", { length: 2 }).notNull(),            // S, A, B, C, D
+  temperature: varchar("temperature", { length: 20 }),       // quente, morno, frio
+  serviceType: varchar("serviceType", { length: 30 }),       // rapido, medio, projeto, indefinido
+  resumo: text("resumo"),
+  nextAction: varchar("nextAction", { length: 50 }),         // schedule, handoff_consultant, nurture
+  // Score breakdown por dimensão
+  breakdownValor: int("breakdownValor").default(0),          // 0-20
+  breakdownTemperatura: int("breakdownTemperatura").default(0), // 0-25
+  breakdownEngajamento: int("breakdownEngajamento").default(0), // 0-20
+  breakdownVeiculo: int("breakdownVeiculo").default(0),      // 0-15
+  breakdownServico: int("breakdownServico").default(0),      // 0-10
+  breakdownRecencia: int("breakdownRecencia").default(0),    // 0-10
+  breakdownCompletude: int("breakdownCompletude").default(0),// 0-10
+  // Metadata
+  consultorId: int("consultorId"),
+  leadPrice: int("leadPrice").default(0),
+  leadCreatedAt: bigint("leadCreatedAt", { mode: "number" }),
+  scoredAt: timestamp("scoredAt").defaultNow(),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+export type LeadScore = typeof leadScores.$inferSelect;

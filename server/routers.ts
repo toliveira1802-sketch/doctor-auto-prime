@@ -25,6 +25,7 @@ import {
   trelloCardOverrides,
   veiculos,
   oficinaVagas,
+  leadScores,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -1799,6 +1800,182 @@ export const appRouter = router({
         return { connected: false, lists: [] };
       }
     }),
+  }),
+
+  // ─── LEAD SCORING ──────────────────────────────────────────────────────────
+  leadScoring: router({
+    // Listar todos os scores salvos com ranking
+    list: protectedProcedure
+      .input(z.object({
+        tier: z.string().optional(),
+        consultorId: z.number().optional(),
+        limit: z.number().default(50),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { scores: [], stats: null };
+        let query = db.select().from(leadScores).$dynamic();
+        if (input?.tier) query = query.where(eq(leadScores.tier, input.tier)) as any;
+        if (input?.consultorId) query = query.where(eq(leadScores.consultorId, input.consultorId)) as any;
+        const scores = await (query as any).orderBy(desc(leadScores.score)).limit(input?.limit ?? 50);
+        // Compute stats
+        const total = scores.length;
+        const byTier = { S: 0, A: 0, B: 0, C: 0, D: 0 } as Record<string, number>;
+        const byTemp = { quente: 0, morno: 0, frio: 0 } as Record<string, number>;
+        let totalScore = 0;
+        let totalValor = 0;
+        for (const s of scores) {
+          byTier[s.tier] = (byTier[s.tier] ?? 0) + 1;
+          if (s.temperature) byTemp[s.temperature] = (byTemp[s.temperature] ?? 0) + 1;
+          totalScore += s.score;
+          totalValor += s.leadPrice ?? 0;
+        }
+        return {
+          scores,
+          stats: {
+            total,
+            avgScore: total > 0 ? Math.round(totalScore / total) : 0,
+            totalValorEstimado: totalValor,
+            byTier,
+            byTemp,
+          },
+        };
+      }),
+
+    // Pontuar leads em lote via IA
+    scoreLeads: protectedProcedure
+      .input(z.object({
+        leads: z.array(z.object({
+          id: z.number(),
+          name: z.string(),
+          price: z.number().optional(),
+          temperature: z.string().optional(),
+          pipeline: z.string().optional(),
+          serviceType: z.string().optional(),
+          placa: z.string().optional(),
+          marca: z.string().optional(),
+          modelo: z.string().optional(),
+          lastMessage: z.string().optional(),
+          createdAt: z.number().optional(),
+          consultorId: z.number().optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { invokeLLM } = await import("./_core/llm");
+        const now = Date.now();
+        const results: any[] = [];
+
+        for (const lead of input.leads) {
+          try {
+            // Build scoring prompt
+            const prompt = `Você é um especialista em qualificação de leads para uma oficina automotiva premium (Doctor Auto Prime) especializada em VW e Audi.
+
+Analise este lead e retorne um JSON com a pontuação:
+
+Lead:
+- Nome: ${lead.name}
+- Valor estimado: R$ ${lead.price ?? 0}
+- Temperatura atual: ${lead.temperature ?? "desconhecida"}
+- Pipeline: ${lead.pipeline ?? "desconhecido"}
+- Tipo de serviço: ${lead.serviceType ?? "desconhecido"}
+- Veículo: ${lead.marca ?? ""} ${lead.modelo ?? ""} ${lead.placa ?? ""}
+- Última mensagem: ${lead.lastMessage ?? "sem mensagem"}
+- Criado há: ${lead.createdAt ? Math.round((now - lead.createdAt * 1000) / 86400000) : "?"} dias
+
+Regras de pontuação (total 0-100):
+1. Valor (0-20): R$0=0, R$500=5, R$1000=10, R$2000=15, R$3000+=20
+2. Temperatura (0-25): quente=25, morno=15, frio=5, desconhecido=8
+3. Engajamento (0-20): mensagem recente e detalhada=20, básica=10, sem mensagem=0
+4. Veículo (0-15): VW/Audi=15, Mercedes/BMW=12, outro premium=8, popular=4, desconhecido=0
+5. Serviço (0-10): remap/performance=10, diagnóstico=8, manutenção=6, indefinido=3
+6. Recência (0-10): criado hoje=10, 1-3 dias=8, 4-7 dias=5, 8-14 dias=3, 15+ dias=1
+7. Completude (0-10): todos os dados=10, maioria=7, poucos dados=3
+
+Retorne APENAS JSON válido:
+{
+  "score": <0-100>,
+  "tier": "<S|A|B|C|D>",
+  "temperature": "<quente|morno|frio>",
+  "serviceType": "<rapido|medio|projeto|indefinido>",
+  "resumo": "<1 frase explicando o score>",
+  "nextAction": "<schedule|handoff_consultant|nurture>",
+  "breakdown": {
+    "valor": <0-20>,
+    "temperatura": <0-25>,
+    "engajamento": <0-20>,
+    "veiculo": <0-15>,
+    "servico": <0-10>,
+    "recencia": <0-10>,
+    "completude": <0-10>
+  }
+}`;
+
+            const llmRes = await invokeLLM({
+              messages: [
+                { role: "system", content: "Você é um sistema de lead scoring. Retorne APENAS JSON válido, sem markdown, sem explicações." },
+                { role: "user", content: prompt },
+              ],
+              response_format: { type: "json_object" } as any,
+            });
+
+            const content = (llmRes.choices[0]?.message?.content ?? "{}") as string;
+            const parsed = JSON.parse(content);
+
+            const tier = parsed.tier ?? "D";
+            const score = Math.max(0, Math.min(100, parsed.score ?? 0));
+
+            // Upsert: delete old score for this lead, insert new
+            await db.delete(leadScores).where(eq(leadScores.leadId, lead.id));
+            await db.insert(leadScores).values({
+              leadId: lead.id,
+              leadName: lead.name,
+              score,
+              tier,
+              temperature: parsed.temperature ?? lead.temperature ?? "morno",
+              serviceType: parsed.serviceType ?? "indefinido",
+              resumo: parsed.resumo ?? "",
+              nextAction: parsed.nextAction ?? "nurture",
+              breakdownValor: parsed.breakdown?.valor ?? 0,
+              breakdownTemperatura: parsed.breakdown?.temperatura ?? 0,
+              breakdownEngajamento: parsed.breakdown?.engajamento ?? 0,
+              breakdownVeiculo: parsed.breakdown?.veiculo ?? 0,
+              breakdownServico: parsed.breakdown?.servico ?? 0,
+              breakdownRecencia: parsed.breakdown?.recencia ?? 0,
+              breakdownCompletude: parsed.breakdown?.completude ?? 0,
+              consultorId: lead.consultorId ?? null,
+              leadPrice: lead.price ?? 0,
+              leadCreatedAt: lead.createdAt ?? null,
+            });
+
+            results.push({ leadId: lead.id, score, tier, success: true });
+
+            // Notify owner for S-tier leads
+            if (tier === "S") {
+              const { notifyOwner } = await import("./_core/notification");
+              await notifyOwner({
+                title: `🔥 Lead S-Tier: ${lead.name}`,
+                content: `Score: ${score}/100 | ${parsed.resumo ?? ""} | Ação: ${parsed.nextAction ?? ""}`
+              }).catch(() => {});
+            }
+          } catch (err: any) {
+            results.push({ leadId: lead.id, score: 0, tier: "D", success: false, error: err.message });
+          }
+        }
+
+        return { results, total: results.length, success: results.filter((r) => r.success).length };
+      }),
+
+    // Deletar score de um lead
+    deleteScore: protectedProcedure
+      .input(z.object({ leadId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.delete(leadScores).where(eq(leadScores.leadId, input.leadId));
+        return { success: true };
+      }),
   }),
 
   // ─── MELHORIAS / SUGESTÕES ─────────────────────────────────────────────────
