@@ -5,6 +5,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerKommoRoutes } from "../kommoRoutes";
+import { registerLocalAuthRoutes } from "../localAuth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -38,6 +39,8 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Kommo OAuth routes
   registerKommoRoutes(app);
+  // Local email+password auth for colaboradores
+  registerLocalAuthRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

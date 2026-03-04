@@ -45,6 +45,7 @@ import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
 import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
 import SelecionarPerfil from "./pages/SelecionarPerfil";
 import MecanicoView from "./pages/MecanicoView";
+import Login from "./pages/Login";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -53,6 +54,11 @@ function WithLayout({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
+      {/* Login local por email+senha */}
+      <Route path="/login">
+        <Login />
+      </Route>
+
       {/* Tela de seleção de perfil (antes do login) */}
       <Route path="/selecionar-perfil">
         <SelecionarPerfil />

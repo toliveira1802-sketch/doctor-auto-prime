@@ -1,0 +1,38 @@
+{
+  "query": "\n-- Thales: Administrador (nivelAcessoId=1), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 1, email = 'thales@doctorauto.com', ativo = 1\nWHERE nome = 'Thales';\n\n-- Sofia/Sophia: Administrador (nivelAcessoId=1), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 1, email = 'sofia@doctorauto.com', ativo = 1\nWHERE nome = 'Sofia';\n\n-- Pedro: Consultor (nivelAcessoId=3), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 3, email = 'pedro@doctorauto.com', ativo = 1\nWHERE nome = 'Pedro';\n\n-- João: Consultor (nivelAcessoId=3), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 3, email = 'joao@doctorauto.com', ativo = 1\nWHERE nome = 'João';\n\n-- Verificar resultado\nSELECT id, nome, email, senha, nivelAcessoId FROM 01_colaboradores \nWHERE nome IN ('Thales', 'Sofia', 'Pedro', 'João');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \n-- Thales: Administrador (nivelAcessoId=1), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 1, email = 'thales@doctorauto.com', ativo = 1\nWHERE nome = 'Thales';\n\n-- Sofia/Sophia: Administrador (nivelAcessoId=1), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 1, email = 'sofia@doctorauto.com', ativo = 1\nWHERE nome = 'Sofia';\n\n-- Pedro: Consultor (nivelAcessoId=3), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 3, email = 'pedro@doctorauto.com', ativo = 1\nWHERE nome = 'Pedro';\n\n-- João: Consultor (nivelAcessoId=3), senha forte\nUPDATE 01_colaboradores \nSET senha = 'DocAuto@2026', nivelAcessoId = 3, email = 'joao@doctorauto.com', ativo = 1\nWHERE nome = 'João';\n\n-- Verificar resultado\nSELECT id, nome, email, senha, nivelAcessoId FROM 01_colaboradores \nWHERE nome IN ('Thales', 'Sofia', 'Pedro', 'João');\n",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "Thales",
+      "email": "thales@doctorauto.com",
+      "senha": "DocAuto@2026",
+      "nivelAcessoId": "1"
+    },
+    {
+      "id": "2",
+      "nome": "Sofia",
+      "email": "sofia@doctorauto.com",
+      "senha": "DocAuto@2026",
+      "nivelAcessoId": "1"
+    },
+    {
+      "id": "5",
+      "nome": "Pedro",
+      "email": "pedro@doctorauto.com",
+      "senha": "DocAuto@2026",
+      "nivelAcessoId": "3"
+    },
+    {
+      "id": "6",
+      "nome": "João",
+      "email": "joao@doctorauto.com",
+      "senha": "DocAuto@2026",
+      "nivelAcessoId": "3"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\temail\tsenha\tnivelAcessoId\n1\tThales\tthales@doctorauto.com\tDocAuto@2026\t1\n2\tSofia\tsofia@doctorauto.com\tDocAuto@2026\t1\n5\tPedro\tpedro@doctorauto.com\tDocAuto@2026\t3\n6\tJoão\tjoao@doctorauto.com\tDocAuto@2026\t3\n",
+  "stderr": "",
+  "execution_time_ms": 727
+}
