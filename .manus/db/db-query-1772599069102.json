@@ -1,0 +1,28 @@
+{
+  "query": "\nSELECT \n  os.id, os.numeroOs, os.status, os.placa, os.km,\n  c.nomeCompleto as cliente,\n  v.modelo as veiculo,\n  col.nome as consultor,\n  mec.nome as mecanico,\n  os.totalOrcamento,\n  os.motivoVisita,\n  os.primeiraVez\nFROM `09_ordens_servico` os\nJOIN `07_clientes` c ON c.id = os.clienteId\nJOIN `08_veiculos` v ON v.id = os.veiculoId\nLEFT JOIN `01_colaboradores` col ON col.id = os.colaboradorId\nLEFT JOIN `03_mecanicos` mec ON mec.id = os.mecanicoId\nORDER BY os.id DESC\nLIMIT 3;\n\nSELECT id, tipo, descricao, valorTotal, prioridade, status\nFROM `11_ordens_servico_itens`\nORDER BY id DESC\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nSELECT \n  os.id, os.numeroOs, os.status, os.placa, os.km,\n  c.nomeCompleto as cliente,\n  v.modelo as veiculo,\n  col.nome as consultor,\n  mec.nome as mecanico,\n  os.totalOrcamento,\n  os.motivoVisita,\n  os.primeiraVez\nFROM `09_ordens_servico` os\nJOIN `07_clientes` c ON c.id = os.clienteId\nJOIN `08_veiculos` v ON v.id = os.veiculoId\nLEFT JOIN `01_colaboradores` col ON col.id = os.colaboradorId\nLEFT JOIN `03_mecanicos` mec ON mec.id = os.mecanicoId\nORDER BY os.id DESC\nLIMIT 3;\n\nSELECT id, tipo, descricao, valorTotal, prioridade, status\nFROM `11_ordens_servico_itens`\nORDER BY id DESC\nLIMIT 5;\n",
+  "rows": [
+    {
+      "id": "1",
+      "numeroOs": "OS-00001",
+      "status": "Diagnóstico",
+      "placa": "BRA2E19",
+      "km": "45200",
+      "cliente": "Carlos Eduardo Mendes",
+      "veiculo": "Golf",
+      "consultor": "Pedro",
+      "mecanico": "Tadeu",
+      "totalOrcamento": "2150.00",
+      "motivoVisita": "Cliente relatou perda de potência e consumo elevado de combustível. Veículo com 45.200 km.",
+      "primeiraVez": "1"
+    }
+  ],
+  "messages": [
+    "id\ttipo\tdescricao\tvalorTotal\tprioridade\tstatus",
+    "2\tservico\tRemap Stage 1 - Golf GTI 2.0 TSI (230cv → 280cv)\t1800.00\talta\tpendente",
+    "1\tservico\tDiagnóstico Eletrônico VCDS + Leitura de Falhas\t350.00\talta\tpendente"
+  ],
+  "stdout": "id\tnumeroOs\tstatus\tplaca\tkm\tcliente\tveiculo\tconsultor\tmecanico\ttotalOrcamento\tmotivoVisita\tprimeiraVez\n1\tOS-00001\tDiagnóstico\tBRA2E19\t45200\tCarlos Eduardo Mendes\tGolf\tPedro\tTadeu\t2150.00\tCliente relatou perda de potência e consumo elevado de combustível. Veículo com 45.200 km.\t1\nid\ttipo\tdescricao\tvalorTotal\tprioridade\tstatus\n2\tservico\tRemap Stage 1 - Golf GTI 2.0 TSI (230cv → 280cv)\t1800.00\talta\tpendente\n1\tservico\tDiagnóstico Eletrônico VCDS + Leitura de Falhas\t350.00\talta\tpendente\n",
+  "stderr": "",
+  "execution_time_ms": 408
+}

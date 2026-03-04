@@ -530,33 +530,30 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) return null;
 
-        const [row] = await db
-          .select({ os: ordensServico, cliente: clientes, veiculo: veiculos, mecanico: mecanicos })
+            const [row] = await db
+          .select({ os: ordensServico, cliente: clientes, veiculo: veiculos, mecanico: mecanicos, colaborador: colaboradores })
           .from(ordensServico)
           .leftJoin(clientes, eq(ordensServico.clienteId, clientes.id))
           .leftJoin(veiculos, eq(ordensServico.veiculoId, veiculos.id))
           .leftJoin(mecanicos, eq(ordensServico.mecanicoId, mecanicos.id))
+          .leftJoin(colaboradores, eq(ordensServico.colaboradorId, colaboradores.id))
           .where(eq(ordensServico.id, input.id));
-
         if (!row) return null;
-
         const historico = await db
           .select()
           .from(osHistorico)
           .where(eq(osHistorico.ordemServicoId, input.id))
           .orderBy(desc(osHistorico.dataAlteracao));
-
         const itens = await db
           .select()
           .from(osItens)
           .where(eq(osItens.ordemServicoId, input.id));
-
         return {
           os: row.os,
           cliente: row.cliente,
           veiculo: row.veiculo,
-          mecanico: row.mecanico,
-          colaborador: null as null,
+          mecanico: row.mecanico ? { id: row.mecanico.id, nome: row.mecanico.nome, especialidade: row.mecanico.especialidade } : null,
+          colaborador: row.colaborador ? { id: row.colaborador.id, nome: row.colaborador.nome, cargo: row.colaborador.cargo } : null,
           historico,
           itens,
         };

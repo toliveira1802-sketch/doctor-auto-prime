@@ -1,0 +1,10 @@
+{
+  "query": "\nSELECT c.id as clienteId, c.nomeCompleto, v.id as veiculoId, v.placa, v.modelo\nFROM `07_clientes` c\nJOIN `08_veiculos` v ON v.clienteId = c.id\nWHERE c.nomeCompleto = 'Carlos Eduardo Mendes'\nLIMIT 1;\n\nSELECT id, nome, cargo FROM `02_colaboradores` WHERE cargo LIKE '%Consultor%' AND ativo = 1 LIMIT 5;\n\nSELECT id, nome, grauConhecimento FROM `06_mecanicos` WHERE ativo = 1 LIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nSELECT c.id as clienteId, c.nomeCompleto, v.id as veiculoId, v.placa, v.modelo\nFROM `07_clientes` c\nJOIN `08_veiculos` v ON v.clienteId = c.id\nWHERE c.nomeCompleto = 'Carlos Eduardo Mendes'\nLIMIT 1;\n\nSELECT id, nome, cargo FROM `02_colaboradores` WHERE cargo LIKE '%Consultor%' AND ativo = 1 LIMIT 5;\n\nSELECT id, nome, grauConhecimento FROM `06_mecanicos` WHERE ativo = 1 LIMIT 5;\n",
+  "returncode": 1,
+  "logs": [
+    "clienteId\tnomeCompleto\tveiculoId\tplaca\tmodelo",
+    "67231\tCarlos Eduardo Mendes\t30002\tBRA2E19\tGolf",
+    "ERROR 1146 (42S02) at line 8: Table 's6kxius3wp8dtxunacezmn.02_colaboradores' doesn't exist"
+  ]
+}

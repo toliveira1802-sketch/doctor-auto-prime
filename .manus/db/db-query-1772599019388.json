@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Insert real test client\nINSERT INTO `07_clientes` (empresaId, nomeCompleto, cpf, email, telefone, cidade, estado, origemCadastro)\nVALUES (1, 'Carlos Eduardo Mendes', '321.654.987-00', 'carlos.mendes@email.com', '(11) 99887-6655', 'São Paulo', 'SP', 'Indicação');\n\n-- Get the inserted client ID and insert vehicle\nINSERT INTO `08_veiculos` (clienteId, placa, marca, modelo, versao, ano, combustivel, ultimoKm, kmAtual, origemContato)\nVALUES (\n  (SELECT id FROM `07_clientes` WHERE nomeCompleto = 'Carlos Eduardo Mendes' ORDER BY id DESC LIMIT 1),\n  'BRA2E19',\n  'Volkswagen',\n  'Golf',\n  'GTI 2.0 TSI DSG',\n  2021,\n  'Gasolina',\n  45200,\n  45200,\n  'Indicação'\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \n-- Insert real test client\nINSERT INTO `07_clientes` (empresaId, nomeCompleto, cpf, email, telefone, cidade, estado, origemCadastro)\nVALUES (1, 'Carlos Eduardo Mendes', '321.654.987-00', 'carlos.mendes@email.com', '(11) 99887-6655', 'São Paulo', 'SP', 'Indicação');\n\n-- Get the inserted client ID and insert vehicle\nINSERT INTO `08_veiculos` (clienteId, placa, marca, modelo, versao, ano, combustivel, ultimoKm, kmAtual, origemContato)\nVALUES (\n  (SELECT id FROM `07_clientes` WHERE nomeCompleto = 'Carlos Eduardo Mendes' ORDER BY id DESC LIMIT 1),\n  'BRA2E19',\n  'Volkswagen',\n  'Golf',\n  'GTI 2.0 TSI DSG',\n  2021,\n  'Gasolina',\n  45200,\n  45200,\n  'Indicação'\n);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 420
+}

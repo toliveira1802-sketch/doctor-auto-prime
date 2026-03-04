@@ -1,0 +1,29 @@
+{
+  "query": "\nSELECT c.id as clienteId, c.nomeCompleto, v.id as veiculoId, v.placa, v.modelo\nFROM `07_clientes` c\nJOIN `08_veiculos` v ON v.clienteId = c.id\nWHERE c.nomeCompleto = 'Carlos Eduardo Mendes'\nLIMIT 1;\n\nSELECT id, nome, cargo FROM `01_colaboradores` WHERE cargo LIKE '%Consultor%' AND ativo = 1 LIMIT 5;\n\nSELECT id, nome, grauConhecimento FROM `03_mecanicos` WHERE ativo = 1 LIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nSELECT c.id as clienteId, c.nomeCompleto, v.id as veiculoId, v.placa, v.modelo\nFROM `07_clientes` c\nJOIN `08_veiculos` v ON v.clienteId = c.id\nWHERE c.nomeCompleto = 'Carlos Eduardo Mendes'\nLIMIT 1;\n\nSELECT id, nome, cargo FROM `01_colaboradores` WHERE cargo LIKE '%Consultor%' AND ativo = 1 LIMIT 5;\n\nSELECT id, nome, grauConhecimento FROM `03_mecanicos` WHERE ativo = 1 LIMIT 5;\n",
+  "rows": [
+    {
+      "clienteId": "67231",
+      "nomeCompleto": "Carlos Eduardo Mendes",
+      "veiculoId": "30002",
+      "placa": "BRA2E19",
+      "modelo": "Golf"
+    }
+  ],
+  "messages": [
+    "id\tnome\tcargo",
+    "5\tPedro\tConsultor de Vendas",
+    "6\tJoão\tConsultor de Vendas",
+    "7\tRony\tConsultor Técnico",
+    "8\tAntônio\tConsultor Técnico",
+    "id\tnome\tgrauConhecimento",
+    "1\tTadeu\tSênior",
+    "2\tJoão\tPleno",
+    "3\tPedro\tSênior",
+    "4\tAldo\tPleno",
+    "5\tSamuel\tJúnior"
+  ],
+  "stdout": "clienteId\tnomeCompleto\tveiculoId\tplaca\tmodelo\n67231\tCarlos Eduardo Mendes\t30002\tBRA2E19\tGolf\nid\tnome\tcargo\n5\tPedro\tConsultor de Vendas\n6\tJoão\tConsultor de Vendas\n7\tRony\tConsultor Técnico\n8\tAntônio\tConsultor Técnico\nid\tnome\tgrauConhecimento\n1\tTadeu\tSênior\n2\tJoão\tPleno\n3\tPedro\tSênior\n4\tAldo\tPleno\n5\tSamuel\tJúnior\n",
+  "stderr": "",
+  "execution_time_ms": 461
+}
