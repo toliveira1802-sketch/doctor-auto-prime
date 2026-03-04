@@ -91,3 +91,11 @@
 - [x] Aba Veículo: campo Última Revisão (data + km)
 - [x] Schema: adicionar ultimaRevisaoKm e ultimaRevisaoData em veículos
 - [x] Etiqueta de para-brisa: incluir Última Revisão nos dados gerados
+
+## Anexos de Mídia na OS (Em andamento)
+
+- [x] Schema: tabela os_anexos (id, ordemServicoId, url, fileKey, tipo, nomeArquivo, tamanho, createdAt)
+- [x] SQL migration: criar tabela os_anexos
+- [x] Router: osAnexos.upload (base64 → Buffer → S3), osAnexos.list, osAnexos.delete
+- [x] Componente OSAnexos: drag-and-drop, preview de imagens, player de vídeo, lightbox
+- [x] Integrar OSAnexos no AdminOSDetalhes como seção colapsável "Fotos & Vídeos do Veículo"

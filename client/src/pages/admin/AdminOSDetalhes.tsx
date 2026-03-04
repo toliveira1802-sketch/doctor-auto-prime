@@ -17,8 +17,9 @@ import {
   ArrowLeft, Save, Plus, Trash2, Phone, Car, User,
   DollarSign, FileText, Wrench, CheckCircle, XCircle,
   AlertTriangle, Clock, Loader2, Edit2, ClipboardCheck,
-  ChevronDown, ChevronUp, Send, Copy, Crown, Award, Medal, Star, Printer
+  ChevronDown, ChevronUp, Send, Copy, Crown, Award, Medal, Star, Printer, Camera
 } from "lucide-react";
+import OSAnexos from "@/components/OSAnexos";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 const prioridadeConfig: Record<string, { label: string; borderColor: string; bgColor: string }> = {
@@ -605,6 +606,24 @@ export default function AdminOSDetalhes() {
                         </div>
                       );
                     })}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* Fotos & Vídeos */}
+            <Collapsible defaultOpen>
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="pb-2 cursor-pointer hover:bg-slate-800/30 rounded-t-lg transition-colors">
+                    <CardTitle className="text-white text-sm flex items-center gap-2">
+                      <Camera className="h-4 w-4 text-orange-400" />Fotos & Vídeos do Veículo
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <OSAnexos ordemServicoId={osId} />
                   </CardContent>
                 </CollapsibleContent>
               </Card>

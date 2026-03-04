@@ -305,6 +305,18 @@ export const crm = mysqlTable("99_crm", {
 export type CrmRecord = typeof crm.$inferSelect;
 
 // ─── SYSTEM_CONFIG ───────────────────────────────────────────────────────────
+export const osAnexos = mysqlTable("14_os_anexos", {
+  id:               int("id").primaryKey().autoincrement(),
+  ordemServicoId:   int("ordem_servico_id").notNull(),
+  url:              varchar("url", { length: 1000 }).notNull(),
+  fileKey:          varchar("file_key", { length: 500 }).notNull(),
+  tipo:             varchar("tipo", { length: 20 }).notNull().default("imagem"), // imagem | video
+  nomeArquivo:      varchar("nome_arquivo", { length: 255 }),
+  tamanhoBytes:     int("tamanho_bytes"),
+  descricao:        varchar("descricao", { length: 500 }),
+  createdAt:        timestamp("created_at").defaultNow(),
+});
+
 export const mecanicoFeedback = mysqlTable("13_mecanico_feedback", {
   id: int("id").autoincrement().primaryKey(),
   mecanicoId: int("mecanicoId").notNull(),

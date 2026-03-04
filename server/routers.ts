@@ -17,6 +17,7 @@ import {
   recursos,
   servicosCatalogo,
   mecanicoFeedback,
+  osAnexos,
   systemConfig,
   veiculos,
 } from "../drizzle/schema";
@@ -24,6 +25,7 @@ import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { storagePut } from "./storage";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function getMonthRange(mes?: number, ano?: number) {
@@ -1124,7 +1126,7 @@ export const appRouter = router({
         return row ?? null;
       }),
 
-    set: protectedProcedure
+     set: protectedProcedure
       .input(z.object({ chave: z.string(), valor: z.string(), descricao: z.string().optional() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -1135,6 +1137,61 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
-});
 
+  // ─── OS ANEXOS (MÍDIA) ───────────────────────────────────────────────────────
+  osAnexos: router({
+    list: protectedProcedure
+      .input(z.object({ ordemServicoId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db.select().from(osAnexos)
+          .where(eq(osAnexos.ordemServicoId, input.ordemServicoId))
+          .orderBy(desc(osAnexos.createdAt));
+      }),
+
+    upload: protectedProcedure
+      .input(z.object({
+        ordemServicoId: z.number(),
+        nomeArquivo: z.string(),
+        tipo: z.enum(["imagem", "video"]),
+        mimeType: z.string(),
+        tamanhoBytes: z.number().optional(),
+        descricao: z.string().optional(),
+        base64: z.string(), // base64-encoded file content
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        // Decode base64 to Buffer
+        const buffer = Buffer.from(input.base64, "base64");
+        // Generate unique file key
+        const ext = input.nomeArquivo.split(".").pop() ?? "bin";
+        const randomSuffix = Math.random().toString(36).slice(2, 10);
+        const fileKey = `os-${input.ordemServicoId}/${Date.now()}-${randomSuffix}.${ext}`;
+        // Upload to S3
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        // Save metadata to DB
+        const result = await db.insert(osAnexos).values({
+          ordemServicoId: input.ordemServicoId,
+          url,
+          fileKey,
+          tipo: input.tipo,
+          nomeArquivo: input.nomeArquivo,
+          tamanhoBytes: input.tamanhoBytes,
+          descricao: input.descricao,
+        });
+        return { id: Number((result as any).insertId), url, fileKey };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.delete(osAnexos).where(eq(osAnexos.id, input.id));
+        return { success: true };
+      }),
+  }),
+});
 export type AppRouter = typeof appRouter;
