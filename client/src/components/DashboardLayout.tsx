@@ -61,23 +61,28 @@ import { Badge } from "./ui/badge";
 import { trpc } from "@/lib/trpc";
 
 // Mapeamento de itens visíveis por perfil
+// consultor = João Paulo, Pedro (operacional apenas)
+// gestor = Sophia Duarte (operacional + gestão)
+// admin = Thales Oliveira (tudo: operacional + gestão + dev)
 const PERFIL_ACESSO: Record<string, string[]> = {
-  "/admin/dashboard": ["consultor", "admin"],
-  "/admin/patio": ["consultor", "admin"],
-  "/admin/os": ["consultor", "admin"],
-  "/admin/agenda": ["consultor", "admin"],
-  "/admin/clientes": ["consultor", "admin"],
-  "/admin/financeiro": ["admin"],
-  "/admin/produtividade": ["admin"],
-  "/admin/mecanicos/analytics": ["admin"],
-  "/admin/mecanicos/feedback": ["consultor", "admin"],
+  // POMBAL — operacional (consultor, gestor, admin)
+  "/admin/dashboard": ["consultor", "gestor", "admin"],
+  "/admin/patio": ["consultor", "gestor", "admin"],
+  "/admin/os": ["consultor", "gestor", "admin"],
+  "/admin/agenda": ["consultor", "gestor", "admin"],
+  "/admin/clientes": ["consultor", "gestor", "admin"],
+  "/admin/financeiro": ["gestor", "admin"],
+  "/admin/produtividade": ["gestor", "admin"],
+  "/admin/mecanicos/analytics": ["gestor", "admin"],
+  "/admin/mecanicos/feedback": ["consultor", "gestor", "admin"],
   "/admin/configuracoes": ["admin"],
   "/admin/integracoes": ["admin"],
   "/admin/trello-migracao": ["admin"],
   "/admin/usuarios": ["admin"],
-  "/admin/agenda-mecanicos": ["consultor", "admin"],
-  "/admin/operacional": ["consultor", "admin"],
-  "/admin/ia-qg": ["admin"],
+  "/admin/agenda-mecanicos": ["consultor", "gestor", "admin"],
+  "/admin/operacional": ["consultor", "gestor", "admin"],
+  "/admin/ia-qg": ["gestor", "admin"],
+  // GESTÃO — estratégico (gestor, admin)
   "/gestao/visao-geral": ["gestor", "admin"],
   "/gestao/operacional": ["gestor", "admin"],
   "/gestao/financeiro": ["gestor", "admin"],
@@ -91,6 +96,7 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/gestao/rh": ["gestor", "admin"],
   "/gestao/operacoes": ["gestor", "admin"],
   "/gestao/tecnologia": ["gestor", "admin"],
+  // Dev — apenas admin (Thales)
   "/dev": ["admin"],
 };
 
@@ -248,11 +254,19 @@ function DashboardLayoutContent({
 
   // Filtra menu por perfil selecionado (salvo em sessionStorage)
   const perfilAtual = sessionStorage.getItem("perfil_selecionado") ?? "admin";
-  // Grupos ocultos no lançamento — visíveis apenas com flag de owner no localStorage
-  const HIDDEN_GROUPS = ["GESTÃO", "Dev"];
-  const showHiddenGroups = localStorage.getItem("dap_show_all") === "1";
+  // Grupos visíveis por perfil:
+  // consultor: apenas POMBAL
+  // gestor: POMBAL + GESTÃO
+  // admin: POMBAL + GESTÃO + Dev
+  const GROUPS_BY_PERFIL: Record<string, string[]> = {
+    consultor: ["POMBAL"],
+    gestor: ["POMBAL", "GESTÃO"],
+    admin: ["POMBAL", "GESTÃO", "Dev"],
+    mecanico: ["POMBAL"],
+  };
+  const allowedGroups = GROUPS_BY_PERFIL[perfilAtual] ?? ["POMBAL"];
   const filteredMenuItems = menuItems
-    .filter(group => showHiddenGroups || !HIDDEN_GROUPS.includes(group.group))
+    .filter(group => allowedGroups.includes(group.group))
     .map(group => ({
       ...group,
       items: group.items.filter(item => {
