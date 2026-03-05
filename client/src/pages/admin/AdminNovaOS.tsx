@@ -605,10 +605,10 @@ export default function AdminNovaOS() {
                   <Tag className="h-3.5 w-3.5 text-amber-500" />
                   Campanha / Promoção aplicada <span className="text-muted-foreground text-xs font-normal">(opcional)</span>
                 </Label>
-                <Select value={osForm.campanha} onValueChange={v => setOsForm(p => ({...p, campanha: v, veioDePromocao: !!v}))}>
+                <Select value={osForm.campanha || "__none__"} onValueChange={v => { const val = v === "__none__" ? "" : v; setOsForm(p => ({...p, campanha: val, veioDePromocao: !!val})); }}>
                   <SelectTrigger><SelectValue placeholder="Nenhuma campanha" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhuma</SelectItem>
+                    <SelectItem value="__none__">Nenhuma</SelectItem>
                     {CAMPANHAS.filter(c => c.includes("Promoção")).map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                   </SelectContent>
                 </Select>

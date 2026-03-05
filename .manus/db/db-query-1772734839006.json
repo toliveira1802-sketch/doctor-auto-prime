@@ -1,0 +1,64 @@
+{
+  "query": "SELECT v.id, v.clienteId, v.placa, v.marca, v.modelo, v.kmAtual, c.nomeCompleto FROM 08_veiculos v LEFT JOIN 07_clientes c ON v.clienteId = c.id ORDER BY v.id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT v.id, v.clienteId, v.placa, v.marca, v.modelo, v.kmAtual, c.nomeCompleto FROM 08_veiculos v LEFT JOIN 07_clientes c ON v.clienteId = c.id ORDER BY v.id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "60004",
+      "clienteId": "127298",
+      "placa": "EZC5B51",
+      "marca": "MERCEDES",
+      "modelo": "C180",
+      "kmAtual": "0",
+      "nomeCompleto": "MARCOS"
+    },
+    {
+      "id": "60003",
+      "clienteId": "127234",
+      "placa": "FNL1259",
+      "marca": "NISSAN",
+      "modelo": "LIVINA",
+      "kmAtual": "0",
+      "nomeCompleto": "VIDAL"
+    },
+    {
+      "id": "60002",
+      "clienteId": "127232",
+      "placa": "FDN4J55",
+      "marca": "VW",
+      "modelo": "FOX",
+      "kmAtual": "0",
+      "nomeCompleto": "FOX"
+    },
+    {
+      "id": "30002",
+      "clienteId": "67231",
+      "placa": "BRA2E19",
+      "marca": "Volkswagen",
+      "modelo": "Golf",
+      "kmAtual": "45200",
+      "nomeCompleto": "Carlos Eduardo Mendes"
+    },
+    {
+      "id": "2",
+      "clienteId": "7230",
+      "placa": "ERR4E88",
+      "marca": "VW",
+      "modelo": "PASSAT 2.0T FSI",
+      "kmAtual": "98000",
+      "nomeCompleto": "NELSON VOLPATO"
+    },
+    {
+      "id": "1",
+      "clienteId": "7230",
+      "placa": "ERR1B44",
+      "marca": "VW",
+      "modelo": "PASSAT CC 3.6 FSI",
+      "kmAtual": "125000",
+      "nomeCompleto": "NELSON VOLPATO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tclienteId\tplaca\tmarca\tmodelo\tkmAtual\tnomeCompleto\n60004\t127298\tEZC5B51\tMERCEDES\tC180\t0\tMARCOS\n60003\t127234\tFNL1259\tNISSAN\tLIVINA\t0\tVIDAL\n60002\t127232\tFDN4J55\tVW\tFOX\t0\tFOX\n30002\t67231\tBRA2E19\tVolkswagen\tGolf\t45200\tCarlos Eduardo Mendes\n2\t7230\tERR4E88\tVW\tPASSAT 2.0T FSI\t98000\tNELSON VOLPATO\n1\t7230\tERR1B44\tVW\tPASSAT CC 3.6 FSI\t125000\tNELSON VOLPATO\n",
+  "stderr": "",
+  "execution_time_ms": 456
+}

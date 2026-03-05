@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, nomeCompleto, telefone, email FROM 07_clientes ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, nomeCompleto, telefone, email FROM 07_clientes ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "157231",
+      "nomeCompleto": "DOUGLAS PACHECO DE MEDEIROS",
+      "telefone": "(11) 99480-5363",
+      "email": "NAOPEGAMOS@DOCTOR.COM.BR"
+    },
+    {
+      "id": "127347",
+      "nomeCompleto": "RAFAEL TAVARES VICENTE MARIA",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127346",
+      "nomeCompleto": "BRUNO STRADIOTTO",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127345",
+      "nomeCompleto": "RJH3F37 KICKS AZUL",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127344",
+      "nomeCompleto": "AVW7I75 GOLF GTI PRETA",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127343",
+      "nomeCompleto": "ELTON",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127342",
+      "nomeCompleto": "WAGNER DO SANTOS PINTO",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127341",
+      "nomeCompleto": "WILLIAN CORREIA",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127340",
+      "nomeCompleto": "ORIVALDO STENGER",
+      "telefone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "127339",
+      "nomeCompleto": "GISELE RIBEIRO",
+      "telefone": "NULL",
+      "email": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnomeCompleto\ttelefone\temail\n157231\tDOUGLAS PACHECO DE MEDEIROS\t(11) 99480-5363\tNAOPEGAMOS@DOCTOR.COM.BR\n127347\tRAFAEL TAVARES VICENTE MARIA\tNULL\tNULL\n127346\tBRUNO STRADIOTTO\tNULL\tNULL\n127345\tRJH3F37 KICKS AZUL\tNULL\tNULL\n127344\tAVW7I75 GOLF GTI PRETA\tNULL\tNULL\n127343\tELTON\tNULL\tNULL\n127342\tWAGNER DO SANTOS PINTO\tNULL\tNULL\n127341\tWILLIAN CORREIA\tNULL\tNULL\n127340\tORIVALDO STENGER\tNULL\tNULL\n127339\tGISELE RIBEIRO\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 373
+}

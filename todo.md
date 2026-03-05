@@ -277,3 +277,11 @@
 - [ ] Ao clicar no quadrado de perfil, exibir campo de senha simples
 - [ ] Senha por perfil: Consultor=1234, Administrador=1234, Gestão=1234, Mecânico=1234
 - [ ] Rota /api/auth/local-login-perfil valida senha por nivelAcessoId
+
+## Bug Fix: Fluxo Nova OS Step 2 → Step 3
+
+- [x] Corrigir clientes.create para retornar objeto completo (não só {id})
+- [x] Corrigir veiculos.create para retornar objeto completo com clienteId
+- [x] Garantir que veiculoSelecionado seja setado corretamente após criar novo veículo
+- [x] Corrigir SelectItem value="" no campo Campanha do Step 3 (causava crash ao avançar)
+- [x] Testar fluxo completo: cliente existente + veículo existente → Step 3 abre sem crash

@@ -576,12 +576,15 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-        const result = await db.insert(clientes).values({
+        const insertData = {
           ...input,
           empresaId: input.empresaId ?? 1,
           dataNascimento: input.dataNascimento ? new Date(input.dataNascimento) : undefined,
-        });
-        return { id: Number((result as any).insertId) };
+        };
+        const result = await db.insert(clientes).values(insertData);
+        const insertId = Number((result as any).insertId);
+        const [created] = await db.select().from(clientes).where(eq(clientes.id, insertId));
+        return created ?? { id: insertId, nomeCompleto: input.nomeCompleto, telefone: input.telefone ?? null, email: input.email ?? null, cpf: input.cpf ?? null, origemCadastro: input.origemCadastro ?? 'Sistema', empresaId: input.empresaId ?? 1 };
       }),
 
     update: protectedProcedure
@@ -646,7 +649,9 @@ export const appRouter = router({
           ...rest,
           ultimaRevisaoData: ultimaRevisaoData ? new Date(ultimaRevisaoData) as any : undefined,
         });
-        return { id: Number((result as any).insertId), placa: input.placa, kmAtual: input.kmAtual ?? 0, marca: input.marca, modelo: input.modelo, ano: input.ano };
+        const veiculoId = Number((result as any).insertId);
+        const [createdVeiculo] = await db.select().from(veiculos).where(eq(veiculos.id, veiculoId));
+        return createdVeiculo ?? { id: veiculoId, clienteId: input.clienteId, placa: input.placa, kmAtual: input.kmAtual ?? 0, marca: input.marca ?? null, modelo: input.modelo ?? null, ano: input.ano ?? null, combustivel: input.combustivel ?? null };
       }),
   }),
 
