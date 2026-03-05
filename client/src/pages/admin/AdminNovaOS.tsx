@@ -196,16 +196,28 @@ export default function AdminNovaOS() {
   };
 
   const handleCriarOS = () => {
+    const clienteId = Number(clienteSelecionado?.id);
+    const veiculoId = Number(veiculoSelecionado?.id);
+    const colaboradorId = parseInt(osForm.colaboradorId, 10);
+    const mecanicoId = parseInt(osForm.mecanicoId, 10);
+    const recursoId = parseInt(osForm.recursoId, 10);
+
+    if (isNaN(clienteId) || clienteId <= 0) { toast.error("Cliente inválido. Volte ao Step 1 e selecione o cliente novamente."); return; }
+    if (isNaN(veiculoId) || veiculoId <= 0) { toast.error("Veículo inválido. Volte ao Step 2 e selecione o veículo novamente."); return; }
+    if (isNaN(colaboradorId) || colaboradorId <= 0) { toast.error("Selecione o consultor responsável."); return; }
+    if (isNaN(mecanicoId) || mecanicoId <= 0) { toast.error("Selecione o mecânico."); return; }
+    if (isNaN(recursoId) || recursoId <= 0) { toast.error("Selecione o recurso/elevador."); return; }
+
     criarOS.mutate({
-      clienteId: clienteSelecionado.id,
-      veiculoId: veiculoSelecionado.id,
+      clienteId,
+      veiculoId,
       placa: veiculoSelecionado.placa,
       km: veiculoSelecionado.kmAtual || Number(veiculoForm.kmAtual) || 0,
       motivoVisita: osForm.motivoVisita,
       tipoServico1: osForm.tipoServico,
-      colaboradorId: parseInt(osForm.colaboradorId),
-      mecanicoId: parseInt(osForm.mecanicoId),
-      recursoId: parseInt(osForm.recursoId),
+      colaboradorId,
+      mecanicoId,
+      recursoId,
       observacoes: osForm.observacoes,
       primeiraVez: osForm.primeiraVez,
       veioDePromocao: osForm.veioDePromocao || !!osForm.campanha,

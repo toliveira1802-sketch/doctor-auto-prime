@@ -371,7 +371,7 @@ export default function AdminOSDetalhes() {
                       <Label className="text-slate-400 text-xs">Consultor</Label>
                       <Select
                         defaultValue={String(os.colaboradorId ?? "")}
-                        onValueChange={v => setEditedOS(p => ({ ...p, colaboradorId: parseInt(v) }))}
+                        onValueChange={v => setEditedOS(p => ({ ...p, colaboradorId: parseInt(v, 10) || undefined }))}
                       >
                         <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-8 text-xs mt-1">
                           <SelectValue placeholder="Selecionar" />
@@ -421,7 +421,7 @@ export default function AdminOSDetalhes() {
                       <Label className="text-slate-400 text-xs">Mecânico</Label>
                       <Select
                         defaultValue={String(os.mecanicoId ?? "")}
-                        onValueChange={v => setEditedOS(p => ({ ...p, mecanicoId: parseInt(v) }))}
+                        onValueChange={v => setEditedOS(p => ({ ...p, mecanicoId: parseInt(v, 10) || undefined }))}
                       >
                         <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-8 text-xs mt-1">
                           <SelectValue placeholder="Selecionar mecânico" />

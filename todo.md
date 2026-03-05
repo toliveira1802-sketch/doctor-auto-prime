@@ -285,3 +285,12 @@
 - [x] Garantir que veiculoSelecionado seja setado corretamente após criar novo veículo
 - [x] Corrigir SelectItem value="" no campo Campanha do Step 3 (causava crash ao avançar)
 - [x] Testar fluxo completo: cliente existente + veículo existente → Step 3 abre sem crash
+
+## Bug Fix: clienteId chegando como NaN no fluxo Nova OS
+
+- [x] Auditar clientes.list no servidor — validar que clienteId NaN não executa query
+- [x] Auditar veiculos.list no servidor — validar que clienteId NaN não executa query
+- [x] Auditar os.create no servidor — guard isNaN(clienteId) e isNaN(veiculoId) adicionado
+- [x] Auditar frontend AdminNovaOS — handleCriarOS com guards isNaN em todos os ids
+- [x] Corrigir parseInt sem radix em AdminOSDetalhes (colaboradorId, mecanicoId)
+- [x] Testar TypeScript — sem erros após correções

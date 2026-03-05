@@ -777,8 +777,10 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
-
-        // Generate OS number: DAP-YYYYMM-XXXX
+        // Guard against NaN ids that can arrive from frontend parseInt on empty strings
+        if (!input.clienteId || isNaN(input.clienteId) || input.clienteId <= 0) throw new Error("clienteId inválido");
+        if (!input.veiculoId || isNaN(input.veiculoId) || input.veiculoId <= 0) throw new Error("veiculoId inválido");
+        // Generate OS number: DAP-YYYYMM-XXXXX
         const now = new Date();
         const prefix = `DAP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
         const [lastOs] = await db
