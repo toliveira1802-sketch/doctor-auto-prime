@@ -31,6 +31,7 @@ import AdminAgendaMecanicos from "./pages/admin/AdminAgendaMecanicos";
 
 // Gestão pages
 import GestaoVisaoGeral from "./pages/gestao/GestaoVisaoGeral";
+import GestaoOSUltimate from "./pages/gestao/GestaoOSUltimate";
 import GestaoOperacional from "./pages/gestao/GestaoOperacional";
 import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
 import GestaoProdutividade from "./pages/gestao/GestaoProdutividade";
@@ -160,6 +161,10 @@ function Router() {
       </Route>
 
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}
+      <Route path="/gestao/os-ultimate">
+        <WithLayout><GestaoOSUltimate /></WithLayout>
+      </Route>
+
       <Route path="/gestao/visao-geral">
         <WithLayout><GestaoVisaoGeral /></WithLayout>
       </Route>

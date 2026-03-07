@@ -301,3 +301,16 @@
 - [x] Remover redirect para /login no App.tsx nas rotas /admin e /gestao
 - [x] Manter o sistema de sessão funcionando para quem quiser logar
 - [x] Testar acesso direto sem login — dashboard abre sem autenticação
+
+## Feature: OS Ultimate (Gestão)
+
+- [x] Criar página GestaoOSUltimate.tsx com painel gerencial completo
+- [x] KPIs: total OS abertas, em execução, aguardando aprovação, prontas, ticket médio, faturamento mês
+- [x] Funil de status visual (Diagnóstico → Orçamento → Aprovado → Em Execução → Pronto → Entregue)
+- [x] Tabela completa de OS com filtros por status, consultor, mecânico
+- [x] Ranking de mecânicos com qtde OS, valor gerado e placas ao clicar
+- [x] Alertas: OS paradas há mais de 48h, orçamentos sem aprovação há mais de 24h
+- [x] Mix de serviços: Rápido / Médio / Demorado / Projeto com valores e metas
+- [x] Filtro por consultor (Pedro, João, Thales)
+- [x] Registrar rota /gestao/os-ultimate no App.tsx
+- [x] Adicionar item "OS Ultimate" no menu GESTÃO do DashboardLayout

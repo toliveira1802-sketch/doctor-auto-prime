@@ -83,6 +83,7 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/admin/operacional": ["consultor", "gestor", "admin"],
   "/admin/ia-qg": ["gestor", "admin"],
   // GESTÃO — estratégico (gestor, admin)
+  "/gestao/os-ultimate": ["gestor", "admin"],
   "/gestao/visao-geral": ["gestor", "admin"],
   "/gestao/operacional": ["gestor", "admin"],
   "/gestao/financeiro": ["gestor", "admin"],
@@ -168,6 +169,7 @@ const menuItems: MenuGroup[] = [
   {
     group: "GESTÃO",
     items: [
+      { icon: FileText, label: "OS Ultimate", path: "/gestao/os-ultimate" },
       { icon: TrendingUp, label: "Visão Geral", path: "/gestao/visao-geral" },
       { icon: Wrench, label: "Operacional", path: "/gestao/operacional" },
       { icon: DollarSign, label: "Financeiro", path: "/gestao/financeiro" },
