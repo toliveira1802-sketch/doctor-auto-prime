@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, tokenType, expiresAt, baseDomain, LEFT(accessToken, 20) as accessTokenPreview, LEFT(refreshToken, 20) as refreshTokenPreview FROM kommoTokens LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, tokenType, expiresAt, baseDomain, LEFT(accessToken, 20) as accessTokenPreview, LEFT(refreshToken, 20) as refreshTokenPreview FROM kommoTokens LIMIT 1;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 's6kxius3wp8dtxunacezmn.kommoTokens' doesn't exist"
+  ]
+}

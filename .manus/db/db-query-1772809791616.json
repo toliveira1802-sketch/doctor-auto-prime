@@ -1,0 +1,22 @@
+{
+  "query": "SHOW TABLES LIKE '%kommo%'; SHOW TABLES LIKE '%token%'; SHOW TABLES LIKE '%integration%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SHOW TABLES LIKE '%kommo%'; SHOW TABLES LIKE '%token%'; SHOW TABLES LIKE '%integration%';",
+  "rows": [
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (%kommo%)": "15_kommo_tokens"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (%kommo%)": "16_kommo_leads"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (%kommo%)": "Tables_in_S6kXiUs3wP8DTXUNAceZmN (%token%)"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (%kommo%)": "15_kommo_tokens"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_S6kXiUs3wP8DTXUNAceZmN (%kommo%)\n15_kommo_tokens\n16_kommo_leads\nTables_in_S6kXiUs3wP8DTXUNAceZmN (%token%)\n15_kommo_tokens\n",
+  "stderr": "",
+  "execution_time_ms": 537
+}

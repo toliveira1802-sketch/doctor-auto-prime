@@ -294,3 +294,10 @@
 - [x] Auditar frontend AdminNovaOS — handleCriarOS com guards isNaN em todos os ids
 - [x] Corrigir parseInt sem radix em AdminOSDetalhes (colaboradorId, mecanicoId)
 - [x] Testar TypeScript — sem erros após correções
+
+## Remover Login Obrigatório do Site
+
+- [x] Remover guard de autenticação do DashboardLayout (não redirecionar para login)
+- [x] Remover redirect para /login no App.tsx nas rotas /admin e /gestao
+- [x] Manter o sistema de sessão funcionando para quem quiser logar
+- [x] Testar acesso direto sem login — dashboard abre sem autenticação
