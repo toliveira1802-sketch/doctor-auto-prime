@@ -314,3 +314,12 @@
 - [x] Filtro por consultor (Pedro, João, Thales)
 - [x] Registrar rota /gestao/os-ultimate no App.tsx
 - [x] Adicionar item "OS Ultimate" no menu GESTÃO do DashboardLayout
+
+## Feature: Filtro de Período na OS Ultimate
+
+- [x] Adicionar seletor de mês/ano no topo da OS Ultimate (padrão = mês vigente)
+- [x] Filtrar KPIs pelo período selecionado (dataEntrada >= início do mês)
+- [x] Filtrar funil de status pelo período
+- [x] Filtrar ranking de mecânicos pelo período
+- [x] Filtrar tabela de OS pelo período
+- [x] Faturamento mês: usar dataSaida dentro do período para OS Entregues
