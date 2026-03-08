@@ -376,3 +376,31 @@
 - [x] Cliente: card na tela de seleção (portal separado em breve)
 - [x] Painel DEV: aba Controle de Acesso com credenciais, matriz de visibilidade e permissões por role
 - [x] Indicador de role ativo no rodapé do sidebar (badge colorido + botão Trocar Perfil)
+
+## Feature: Login com Usuário+Senha por Perfil
+
+- [ ] Remover card Cliente da tela de seleção de perfil
+- [ ] Adicionar colunas username, senhaHash, primeiroAcesso na tabela colaboradores
+- [ ] Criar usuários iniciais: gestao_sophia/123456, consultor_pedro/123456, consultor_joao/123456, mecanico_thales/123456, etc.
+- [ ] Procedure auth.loginUsuario: validar username+senha, retornar role+primeiroAcesso
+- [ ] Tela de login: campo username + senha (sem card de seleção)
+- [ ] Fluxo de troca obrigatória de senha no primeiro acesso (/trocar-senha)
+- [ ] Procedure auth.trocarSenha: atualizar senhaHash + limpar primeiroAcesso
+- [ ] Tabela de usuários no Painel DEV: nome, username, senha inicial, senha atual, reset, alterar
+- [ ] Botão Resetar Senha no Painel DEV: volta para 123456 + marca primeiroAcesso=true
+- [ ] Botão Alterar Senha no Painel DEV: define nova senha diretamente
+- [ ] Testar login de todos os perfis (gestao, consultor, mecanico, dev)
+
+## Sistema de Login com Banco de Dados (Concluído)
+
+- [x] auth.roleLogin refatorado: autentica pelo banco de dados (tabela 01_colaboradores)
+- [x] Mapeamento nivelAcessoId → role do sistema (dev/gestao/consultor/mecanico/cliente)
+- [x] Login retorna colaboradorId e primeiroAcesso para controle de fluxo
+- [x] RoleContext atualizado: campos colaboradorId e primeiroAcesso no tipo RoleInfo
+- [x] SelecionarPerfil.tsx reescrito: formulário username+senha, redireciona para /trocar-senha se primeiroAcesso=true
+- [x] TrocarSenha.tsx reescrito: usa tRPC (usuarios.trocarSenhaPropria), valida senha atual, confirma nova senha
+- [x] Procedures tRPC: usuarios.list, usuarios.resetSenha, usuarios.alterarSenha, usuarios.trocarSenhaPropria, usuarios.criarUsuario, usuarios.toggleAtivo
+- [x] Aba "Usuários" no Painel DEV: tabela com nome, username, nível, status senha, 1º acesso, ativo/inativo
+- [x] Ações na tabela: Reset (volta para 123456 + marca primeiroAcesso=true), Alterar senha (Dev define nova senha), Ativar/Desativar usuário
+- [x] Dialog "Criar Usuário": nome, cargo, username, nível de acesso — senha inicial 123456
+- [x] Usernames configurados no banco: Dev_thales, gestao_sophia, gestao_francisco, gestao_marcia, gestao_simone, consultor_pedro, consultor_joao, consultor_rony, consultor_antonio

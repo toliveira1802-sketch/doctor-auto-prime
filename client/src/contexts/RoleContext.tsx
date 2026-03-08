@@ -6,6 +6,8 @@ interface RoleInfo {
   role: Role;
   nome: string;
   login: string;
+  colaboradorId?: number;
+  primeiroAcesso?: boolean;
 }
 
 interface RoleContextValue {

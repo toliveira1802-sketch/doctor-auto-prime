@@ -1,0 +1,100 @@
+{
+  "query": "SELECT id, nome, cargo, username, senha, primeiroAcesso, nivelAcessoId, ativo FROM 01_colaboradores ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, nome, cargo, username, senha, primeiroAcesso, nivelAcessoId, ativo FROM 01_colaboradores ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "Thales Oliveira",
+      "cargo": "Sócio / Diretor Técnico",
+      "username": "Thales_doctor",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "1",
+      "ativo": "1"
+    },
+    {
+      "id": "2",
+      "nome": "Sophia Duarte",
+      "cargo": "Gestão / Administração",
+      "username": "Sophia_doctor",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "2",
+      "ativo": "1"
+    },
+    {
+      "id": "3",
+      "nome": "Francisco",
+      "cargo": "Gestão / Financeiro",
+      "username": "NULL",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "2",
+      "ativo": "1"
+    },
+    {
+      "id": "4",
+      "nome": "Márcia",
+      "cargo": "Coordenação Interna",
+      "username": "NULL",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "2",
+      "ativo": "1"
+    },
+    {
+      "id": "5",
+      "nome": "Pedro",
+      "cargo": "Consultor de Vendas",
+      "username": "Pedro_doctor",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "3",
+      "ativo": "1"
+    },
+    {
+      "id": "6",
+      "nome": "João Paulo",
+      "cargo": "Consultor de Vendas",
+      "username": "Joao_doctor",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "3",
+      "ativo": "1"
+    },
+    {
+      "id": "7",
+      "nome": "Rony",
+      "cargo": "Consultor Técnico",
+      "username": "NULL",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "3",
+      "ativo": "1"
+    },
+    {
+      "id": "8",
+      "nome": "Antônio",
+      "cargo": "Consultor Técnico",
+      "username": "NULL",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "3",
+      "ativo": "1"
+    },
+    {
+      "id": "30002",
+      "nome": "Simone",
+      "cargo": "Coordenação Interna",
+      "username": "NULL",
+      "senha": "123456",
+      "primeiroAcesso": "1",
+      "nivelAcessoId": "1",
+      "ativo": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\tcargo\tusername\tsenha\tprimeiroAcesso\tnivelAcessoId\tativo\n1\tThales Oliveira\tSócio / Diretor Técnico\tThales_doctor\t123456\t1\t1\t1\n2\tSophia Duarte\tGestão / Administração\tSophia_doctor\t123456\t1\t2\t1\n3\tFrancisco\tGestão / Financeiro\tNULL\t123456\t1\t2\t1\n4\tMárcia\tCoordenação Interna\tNULL\t123456\t1\t2\t1\n5\tPedro\tConsultor de Vendas\tPedro_doctor\t123456\t1\t3\t1\n6\tJoão Paulo\tConsultor de Vendas\tJoao_doctor\t123456\t1\t3\t1\n7\tRony\tConsultor Técnico\tNULL\t123456\t1\t3\t1\n8\tAntônio\tConsultor Técnico\tNULL\t123456\t1\t3\t1\n30002\tSimone\tCoordenação Interna\tNULL\t123456\t1\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 441
+}

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, tipoUsuario, nivelAcesso FROM 02_nivelDeAcesso ORDER BY nivelAcesso;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, tipoUsuario, nivelAcesso FROM 02_nivelDeAcesso ORDER BY nivelAcesso;",
+  "rows": [
+    {
+      "id": "5",
+      "tipoUsuario": "Cliente",
+      "nivelAcesso": "1"
+    },
+    {
+      "id": "6",
+      "tipoUsuario": "Terceirizado",
+      "nivelAcesso": "1"
+    },
+    {
+      "id": "4",
+      "tipoUsuario": "Mecânico",
+      "nivelAcesso": "2"
+    },
+    {
+      "id": "3",
+      "tipoUsuario": "Consultor Técnico",
+      "nivelAcesso": "5"
+    },
+    {
+      "id": "2",
+      "tipoUsuario": "Gestão",
+      "nivelAcesso": "8"
+    },
+    {
+      "id": "1",
+      "tipoUsuario": "Direção",
+      "nivelAcesso": "10"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttipoUsuario\tnivelAcesso\n5\tCliente\t1\n6\tTerceirizado\t1\n4\tMecânico\t2\n3\tConsultor Técnico\t5\n2\tGestão\t8\n1\tDireção\t10\n",
+  "stderr": "",
+  "execution_time_ms": 352
+}

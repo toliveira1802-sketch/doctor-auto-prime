@@ -13,8 +13,10 @@ import {
   CheckCircle2, XCircle, AlertCircle, Copy, Eye, EyeOff, Code2,
   Webhook, MessageSquare, Bot, BarChart3, Shield, Server, ScrollText,
   Filter, Eraser, Info, ChevronDown, ChevronRight, Users, Lock, Unlock,
-  UserCheck, Wrench, ShoppingBag, Crown, Key
+  UserCheck, Wrench, ShoppingBag, Crown, Key, RotateCcw, UserPlus, Pencil,
+  Power, PowerOff
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -253,6 +255,7 @@ export default function DevPanel() {
           <TabsTrigger value="banco" className="gap-1"><Database className="w-3.5 h-3.5" />Banco de Dados</TabsTrigger>
           <TabsTrigger value="logs" className="gap-1"><ScrollText className="w-3.5 h-3.5" />Logs</TabsTrigger>
           <TabsTrigger value="acesso" className="gap-1"><Shield className="w-3.5 h-3.5" />Controle de Acesso</TabsTrigger>
+          <TabsTrigger value="usuarios" className="gap-1"><Users className="w-3.5 h-3.5" />Usuários</TabsTrigger>
         </TabsList>
 
         {/* ─── FEATURE FLAGS ─────────────────────────────────────────────────── */}
@@ -751,7 +754,265 @@ export default function DevPanel() {
           </Card>
         </TabsContent>
 
+        {/* ─── USUÁRIOS ──────────────────────────────────────────────────────────── */}
+        <TabsContent value="usuarios" className="mt-4 space-y-4">
+          <UsuariosTab />
+        </TabsContent>
+
       </Tabs>
+    </div>
+  );
+}
+
+// ─── USUARIOS TAB ─────────────────────────────────────────────────────────────
+const NIVEL_LABEL: Record<number, { label: string; cor: string }> = {
+  1: { label: "Dev / Direção", cor: "text-violet-400" },
+  2: { label: "Gestão", cor: "text-blue-400" },
+  3: { label: "Consultor", cor: "text-emerald-400" },
+  4: { label: "Mecânico", cor: "text-amber-400" },
+  5: { label: "Cliente", cor: "text-sky-400" },
+  6: { label: "Terceirizado", cor: "text-orange-400" },
+};
+
+function UsuariosTab() {
+  const { data: usuarios = [], refetch } = trpc.usuarios.list.useQuery();
+  const resetSenha = trpc.usuarios.resetSenha.useMutation({ onSuccess: () => { refetch(); toast.success("Senha resetada para 123456!"); } });
+  const alterarSenha = trpc.usuarios.alterarSenha.useMutation({ onSuccess: () => { setDialogAlterar(null); refetch(); toast.success("Senha alterada com sucesso!"); } });
+  const criarUsuario = trpc.usuarios.criarUsuario.useMutation({ onSuccess: () => { setDialogCriar(false); refetch(); toast.success("Usuário criado!"); } });
+  const toggleAtivo = trpc.usuarios.toggleAtivo.useMutation({ onSuccess: () => { refetch(); toast.success("Status atualizado!"); } });
+
+  const [dialogAlterar, setDialogAlterar] = useState<{ id: number; nome: string } | null>(null);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [showNovaSenha, setShowNovaSenha] = useState(false);
+  const [dialogCriar, setDialogCriar] = useState(false);
+  const [novoNome, setNovoNome] = useState("");
+  const [novoCargo, setNovoCargo] = useState("");
+  const [novoUsername, setNovoUsername] = useState("");
+  const [novoNivel, setNovoNivel] = useState(3);
+
+  const handleAlterar = () => {
+    if (!dialogAlterar || !novaSenha.trim()) return;
+    alterarSenha.mutate({ id: dialogAlterar.id, novaSenha });
+  };
+
+  const handleCriar = () => {
+    if (!novoNome.trim() || !novoUsername.trim()) { toast.error("Nome e username são obrigatórios"); return; }
+    criarUsuario.mutate({ nome: novoNome, cargo: novoCargo, username: novoUsername, nivelAcessoId: novoNivel, empresaId: 1 });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-zinc-400 text-sm">Gerencie os usuários do sistema. Somente o Dev pode resetar ou alterar senhas.</p>
+        <Button size="sm" className="bg-violet-600 hover:bg-violet-700 gap-1" onClick={() => { setNovoNome(""); setNovoCargo(""); setNovoUsername(""); setNovoNivel(3); setDialogCriar(true); }}>
+          <UserPlus className="w-3.5 h-3.5" /> Novo Usuário
+        </Button>
+      </div>
+
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Nome</th>
+                  <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Username (login)</th>
+                  <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Nível / Role</th>
+                  <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">Senha Padrão</th>
+                  <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">1º Acesso</th>
+                  <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">Status</th>
+                  <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {usuarios.map((u) => {
+                  const nivel = NIVEL_LABEL[u.nivelAcessoId ?? 5] ?? { label: "Desconhecido", cor: "text-zinc-400" };
+                  const senhaEhPadrao = u.senha === "123456";
+                  return (
+                    <tr key={u.id} className={`hover:bg-zinc-800/40 transition-colors ${!u.ativo ? "opacity-50" : ""}`}>
+                      <td className="px-4 py-3">
+                        <p className="text-white font-medium">{u.nome}</p>
+                        {u.cargo && <p className="text-zinc-500 text-xs">{u.cargo}</p>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <code className="text-violet-300 text-xs bg-zinc-800 px-2 py-0.5 rounded">{u.username ?? "—"}</code>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-medium ${nivel.cor}`}>{nivel.label}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {senhaEhPadrao
+                          ? <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">123456</Badge>
+                          : <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">Personalizada</Badge>}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {u.primeiroAcesso
+                          ? <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">Pendente</Badge>
+                          : <Badge className="bg-zinc-700/50 text-zinc-400 border-zinc-600/30 text-xs">Concluído</Badge>}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {u.ativo
+                          ? <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">Ativo</Badge>
+                          : <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">Inativo</Badge>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-amber-400 hover:bg-amber-500/10"
+                            title="Resetar senha para 123456"
+                            onClick={() => resetSenha.mutate({ id: u.id })}
+                            disabled={resetSenha.isPending}
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-violet-400 hover:bg-violet-500/10"
+                            title="Alterar senha"
+                            onClick={() => { setDialogAlterar({ id: u.id, nome: u.nome }); setNovaSenha(""); setShowNovaSenha(false); }}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className={`h-7 w-7 ${u.ativo ? "text-red-400 hover:bg-red-500/10" : "text-emerald-400 hover:bg-emerald-500/10"}`}
+                            title={u.ativo ? "Desativar usuário" : "Ativar usuário"}
+                            onClick={() => toggleAtivo.mutate({ id: u.id, ativo: !u.ativo })}
+                            disabled={toggleAtivo.isPending}
+                          >
+                            {u.ativo ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Legenda */}
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardContent className="p-4">
+          <p className="text-zinc-400 text-xs font-semibold mb-3">Legenda de Ações</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex items-center gap-2">
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-zinc-400 text-xs"><strong className="text-amber-400">Reset:</strong> Volta senha para 123456 e marca como 1º acesso pendente</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Pencil className="w-3.5 h-3.5 text-violet-400" />
+              <span className="text-zinc-400 text-xs"><strong className="text-violet-400">Alterar:</strong> Dev define nova senha diretamente</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <PowerOff className="w-3.5 h-3.5 text-red-400" />
+              <span className="text-zinc-400 text-xs"><strong className="text-red-400">Ativar/Desativar:</strong> Bloqueia ou libera acesso do usuário</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialog: Alterar Senha */}
+      <Dialog open={!!dialogAlterar} onOpenChange={(o) => !o && setDialogAlterar(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-4 h-4 text-violet-400" />
+              Alterar Senha — {dialogAlterar?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label className="text-zinc-400 text-sm">Nova senha</Label>
+            <div className="relative">
+              <Input
+                type={showNovaSenha ? "text" : "password"}
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Mínimo 4 caracteres"
+                className="bg-zinc-800 border-zinc-700 text-white pr-10"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowNovaSenha(!showNovaSenha)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              >
+                {showNovaSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-zinc-500 text-xs">A flag de 1º acesso será removida automaticamente.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogAlterar(null)}>Cancelar</Button>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={handleAlterar}
+              disabled={!novaSenha.trim() || alterarSenha.isPending}
+            >
+              {alterarSenha.isPending ? "Salvando..." : "Salvar Senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Criar Usuário */}
+      <Dialog open={dialogCriar} onOpenChange={setDialogCriar}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-violet-400" />
+              Criar Novo Usuário
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-zinc-400 text-sm">Nome completo *</Label>
+              <Input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Ex: João Silva" className="bg-zinc-800 border-zinc-700 text-white mt-1" />
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-sm">Cargo</Label>
+              <Input value={novoCargo} onChange={(e) => setNovoCargo(e.target.value)} placeholder="Ex: Consultor de Vendas" className="bg-zinc-800 border-zinc-700 text-white mt-1" />
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-sm">Username (login) *</Label>
+              <Input value={novoUsername} onChange={(e) => setNovoUsername(e.target.value)} placeholder="Ex: consultor_joao" className="bg-zinc-800 border-zinc-700 text-white mt-1 font-mono" />
+              <p className="text-zinc-600 text-xs mt-1">Formato: role_nome (ex: gestao_sophia, consultor_pedro)</p>
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-sm">Nível de Acesso</Label>
+              <Select value={String(novoNivel)} onValueChange={(v) => setNovoNivel(Number(v))}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectItem value="1">Dev / Direção</SelectItem>
+                  <SelectItem value="2">Gestão</SelectItem>
+                  <SelectItem value="3">Consultor</SelectItem>
+                  <SelectItem value="4">Mecânico</SelectItem>
+                  <SelectItem value="5">Cliente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-zinc-500 text-xs">Senha inicial: <code className="text-amber-400">123456</code> — usuário será obrigado a trocar no 1º acesso.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogCriar(false)}>Cancelar</Button>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={handleCriar}
+              disabled={!novoNome.trim() || !novoUsername.trim() || criarUsuario.isPending}
+            >
+              {criarUsuario.isPending ? "Criando..." : "Criar Usuário"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

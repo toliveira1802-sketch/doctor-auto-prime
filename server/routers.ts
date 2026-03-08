@@ -61,22 +61,159 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
-    // Login local por role (sem OAuth)
+    // Login local por role — autentica pelo banco de dados
     roleLogin: publicProcedure
       .input(z.object({ login: z.string(), senha: z.string() }))
-      .mutation(({ input }) => {
-        const ROLES: Record<string, { role: string; nome: string; senha: string }> = {
-          Dev_thales: { role: "dev", nome: "Thales (Dev)", senha: "T060925@" },
-          gestao: { role: "gestao", nome: "Gestão", senha: "gestao123" },
-          consultor: { role: "consultor", nome: "Consultor", senha: "consultor123" },
-          mecanico: { role: "mecanico", nome: "Mecânico", senha: "mecanico123" },
-          cliente: { role: "cliente", nome: "Cliente", senha: "cliente123" },
-        };
-        const entry = ROLES[input.login];
-        if (!entry || entry.senha !== input.senha) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "Login ou senha incorretos" });
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+
+        // Busca colaborador pelo username (case-sensitive)
+        const [colab] = await db
+          .select({ id: colaboradores.id, nome: colaboradores.nome, username: colaboradores.username, senha: colaboradores.senha, primeiroAcesso: colaboradores.primeiroAcesso, nivelAcessoId: colaboradores.nivelAcessoId, ativo: colaboradores.ativo })
+          .from(colaboradores)
+          .where(eq(colaboradores.username, input.login))
+          .limit(1);
+
+        if (!colab || !colab.ativo) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário não encontrado ou inativo" });
         }
-        return { role: entry.role, nome: entry.nome, login: input.login };
+        if (colab.senha !== input.senha) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha incorreta" });
+        }
+
+        // Mapeia nivelAcessoId → role do sistema
+        const nivelToRole: Record<number, string> = {
+          1: "dev",      // Direção
+          2: "gestao",   // Gestão
+          3: "consultor", // Consultor Técnico
+          4: "mecanico", // Mecânico
+          5: "cliente",  // Cliente
+        };
+        // nivelAcessoId do banco: 1=Direção(10), 2=Gestão(8), 3=Consultor(5), 4=Mecânico(2), 5=Cliente(1)
+        const nivelToRoleByDbId: Record<number, string> = {
+          1: "dev",
+          2: "gestao",
+          3: "consultor",
+          4: "mecanico",
+          5: "cliente",
+          6: "mecanico", // Terceirizado → mecânico
+        };
+        const role = nivelToRoleByDbId[colab.nivelAcessoId ?? 5] ?? "consultor";
+
+        return {
+          role,
+          nome: colab.nome,
+          login: colab.username ?? input.login,
+          colaboradorId: colab.id,
+          primeiroAcesso: colab.primeiroAcesso ?? false,
+        };
+      }),
+  }),
+
+  // ─── USUÁRIOS (gerenciamento pelo Dev) ────────────────────────────────────
+  usuarios: router({
+    list: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select({
+          id: colaboradores.id,
+          nome: colaboradores.nome,
+          cargo: colaboradores.cargo,
+          username: colaboradores.username,
+          senha: colaboradores.senha,
+          primeiroAcesso: colaboradores.primeiroAcesso,
+          nivelAcessoId: colaboradores.nivelAcessoId,
+          ativo: colaboradores.ativo,
+        })
+        .from(colaboradores)
+        .orderBy(colaboradores.nivelAcessoId, colaboradores.nome);
+      return rows;
+    }),
+
+    resetSenha: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.update(colaboradores)
+          .set({ senha: "123456", primeiroAcesso: true })
+          .where(eq(colaboradores.id, input.id));
+        return { success: true };
+      }),
+
+    alterarSenha: publicProcedure
+      .input(z.object({ id: z.number(), novaSenha: z.string().min(4) }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.update(colaboradores)
+          .set({ senha: input.novaSenha, primeiroAcesso: false })
+          .where(eq(colaboradores.id, input.id));
+        return { success: true };
+      }),
+
+    trocarSenhaPropria: publicProcedure
+      .input(z.object({ colaboradorId: z.number(), senhaAtual: z.string(), novaSenha: z.string().min(4) }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [colab] = await db
+          .select({ id: colaboradores.id, senha: colaboradores.senha })
+          .from(colaboradores)
+          .where(eq(colaboradores.id, input.colaboradorId))
+          .limit(1);
+        if (!colab) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
+        if (colab.senha !== input.senhaAtual) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha atual incorreta" });
+        }
+        await db.update(colaboradores)
+          .set({ senha: input.novaSenha, primeiroAcesso: false })
+          .where(eq(colaboradores.id, input.colaboradorId));
+        return { success: true };
+      }),
+
+    criarUsuario: publicProcedure
+      .input(z.object({
+        nome: z.string().min(2),
+        cargo: z.string().optional(),
+        username: z.string().min(3),
+        nivelAcessoId: z.number().default(3),
+        empresaId: z.number().default(1),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        // Verifica se username já existe
+        const [existing] = await db
+          .select({ id: colaboradores.id })
+          .from(colaboradores)
+          .where(eq(colaboradores.username, input.username))
+          .limit(1);
+        if (existing) throw new TRPCError({ code: "CONFLICT", message: "Username já está em uso" });
+        const result = await db.insert(colaboradores).values({
+          nome: input.nome,
+          cargo: input.cargo,
+          username: input.username,
+          senha: "123456",
+          primeiroAcesso: true,
+          nivelAcessoId: input.nivelAcessoId,
+          empresaId: input.empresaId,
+          ativo: true,
+        });
+        return { id: Number((result as any).insertId), success: true };
+      }),
+
+    toggleAtivo: publicProcedure
+      .input(z.object({ id: z.number(), ativo: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.update(colaboradores)
+          .set({ ativo: input.ativo })
+          .where(eq(colaboradores.id, input.id));
+        return { success: true };
       }),
   }),
 
