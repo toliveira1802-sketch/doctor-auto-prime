@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, nivel, fonte, mensagem, detalhes, FROM_UNIXTIME(timestamp/1000) as ts FROM system_logs ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, nivel, fonte, mensagem, detalhes, FROM_UNIXTIME(timestamp/1000) as ts FROM system_logs ORDER BY id DESC LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 's6kxius3wp8dtxunacezmn.system_logs' doesn't exist"
+  ]
+}

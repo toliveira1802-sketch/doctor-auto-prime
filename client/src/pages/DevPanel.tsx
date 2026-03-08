@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { useState, useEffect, useRef } from "react";
 import {
   Settings2, Zap, Database, Globe, RefreshCw, Save, Plus, Trash2,
   CheckCircle2, XCircle, AlertCircle, Copy, Eye, EyeOff, Code2,
-  Webhook, MessageSquare, Bot, BarChart3, Shield, Server
+  Webhook, MessageSquare, Bot, BarChart3, Shield, Server, ScrollText,
+  Filter, Eraser, Info, ChevronDown, ChevronRight
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type ConfigRow = {
@@ -137,6 +139,33 @@ function getBool(configs: ConfigRow[], chave: string): boolean {
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function DevPanel() {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [logNivel, setLogNivel] = useState<"all" | "info" | "warn" | "error" | "success">("all");
+  const [logFonte, setLogFonte] = useState("");
+  const [logAutoRefresh, setLogAutoRefresh] = useState(false);
+  const [expandedLog, setExpandedLog] = useState<number | null>(null);
+  const logIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const { data: logs = [], refetch: refetchLogs } = trpc.logs.list.useQuery(
+    { nivel: logNivel, fonte: logFonte || undefined, limit: 200 },
+    { refetchInterval: logAutoRefresh ? 5000 : false }
+  );
+  const addLog = trpc.logs.add.useMutation({ onSuccess: () => refetchLogs() });
+  const clearAllLogs = trpc.logs.clearAll.useMutation({ onSuccess: () => { refetchLogs(); toast.success("Logs limpos!"); } });
+
+  useEffect(() => {
+    return () => { if (logIntervalRef.current) clearInterval(logIntervalRef.current); };
+  }, []);
+
+  const logNivelBadge = (nivel: string) => {
+    const map: Record<string, { cls: string; icon: React.ReactNode }> = {
+      info:    { cls: "bg-blue-500/20 text-blue-400 border-blue-500/30",    icon: <Info className="w-3 h-3" /> },
+      warn:    { cls: "bg-amber-500/20 text-amber-400 border-amber-500/30",  icon: <AlertCircle className="w-3 h-3" /> },
+      error:   { cls: "bg-red-500/20 text-red-400 border-red-500/30",        icon: <XCircle className="w-3 h-3" /> },
+      success: { cls: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", icon: <CheckCircle2 className="w-3 h-3" /> },
+    };
+    const m = map[nivel] ?? map.info;
+    return <Badge className={`${m.cls} gap-1 text-xs`}>{m.icon}{nivel}</Badge>;
+  };
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [newChave, setNewChave] = useState("");
   const [newValor, setNewValor] = useState("");
@@ -221,6 +250,7 @@ export default function DevPanel() {
           <TabsTrigger value="integracoes" className="gap-1"><Globe className="w-3.5 h-3.5" />Integrações</TabsTrigger>
           <TabsTrigger value="config" className="gap-1"><Settings2 className="w-3.5 h-3.5" />Configurações</TabsTrigger>
           <TabsTrigger value="banco" className="gap-1"><Database className="w-3.5 h-3.5" />Banco de Dados</TabsTrigger>
+          <TabsTrigger value="logs" className="gap-1"><ScrollText className="w-3.5 h-3.5" />Logs</TabsTrigger>
         </TabsList>
 
         {/* ─── FEATURE FLAGS ─────────────────────────────────────────────────── */}
@@ -456,6 +486,128 @@ export default function DevPanel() {
                 <Shield className="w-4 h-4 text-amber-400" />
                 <p className="text-sm">Para executar queries SQL diretamente, use o painel <strong className="text-white">Database</strong> no menu de gerenciamento do projeto (ícone de banco de dados no painel lateral direito).</p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ─── LOGS ──────────────────────────────────────────────────────────── */}
+        <TabsContent value="logs" className="mt-4 space-y-4">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-zinc-400" />
+              <Select value={logNivel} onValueChange={(v) => setLogNivel(v as typeof logNivel)}>
+                <SelectTrigger className="w-32 h-8 text-xs bg-zinc-900 border-zinc-700">
+                  <SelectValue placeholder="Nível" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="info">Info</SelectItem>
+                  <SelectItem value="warn">Warn</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Input
+              placeholder="Filtrar por fonte..."
+              value={logFonte}
+              onChange={(e) => setLogFonte(e.target.value)}
+              className="h-8 w-44 text-xs bg-zinc-900 border-zinc-700"
+            />
+            <Button size="sm" variant="outline" onClick={() => refetchLogs()} className="h-8 gap-1 text-xs">
+              <RefreshCw className="w-3 h-3" /> Atualizar
+            </Button>
+            <div className="flex items-center gap-2 ml-auto">
+              <label className="text-xs text-zinc-400 flex items-center gap-1.5 cursor-pointer">
+                <Switch
+                  checked={logAutoRefresh}
+                  onCheckedChange={setLogAutoRefresh}
+                  className="scale-75"
+                />
+                Auto-refresh (5s)
+              </label>
+              <Button
+                size="sm" variant="outline"
+                onClick={() => { if (confirm("Limpar todos os logs?")) clearAllLogs.mutate(); }}
+                className="h-8 gap-1 text-xs text-red-400 hover:text-red-300 border-red-900/40"
+              >
+                <Eraser className="w-3 h-3" /> Limpar tudo
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex gap-3 flex-wrap">
+            {["info","warn","error","success"].map((n) => {
+              const count = logs.filter((l) => l.nivel === n).length;
+              return (
+                <button key={n} onClick={() => setLogNivel(logNivel === n ? "all" : n as typeof logNivel)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                    n === "info" ? "bg-blue-500/10 text-blue-400 border-blue-500/30" :
+                    n === "warn" ? "bg-amber-500/10 text-amber-400 border-amber-500/30" :
+                    n === "error" ? "bg-red-500/10 text-red-400 border-red-500/30" :
+                    "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                  } ${logNivel === n ? "ring-1 ring-offset-1 ring-offset-zinc-950" : ""}`}
+                >
+                  {n} ({count})
+                </button>
+              );
+            })}
+            <span className="text-xs text-zinc-500 self-center ml-auto">{logs.length} registros</span>
+          </div>
+
+          {/* Log list */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-0">
+              {logs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                  <ScrollText className="w-8 h-8 mb-2 opacity-40" />
+                  <p className="text-sm">Nenhum log encontrado</p>
+                  <p className="text-xs mt-1">Os logs aparecerão aqui quando as integrações forem ativadas</p>
+                  <Button size="sm" variant="outline" className="mt-4 text-xs gap-1" onClick={() => {
+                    addLog.mutate({ nivel: "info", fonte: "DevPanel", mensagem: "Teste de log manual", detalhes: JSON.stringify({ timestamp: new Date().toISOString(), user: "dev" }) });
+                    toast.success("Log de teste criado!");
+                  }}>
+                    <Plus className="w-3 h-3" /> Criar log de teste
+                  </Button>
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-800">
+                  {logs.map((log) => (
+                    <div key={log.id} className="hover:bg-zinc-800/50 transition-colors">
+                      <button
+                        className="w-full flex items-start gap-3 px-4 py-3 text-left"
+                        onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                      >
+                        <span className="mt-0.5 shrink-0">{logNivelBadge(log.nivel)}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-mono text-violet-400 shrink-0">{log.fonte}</span>
+                            <span className="text-sm text-white truncate">{log.mensagem}</span>
+                          </div>
+                          <p className="text-xs text-zinc-500 mt-0.5">
+                            {new Date(log.timestamp).toLocaleString("pt-BR")}
+                          </p>
+                        </div>
+                        {log.detalhes && (
+                          expandedLog === log.id
+                            ? <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
+                            : <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
+                        )}
+                      </button>
+                      {expandedLog === log.id && log.detalhes && (
+                        <div className="px-4 pb-3">
+                          <pre className="text-xs text-zinc-400 bg-zinc-950 rounded p-3 overflow-x-auto whitespace-pre-wrap">
+                            {(() => { try { return JSON.stringify(JSON.parse(log.detalhes), null, 2); } catch { return log.detalhes; } })()
+                            }
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

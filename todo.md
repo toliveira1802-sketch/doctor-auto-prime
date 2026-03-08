@@ -344,3 +344,11 @@
 - [ ] Status de conexão em tempo real para cada API
 - [ ] Instruções de configuração por card (URL webhook, como obter token, etc.)
 - [ ] Registrar rota /dev/apis no App.tsx e menu DEV
+
+## Feature: Sistema de Logs no Painel DEV
+- [x] Criar tabela 23_system_logs no banco (id, timestamp, nivel, fonte, mensagem, detalhes, userId)
+- [x] Atualizar schema drizzle para incluir systemLogs
+- [x] Criar procedures tRPC: logs.list (filtros nivel/fonte/limit), logs.add, logs.clearAll
+- [x] Adicionar aba Logs no Painel DEV com tabela, filtros, auto-refresh (5s) e expandir detalhes
+- [x] Instrumentar webhook Kommo para gravar logs de sucesso/erro automaticamente
+- [x] Testar: webhook disparado → 2 logs gravados no banco confirmados

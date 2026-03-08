@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, nivel, fonte, mensagem, LEFT(detalhes, 200) as detalhes_resumo, FROM_UNIXTIME(timestamp/1000) as ts FROM `23_system_logs` ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, nivel, fonte, mensagem, LEFT(detalhes, 200) as detalhes_resumo, FROM_UNIXTIME(timestamp/1000) as ts FROM `23_system_logs` ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "2",
+      "nivel": "success",
+      "fonte": "Kommo Webhook",
+      "mensagem": "1 lead(s) processado(s) com sucesso",
+      "detalhes_resumo": "{\"leads\":[{\"id\":88888,\"nome\":\"Lead Teste Log Final\",\"etapa\":\"Qualificado\"}]}",
+      "ts": "2026-03-08 22:01:31.7510"
+    },
+    {
+      "id": "1",
+      "nivel": "success",
+      "fonte": "Kommo Webhook",
+      "mensagem": "1 lead(s) processado(s) com sucesso",
+      "detalhes_resumo": "{\"leads\":[{\"id\":77777,\"nome\":\"Lead Teste Logs\",\"etapa\":\"Novo Lead\"}]}",
+      "ts": "2026-03-08 22:00:49.8440"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnivel\tfonte\tmensagem\tdetalhes_resumo\tts\n2\tsuccess\tKommo Webhook\t1 lead(s) processado(s) com sucesso\t{\"leads\":[{\"id\":88888,\"nome\":\"Lead Teste Log Final\",\"etapa\":\"Qualificado\"}]}\t2026-03-08 22:01:31.7510\n1\tsuccess\tKommo Webhook\t1 lead(s) processado(s) com sucesso\t{\"leads\":[{\"id\":77777,\"nome\":\"Lead Teste Logs\",\"etapa\":\"Novo Lead\"}]}\t2026-03-08 22:00:49.8440\n",
+  "stderr": "",
+  "execution_time_ms": 347
+}

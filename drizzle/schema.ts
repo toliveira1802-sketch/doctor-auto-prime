@@ -503,3 +503,18 @@ export const leadScoreHistory = mysqlTable("22_lead_score_history", {
   scoredAt: timestamp("scoredAt").defaultNow(),
 });
 export type LeadScoreHistory = typeof leadScoreHistory.$inferSelect;
+
+// ─── 23_SYSTEM_LOGS ───────────────────────────────────────────────────────────
+// Logs de atividades e erros das integrações e do sistema
+export const systemLogs = mysqlTable("23_system_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  timestamp: bigint("timestamp", { mode: "number" }).notNull(),
+  nivel: mysqlEnum("nivel", ["info", "warn", "error", "success"]).notNull().default("info"),
+  fonte: varchar("fonte", { length: 100 }).notNull(),
+  mensagem: text("mensagem").notNull(),
+  detalhes: text("detalhes"),
+  userId: int("userId"),
+  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+});
+export type SystemLog = typeof systemLogs.$inferSelect;
+export type InsertSystemLog = typeof systemLogs.$inferInsert;

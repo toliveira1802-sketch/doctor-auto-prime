@@ -27,6 +27,7 @@ import {
   oficinaVagas,
   leadScores,
   leadScoreHistory,
+  systemLogs,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -2038,6 +2039,78 @@ Retorne APENAS JSON válido:
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         await db.delete(leadScores).where(eq(leadScores.leadId, input.leadId));
+        return { success: true };
+      }),
+  }),
+
+  // ─── SYSTEM LOGS ──────────────────────────────────────────────────────────
+  logs: router({
+    list: protectedProcedure
+      .input(z.object({
+        nivel: z.enum(["info", "warn", "error", "success", "all"]).optional().default("all"),
+        fonte: z.string().optional(),
+        limit: z.number().min(1).max(500).optional().default(100),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const conditions = [];
+        if (input?.nivel && input.nivel !== "all") {
+          conditions.push(eq(systemLogs.nivel, input.nivel as "info" | "warn" | "error" | "success"));
+        }
+        if (input?.fonte) {
+          conditions.push(like(systemLogs.fonte, `%${input.fonte}%`));
+        }
+        const query = db.select().from(systemLogs).orderBy(desc(systemLogs.timestamp)).limit(input?.limit ?? 100);
+        if (conditions.length > 0) {
+          return query.where(and(...conditions));
+        }
+        return query;
+      }),
+    add: protectedProcedure
+      .input(z.object({
+        nivel: z.enum(["info", "warn", "error", "success"]),
+        fonte: z.string(),
+        mensagem: z.string(),
+        detalhes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const now = Date.now();
+        await db.insert(systemLogs).values({
+          timestamp: now,
+          nivel: input.nivel,
+          fonte: input.fonte,
+          mensagem: input.mensagem,
+          detalhes: input.detalhes ?? null,
+          createdAt: now,
+        });
+        return { success: true };
+      }),
+    clear: protectedProcedure
+      .input(z.object({
+        fonte: z.string().optional(),
+        nivel: z.enum(["info", "warn", "error", "success", "all"]).optional(),
+        olderThanDays: z.number().optional().default(30),
+      }).optional())
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const cutoff = Date.now() - ((input?.olderThanDays ?? 30) * 24 * 60 * 60 * 1000);
+        const conditions = [lte(systemLogs.timestamp, cutoff)];
+        if (input?.fonte) conditions.push(like(systemLogs.fonte, `%${input.fonte}%`));
+        if (input?.nivel && input.nivel !== "all") {
+          conditions.push(eq(systemLogs.nivel, input.nivel as "info" | "warn" | "error" | "success"));
+        }
+        await db.delete(systemLogs).where(and(...conditions));
+        return { success: true };
+      }),
+    clearAll: protectedProcedure
+      .mutation(async () => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.delete(systemLogs);
         return { success: true };
       }),
   }),

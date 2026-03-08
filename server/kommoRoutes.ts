@@ -1,8 +1,26 @@
 import type { Express, Request, Response } from "express";
 import { exchangeKommoCode, buildKommoAuthUrl, getKommoToken } from "./kommo";
 import { eq } from "drizzle-orm";
-import { kommoLeads } from "../drizzle/schema";
+import { kommoLeads, systemLogs } from "../drizzle/schema";
 import { getDb } from "./db";
+
+async function writeLog(nivel: "info" | "warn" | "error" | "success", fonte: string, mensagem: string, detalhes?: object) {
+  try {
+    const db = await getDb();
+    if (!db) return;
+    const now = Date.now();
+    await db.insert(systemLogs).values({
+      timestamp: now,
+      nivel,
+      fonte,
+      mensagem,
+      detalhes: detalhes ? JSON.stringify(detalhes).slice(0, 5000) : null,
+      createdAt: now,
+    });
+  } catch (e) {
+    console.error("[writeLog] Failed to write log:", e);
+  }
+}
 
 export function registerKommoRoutes(app: Express) {
   // GET /api/kommo/auth-url — returns the OAuth URL for the frontend to redirect to
@@ -64,13 +82,24 @@ export function registerKommoRoutes(app: Express) {
 
       const allLeads = [...leadsAdd, ...leadsUpdate, ...leadsStatus];
 
+      if (allLeads.length === 0) {
+        await writeLog("warn", "Kommo Webhook", "Payload recebido sem leads identificados", { bodyKeys: Object.keys(body) });
+      }
+
       for (const lead of allLeads) {
         await upsertLead(lead, body);
+      }
+
+      if (allLeads.length > 0) {
+        await writeLog("success", "Kommo Webhook", `${allLeads.length} lead(s) processado(s) com sucesso`, {
+          leads: allLeads.map((l: any) => ({ id: l.id, nome: l.name, etapa: l.status_name }))
+        });
       }
 
       res.json({ ok: true, processed: allLeads.length });
     } catch (err: any) {
       console.error("[Kommo Webhook] Error:", err.message);
+      await writeLog("error", "Kommo Webhook", `Erro ao processar webhook: ${err.message}`, { stack: err.stack?.slice(0, 1000) });
       res.status(500).json({ ok: false, error: err.message });
     }
   });
