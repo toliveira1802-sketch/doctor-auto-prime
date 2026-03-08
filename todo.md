@@ -323,3 +323,17 @@
 - [x] Filtrar ranking de mecânicos pelo período
 - [x] Filtrar tabela de OS pelo período
 - [x] Faturamento mês: usar dataSaida dentro do período para OS Entregues
+
+## Feature: Integração Kommo via Webhook
+
+- [ ] Criar tabela kommo_leads no banco (id, leadId, nome, status, etapa, consultor, telefone, veiculo, origem, createdAt, updatedAt)
+- [ ] Criar endpoint POST /api/kommo/webhook para receber eventos do Kommo
+- [ ] Parsear payload do Kommo: leads[add], leads[update], leads[status], contacts[add]
+- [ ] Salvar/atualizar lead no banco a cada evento recebido
+- [ ] Criar procedure trpc leads.list com filtro de período e consultor
+- [ ] Criar procedure trpc leads.stats para taxa de conversão lead → OS
+- [ ] Criar tela GestaoLeads.tsx com tabela de leads, KPIs e funil de conversão
+- [ ] Adicionar item "Leads CRM" no menu GESTÃO do DashboardLayout
+- [ ] Registrar rota /gestao/leads no App.tsx
+- [ ] Testar endpoint com payload simulado do Kommo
+- [ ] Entregar URL do webhook para configurar no Kommo

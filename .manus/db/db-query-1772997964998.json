@@ -1,0 +1,23 @@
+{
+  "query": "SELECT id, kommoLeadId, nome, status, etapa, responsavel, telefone, placa, marca, modelo, valorLead FROM `16_kommo_leads` LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT id, kommoLeadId, nome, status, etapa, responsavel, telefone, placa, marca, modelo, valorLead FROM `16_kommo_leads` LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "kommoLeadId": "12345",
+      "nome": "Teste Lead Webhook",
+      "status": "1001",
+      "etapa": "Novo Lead",
+      "responsavel": "Pedro",
+      "telefone": "11999998888",
+      "placa": "ABC1234",
+      "marca": "Volkswagen",
+      "modelo": "Golf GTI",
+      "valorLead": "3500.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tkommoLeadId\tnome\tstatus\tetapa\tresponsavel\ttelefone\tplaca\tmarca\tmodelo\tvalorLead\n1\t12345\tTeste Lead Webhook\t1001\tNovo Lead\tPedro\t11999998888\tABC1234\tVolkswagen\tGolf GTI\t3500.00\n",
+  "stderr": "",
+  "execution_time_ms": 365
+}

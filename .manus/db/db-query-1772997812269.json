@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `16_kommo_leads` \n  ADD COLUMN IF NOT EXISTS `etapa` VARCHAR(200) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `etapaId` INT DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `responsavel` VARCHAR(200) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `valorLead` DECIMAL(12,2) DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `webhookPayload` TEXT DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `convertidoOs` TINYINT(1) DEFAULT 0;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute ALTER TABLE `16_kommo_leads` \n  ADD COLUMN IF NOT EXISTS `etapa` VARCHAR(200) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `etapaId` INT DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `responsavel` VARCHAR(200) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `valorLead` DECIMAL(12,2) DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `webhookPayload` TEXT DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `convertidoOs` TINYINT(1) DEFAULT 0;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1131
+}

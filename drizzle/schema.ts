@@ -370,6 +370,12 @@ export const kommoLeads = mysqlTable("16_kommo_leads", {
   agendamentoId: int("agendamentoId"),
   ultimaMensagem: text("ultimaMensagem"),
   ultimaInteracao: timestamp("ultimaInteracao"),
+  etapa: varchar("etapa", { length: 200 }),
+  etapaId: int("etapaId"),
+  responsavel: varchar("responsavel", { length: 200 }),
+  valorLead: decimal("valorLead", { precision: 12, scale: 2 }).default("0"),
+  webhookPayload: text("webhookPayload"),
+  convertidoOs: int("convertidoOs").default(0),
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 });

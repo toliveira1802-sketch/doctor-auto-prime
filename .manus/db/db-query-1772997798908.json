@@ -1,0 +1,19 @@
+{
+  "query": "SHOW TABLES LIKE '16_kommo_leads'; SELECT COUNT(*) as total FROM `16_kommo_leads`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SHOW TABLES LIKE '16_kommo_leads'; SELECT COUNT(*) as total FROM `16_kommo_leads`;",
+  "rows": [
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (16_kommo_leads)": "16_kommo_leads"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (16_kommo_leads)": "total"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN (16_kommo_leads)": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_S6kXiUs3wP8DTXUNAceZmN (16_kommo_leads)\n16_kommo_leads\ntotal\n0\n",
+  "stderr": "",
+  "execution_time_ms": 474
+}
