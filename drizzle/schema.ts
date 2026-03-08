@@ -334,6 +334,8 @@ export const systemConfig = mysqlTable("system_config", {
   id: int("id").autoincrement().primaryKey(),
   chave: varchar("chave", { length: 200 }).notNull().unique(),
   valor: text("valor"),
+  tipo: varchar("tipo", { length: 20 }).default("string"),
+  grupo: varchar("grupo", { length: 50 }).default("geral"),
   descricao: varchar("descricao", { length: 500 }),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 });

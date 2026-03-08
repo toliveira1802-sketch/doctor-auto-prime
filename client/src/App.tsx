@@ -9,6 +9,7 @@ import DashboardLayout from "./components/DashboardLayout";
 // Legacy pages (still accessible)
 import Home from "./pages/Home";
 import Dev from "./pages/Dev";
+import DevPanel from "./pages/DevPanel";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -96,6 +97,9 @@ function Router() {
       {/* Dev navigator */}
       <Route path="/dev">
         <WithLayout><Dev /></WithLayout>
+      </Route>
+      <Route path="/dev/painel">
+        <WithLayout><DevPanel /></WithLayout>
       </Route>
 
       {/* ── ADMIN ROUTES ─────────────────────────────────────────────── */}

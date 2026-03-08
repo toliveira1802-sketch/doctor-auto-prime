@@ -1311,15 +1311,41 @@ export const appRouter = router({
         return row ?? null;
       }),
 
-     set: protectedProcedure
-      .input(z.object({ chave: z.string(), valor: z.string(), descricao: z.string().optional() }))
+    set: protectedProcedure
+      .input(z.object({
+        chave: z.string(),
+        valor: z.string(),
+        tipo: z.string().optional(),
+        grupo: z.string().optional(),
+        descricao: z.string().optional(),
+      }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
         await db.insert(systemConfig)
-          .values({ chave: input.chave, valor: input.valor, descricao: input.descricao })
+          .values({ chave: input.chave, valor: input.valor, tipo: input.tipo, grupo: input.grupo, descricao: input.descricao })
           .onDuplicateKeyUpdate({ set: { valor: input.valor } });
         return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ chave: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.delete(systemConfig).where(eq(systemConfig.chave, input.chave));
+        return { success: true };
+      }),
+    setMany: protectedProcedure
+      .input(z.array(z.object({ chave: z.string(), valor: z.string() })))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        for (const item of input) {
+          await db.insert(systemConfig)
+            .values({ chave: item.chave, valor: item.valor })
+            .onDuplicateKeyUpdate({ set: { valor: item.valor } });
+        }
+        return { success: true, updated: input.length };
       }),
   }),
 

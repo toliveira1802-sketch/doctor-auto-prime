@@ -337,3 +337,10 @@
 - [ ] Registrar rota /gestao/leads no App.tsx
 - [ ] Testar endpoint com payload simulado do Kommo
 - [ ] Entregar URL do webhook para configurar no Kommo
+
+## Feature: Página DevAPIs (aba DEV)
+- [ ] Criar página DevAPIs com cards de integração
+- [ ] Cards: Kommo (webhook), Trello, WhatsApp, Telegram, Google Sheets, OpenAI
+- [ ] Status de conexão em tempo real para cada API
+- [ ] Instruções de configuração por card (URL webhook, como obter token, etc.)
+- [ ] Registrar rota /dev/apis no App.tsx e menu DEV

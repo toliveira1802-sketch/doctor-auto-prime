@@ -52,6 +52,7 @@ import {
   Monitor,
   Activity,
   Brain,
+  Settings2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -99,6 +100,7 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/gestao/tecnologia": ["gestor", "admin"],
   // Dev — apenas admin (Thales)
   "/dev": ["admin"],
+  "/dev/painel": ["admin"],
 };
 
 // Estrutura de menu com suporte a submenus
@@ -189,6 +191,7 @@ const menuItems: MenuGroup[] = [
     group: "Dev",
     items: [
       { icon: Code2, label: "Navegador de Páginas", path: "/dev" },
+      { icon: Settings2, label: "Painel DEV", path: "/dev/painel" },
     ],
   },
 ];
