@@ -61,6 +61,23 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    // Login local por role (sem OAuth)
+    roleLogin: publicProcedure
+      .input(z.object({ login: z.string(), senha: z.string() }))
+      .mutation(({ input }) => {
+        const ROLES: Record<string, { role: string; nome: string; senha: string }> = {
+          Dev_thales: { role: "dev", nome: "Thales (Dev)", senha: "T060925@" },
+          gestao: { role: "gestao", nome: "Gestão", senha: "gestao123" },
+          consultor: { role: "consultor", nome: "Consultor", senha: "consultor123" },
+          mecanico: { role: "mecanico", nome: "Mecânico", senha: "mecanico123" },
+          cliente: { role: "cliente", nome: "Cliente", senha: "cliente123" },
+        };
+        const entry = ROLES[input.login];
+        if (!entry || entry.senha !== input.senha) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Login ou senha incorretos" });
+        }
+        return { role: entry.role, nome: entry.nome, login: input.login };
+      }),
   }),
 
   // ─── DASHBOARD KPIs ────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useRole } from "@/contexts/RoleContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -247,23 +248,26 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  // Filtra menu por perfil selecionado (salvo em sessionStorage)
-  // Padrão: "admin" para acesso livre sem login
-  const perfilAtual = sessionStorage.getItem("perfil_selecionado") ?? "admin";
-  // Nome exibido no rodapé: usa o user logado ou o perfil selecionado
-  const displayName = user?.name ?? (perfilAtual === "admin" ? "Administrador" : perfilAtual.charAt(0).toUpperCase() + perfilAtual.slice(1));
+  // Usa o RoleContext para filtrar o menu por role ativo
+  const { role: activeRole, roleInfo, logout: roleLogout } = useRole();
+  const perfilAtual = activeRole ?? "consultor";
+  // Nome exibido no rodapé
+  const displayName = roleInfo?.nome ?? user?.name ?? "Doctor Auto Prime";
   const displayEmail = user?.email ?? "doctor.auto@prime";
-  // Grupos visíveis por perfil:
+  // Grupos visíveis por role:
+  // dev: POMBAL + GESTÃO + Dev (tudo)
+  // gestao: POMBAL + GESTÃO
   // consultor: apenas POMBAL
-  // gestor: POMBAL + GESTÃO
-  // admin: POMBAL + GESTÃO + Dev
-  const GROUPS_BY_PERFIL: Record<string, string[]> = {
+  // mecanico: apenas POMBAL
+  // cliente: nenhum (portal separado)
+  const GROUPS_BY_ROLE: Record<string, string[]> = {
+    dev: ["POMBAL", "GESTÃO", "Dev"],
+    gestao: ["POMBAL", "GESTÃO"],
     consultor: ["POMBAL"],
-    gestor: ["POMBAL", "GESTÃO"],
-    admin: ["POMBAL", "GESTÃO", "Dev"],
     mecanico: ["POMBAL"],
+    cliente: [],
   };
-  const allowedGroups = GROUPS_BY_PERFIL[perfilAtual] ?? ["POMBAL"];
+  const allowedGroups = GROUPS_BY_ROLE[perfilAtual] ?? ["POMBAL"];
   const filteredMenuItems = menuItems
     .filter(group => allowedGroups.includes(group.group))
     .map(group => ({
@@ -271,7 +275,16 @@ function DashboardLayoutContent({
       items: group.items.filter(item => {
         const acesso = PERFIL_ACESSO[item.path];
         if (!acesso) return true; // sem restrição = todos veem
-        return acesso.includes(perfilAtual);
+        // Mapeia roles novos para os antigos para compatibilidade
+        const roleMap: Record<string, string> = {
+          dev: "admin",
+          gestao: "gestor",
+          consultor: "consultor",
+          mecanico: "mecanico",
+          cliente: "cliente",
+        };
+        const roleMapped = roleMap[perfilAtual] ?? perfilAtual;
+        return acesso.includes(roleMapped);
       }),
     }))
     .filter(group => group.items.length > 0);
@@ -472,7 +485,17 @@ function DashboardLayoutContent({
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="px-2 py-1.5 text-xs text-muted-foreground border-b mb-1">
+                  Role: <span className="font-semibold text-foreground capitalize">{perfilAtual}</span>
+                </div>
+                <DropdownMenuItem
+                  onClick={() => { roleLogout(); window.location.replace("/selecionar-perfil"); }}
+                  className="cursor-pointer"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Trocar Perfil</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"

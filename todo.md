@@ -352,3 +352,27 @@
 - [x] Adicionar aba Logs no Painel DEV com tabela, filtros, auto-refresh (5s) e expandir detalhes
 - [x] Instrumentar webhook Kommo para gravar logs de sucesso/erro automaticamente
 - [x] Testar: webhook disparado → 2 logs gravados no banco confirmados
+
+## Feature: Visibilidade por Role no Painel DEV
+
+- [ ] Criar estrutura de configs visibility.{role}.{secao} no banco (consultor, gestor, admin, mecanico)
+- [ ] Atualizar aba Visibilidade no Painel DEV: grid roles x seções com toggles individuais
+- [ ] Seções controladas: POMBAL, GESTÃO, DEV, e itens individuais do sidebar
+- [ ] Aplicar flags de visibilidade por role no DashboardLayout em tempo real
+- [ ] Salvar e ler configs do banco via procedure config.getAll
+
+## Feature: Sistema de 5 Roles (Dev, Gestão, Consultor, Mecânico, Cliente)
+
+- [x] Procedure auth.devLogin: validar login Dev_thales + senha T060925@ e retornar token de sessão
+- [x] Procedure auth.setRole: salvar role ativo no localStorage/cookie do frontend
+- [x] Contexto RoleContext no frontend com role ativo e funções switchRole/devLogin
+- [x] Tela de seleção de perfil (/selecionar-perfil) com 5 cards de role
+- [x] Login Dev com modal de senha protegida (login: Dev_thales, senha: T060925@)
+- [x] DashboardLayout: filtrar itens do sidebar por role ativo (via RoleContext)
+- [x] Consultor: ver apenas POMBAL
+- [x] Gestão: ver POMBAL + GESTÃO (sem DEV)
+- [x] Mecânico: ver apenas POMBAL simplificado
+- [x] Dev: ver tudo (POMBAL + GESTÃO + DEV)
+- [x] Cliente: card na tela de seleção (portal separado em breve)
+- [x] Painel DEV: aba Controle de Acesso com credenciais, matriz de visibilidade e permissões por role
+- [x] Indicador de role ativo no rodapé do sidebar (badge colorido + botão Trocar Perfil)

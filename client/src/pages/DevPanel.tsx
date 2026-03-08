@@ -12,7 +12,8 @@ import {
   Settings2, Zap, Database, Globe, RefreshCw, Save, Plus, Trash2,
   CheckCircle2, XCircle, AlertCircle, Copy, Eye, EyeOff, Code2,
   Webhook, MessageSquare, Bot, BarChart3, Shield, Server, ScrollText,
-  Filter, Eraser, Info, ChevronDown, ChevronRight
+  Filter, Eraser, Info, ChevronDown, ChevronRight, Users, Lock, Unlock,
+  UserCheck, Wrench, ShoppingBag, Crown, Key
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -251,6 +252,7 @@ export default function DevPanel() {
           <TabsTrigger value="config" className="gap-1"><Settings2 className="w-3.5 h-3.5" />Configurações</TabsTrigger>
           <TabsTrigger value="banco" className="gap-1"><Database className="w-3.5 h-3.5" />Banco de Dados</TabsTrigger>
           <TabsTrigger value="logs" className="gap-1"><ScrollText className="w-3.5 h-3.5" />Logs</TabsTrigger>
+          <TabsTrigger value="acesso" className="gap-1"><Shield className="w-3.5 h-3.5" />Controle de Acesso</TabsTrigger>
         </TabsList>
 
         {/* ─── FEATURE FLAGS ─────────────────────────────────────────────────── */}
@@ -611,6 +613,144 @@ export default function DevPanel() {
             </CardContent>
           </Card>
         </TabsContent>
+        {/* ─── CONTROLE DE ACESSO ─────────────────────────────────────────────────────────────────────────────────────── */}
+        <TabsContent value="acesso" className="mt-4 space-y-6">
+          <p className="text-zinc-400 text-sm">Gerencie o que cada role pode ver e fazer no sistema. Somente o Dev pode alterar estas configurações.</p>
+
+          {/* Credenciais dos roles */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Key className="w-4 h-4 text-violet-400" />
+                Credenciais de Acesso
+              </CardTitle>
+              <CardDescription className="text-zinc-400 text-xs">
+                Login e senha de cada role. Somente o Dev requer senha.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[
+                  { role: "dev", icon: Crown, label: "Dev", login: "Dev_thales", senha: "T060925@", cor: "violet", descricao: "Acesso total ao sistema + configurações" },
+                  { role: "gestao", icon: BarChart3, label: "Gestão", login: "Acesso direto", senha: "Sem senha", cor: "blue", descricao: "POMBAL + GESTÃO" },
+                  { role: "consultor", icon: UserCheck, label: "Consultor", login: "Acesso direto", senha: "Sem senha", cor: "emerald", descricao: "Apenas POMBAL (operacional)" },
+                  { role: "mecanico", icon: Wrench, label: "Mecânico", login: "Acesso direto", senha: "Sem senha", cor: "amber", descricao: "Apenas POMBAL (pátio e OS)" },
+                  { role: "cliente", icon: ShoppingBag, label: "Cliente", login: "Portal separado", senha: "Sem senha", cor: "sky", descricao: "Portal do cliente (em breve)" },
+                ].map(({ role, icon: Icon, label, login, senha, cor, descricao }) => (
+                  <div key={role} className={`flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg bg-${cor}-500/10`}>
+                        <Icon className={`w-4 h-4 text-${cor}-400`} />
+                      </div>
+                      <div>
+                        <p className="text-white text-sm font-medium">{label}</p>
+                        <p className="text-zinc-400 text-xs">{descricao}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-zinc-300 text-xs font-mono">{login}</p>
+                      <p className="text-zinc-500 text-xs font-mono">{senha}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Visível por role */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-400" />
+                Visibilidade por Role
+              </CardTitle>
+              <CardDescription className="text-zinc-400 text-xs">
+                O que cada role vê no sidebar do sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-zinc-700">
+                      <th className="text-left text-zinc-400 pb-2 pr-4">Seção / Página</th>
+                      <th className="text-center text-violet-400 pb-2 px-3">Dev</th>
+                      <th className="text-center text-blue-400 pb-2 px-3">Gestão</th>
+                      <th className="text-center text-emerald-400 pb-2 px-3">Consultor</th>
+                      <th className="text-center text-amber-400 pb-2 px-3">Mecânico</th>
+                      <th className="text-center text-sky-400 pb-2 px-3">Cliente</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {[
+                      { pagina: "Dashboard", dev: true, gestao: true, consultor: true, mecanico: false, cliente: false },
+                      { pagina: "Pátio", dev: true, gestao: true, consultor: true, mecanico: true, cliente: false },
+                      { pagina: "Agenda", dev: true, gestao: true, consultor: true, mecanico: false, cliente: false },
+                      { pagina: "Clientes / OS", dev: true, gestao: true, consultor: true, mecanico: false, cliente: false },
+                      { pagina: "Financeiro", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "Produtividade", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "QG das IAs", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "Melhorias", dev: true, gestao: true, consultor: true, mecanico: false, cliente: false },
+                      { pagina: "Sistema (config)", dev: true, gestao: false, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "GESTÃO — OS Ultimate", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "GESTÃO — Visão Geral", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "GESTÃO — Financeiro", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "GESTÃO — Colaboradores", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "GESTÃO — Metas", dev: true, gestao: true, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "DEV — Painel DEV", dev: true, gestao: false, consultor: false, mecanico: false, cliente: false },
+                      { pagina: "Portal do Cliente", dev: true, gestao: false, consultor: false, mecanico: false, cliente: true },
+                    ].map(({ pagina, ...roles }) => (
+                      <tr key={pagina}>
+                        <td className="text-zinc-300 py-2 pr-4">{pagina}</td>
+                        {Object.entries(roles).map(([role, ativo]) => (
+                          <td key={role} className="text-center py-2 px-3">
+                            {ativo
+                              ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mx-auto" />
+                              : <XCircle className="w-3.5 h-3.5 text-zinc-600 mx-auto" />}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Alterações permitidas por role */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Lock className="w-4 h-4 text-amber-400" />
+                Alterações Permitidas por Role
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[
+                  { role: "Dev", cor: "violet", acoes: ["Alterar feature flags", "Configurar integrações (Kommo, Trello, WhatsApp)", "Gerenciar configurações do sistema", "Ver logs e banco de dados", "Criar/editar/excluir qualquer dado", "Controlar visibilidade por role"] },
+                  { role: "Gestão", cor: "blue", acoes: ["Ver relatórios e KPIs", "Gerenciar metas e campanhas", "Visualizar OS Ultimate", "Exportar relatórios"] },
+                  { role: "Consultor", cor: "emerald", acoes: ["Criar e editar OS", "Cadastrar clientes e veículos", "Gerenciar agenda", "Registrar feedback de mecânicos"] },
+                  { role: "Mecânico", cor: "amber", acoes: ["Ver OS atribuídas", "Atualizar status de execução", "Visualizar pátio"] },
+                  { role: "Cliente", cor: "sky", acoes: ["Ver histórico de OS", "Aprovar/recusar orçamento", "Acompanhar status do veículo"] },
+                ].map(({ role, cor, acoes }) => (
+                  <div key={role} className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                    <p className={`text-${cor}-400 text-sm font-semibold mb-2`}>{role}</p>
+                    <ul className="space-y-1">
+                      {acoes.map((a) => (
+                        <li key={a} className="flex items-center gap-2 text-zinc-300 text-xs">
+                          <Unlock className="w-3 h-3 text-emerald-400 shrink-0" />
+                          {a}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
     </div>
   );

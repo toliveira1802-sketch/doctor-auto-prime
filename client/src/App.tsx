@@ -79,16 +79,26 @@ function Router() {
         <MecanicoView />
       </Route>
 
-      {/* Root: vai direto para o dashboard sem exigir login */}
+      {/* Root: redireciona para seleção de perfil ou para o destino do role ativo */}
       <Route path="/">
         {() => {
-          const perfilRedirect = sessionStorage.getItem("perfil_redirect");
-          if (perfilRedirect) {
-            sessionStorage.removeItem("perfil_redirect");
-            sessionStorage.removeItem("perfil_selecionado");
-            window.location.replace(perfilRedirect);
+          const roleSession = localStorage.getItem("dap_role_session");
+          if (roleSession) {
+            try {
+              const info = JSON.parse(roleSession);
+              const redirectMap: Record<string, string> = {
+                dev: "/dev/painel",
+                gestao: "/gestao/os-ultimate",
+                consultor: "/admin/dashboard",
+                mecanico: "/admin/patio",
+                cliente: "/cliente",
+              };
+              window.location.replace(redirectMap[info.role] ?? "/selecionar-perfil");
+            } catch {
+              window.location.replace("/selecionar-perfil");
+            }
           } else {
-            window.location.replace("/admin/dashboard");
+            window.location.replace("/selecionar-perfil");
           }
           return null;
         }}
