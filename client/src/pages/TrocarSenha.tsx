@@ -1,192 +1,291 @@
 /**
  * Tela de Troca de Senha Obrigatória — Doctor Auto Prime
- * Aparece quando primeiroAcesso = true após login com senha padrão
+ * PAGE 3: Shown when user logs in with default password "123456".
+ * New password + confirm, minimum 8 characters, then straight to dashboard.
  */
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { trpc } from "@/lib/trpc";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "sonner";
-import { Car, Key, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Car,
+  Key,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Lock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+// Role → redirect path
+const ROLE_REDIRECTS: Record<string, string> = {
+  dev: "/dev/painel",
+  gestao: "/gestao/os-ultimate",
+  consultor: "/admin/dashboard",
+  mecanico: "/mecanico",
+  cliente: "/cliente",
+};
 
 export default function TrocarSenha() {
   const [, navigate] = useLocation();
   const { roleInfo, setRoleInfo } = useRole();
-  const [senhaAtual, setSenhaAtual] = useState("");
+
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [showSenhaAtual, setShowSenhaAtual] = useState(false);
   const [showNovaSenha, setShowNovaSenha] = useState(false);
   const [showConfirmar, setShowConfirmar] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const trocarSenha = trpc.usuarios.trocarSenhaPropria.useMutation({
-    onSuccess: () => {
-      toast.success("Senha alterada com sucesso! Bem-vindo ao sistema.");
-      // Atualiza o roleInfo para remover o flag de primeiro acesso
+  const senhasConferem = novaSenha === confirmarSenha && confirmarSenha.length > 0;
+  const senhaValida = novaSenha.length >= 8;
+  const podeSubmeter = novaSenha && confirmarSenha && senhasConferem && senhaValida;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!podeSubmeter || !roleInfo?.colaboradorId || loading) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          colaboradorId: roleInfo.colaboradorId,
+          novaSenha,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao trocar senha. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+
+      // Update role info to remove first access flag
       if (roleInfo) {
         setRoleInfo({ ...roleInfo, primeiroAcesso: false });
       }
-      // Redireciona para a área correta baseada no role
-      const roleRedirects: Record<string, string> = {
-        dev: "/dev/painel",
-        gestao: "/gestao/os-ultimate",
-        consultor: "/admin/dashboard",
-        mecanico: "/admin/patio",
-        cliente: "/cliente",
-      };
-      navigate(roleRedirects[roleInfo?.role ?? "consultor"] ?? "/admin/dashboard");
-    },
-    onError: (err) => {
-      toast.error(err.message ?? "Erro ao trocar senha");
-    },
-  });
 
-  const senhasConferem = novaSenha === confirmarSenha;
-  const senhaValida = novaSenha.length >= 4;
-  const podeSubmeter = senhaAtual && novaSenha && confirmarSenha && senhasConferem && senhaValida;
+      toast.success("Senha alterada com sucesso! Bem-vindo ao sistema.");
 
-  function handleSubmit() {
-    if (!podeSubmeter || !roleInfo?.colaboradorId) return;
-    trocarSenha.mutate({
-      colaboradorId: roleInfo.colaboradorId,
-      senhaAtual,
-      novaSenha,
-    });
+      // Redirect to dashboard based on role
+      const redirectPath =
+        ROLE_REDIRECTS[roleInfo?.role ?? "consultor"] ?? "/admin/dashboard";
+      navigate(redirectPath);
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+      setLoading(false);
+    }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && podeSubmeter) handleSubmit();
+  // If no role info, redirect to login
+  if (!roleInfo?.colaboradorId) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <p className="text-zinc-400">Sessão não encontrada.</p>
+          <Button
+            onClick={() => navigate("/selecionar-perfil")}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            Voltar ao login
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-12">
       {/* Logo */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
-          <Car className="w-8 h-8 text-primary" />
+      <div className="flex flex-col items-center gap-4 mb-8">
+        <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-red-600/30 flex items-center justify-center">
+          <Car className="w-8 h-8 text-red-500" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Doctor Auto Prime</h1>
-          <p className="text-sm text-gray-500">Sistema de Gestão Automotiva</p>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            Doctor Auto Prime
+          </h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            Sistema de Gestão Automotiva
+          </p>
         </div>
       </div>
 
-      <Card className="w-full max-w-md bg-[#161b22] border-amber-500/30">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 rounded-xl bg-amber-500/10">
-              <Key className="w-5 h-5 text-amber-400" />
+      {/* Change password card */}
+      <div className="w-full max-w-md">
+        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-red-600/10">
+                <Key className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  Troca de Senha Obrigatória
+                </h2>
+                <p className="text-zinc-500 text-xs mt-0.5">
+                  Olá,{" "}
+                  <strong className="text-red-400">
+                    {roleInfo?.nome ?? "usuário"}
+                  </strong>
+                  ! Este é seu primeiro acesso.
+                </p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-white text-lg">Troca de Senha Obrigatória</CardTitle>
-              <CardDescription className="text-zinc-400 text-xs mt-0.5">
-                Olá, <strong className="text-amber-400">{roleInfo?.nome ?? "usuário"}</strong>! Este é seu primeiro acesso.
-              </CardDescription>
-            </div>
-          </div>
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-amber-300 text-xs leading-relaxed">
-              Por segurança, você precisa criar uma senha pessoal antes de continuar.
-              A senha padrão <code className="bg-amber-500/20 px-1 rounded">123456</code> não poderá ser usada novamente.
-            </p>
-          </div>
-        </CardHeader>
 
-        <CardContent className="space-y-4">
-          {/* Senha atual */}
-          <div>
-            <Label className="text-zinc-400 text-sm">Senha atual (padrão)</Label>
-            <div className="relative mt-1.5">
-              <Input
-                type={showSenhaAtual ? "text" : "password"}
-                value={senhaAtual}
-                onChange={(e) => setSenhaAtual(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Digite a senha atual"
-                className="bg-zinc-800 border-zinc-700 text-white pr-10"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowSenhaAtual(!showSenhaAtual)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-              >
-                {showSenhaAtual ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Nova senha */}
-          <div>
-            <Label className="text-zinc-400 text-sm">Nova senha</Label>
-            <div className="relative mt-1.5">
-              <Input
-                type={showNovaSenha ? "text" : "password"}
-                value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Mínimo 4 caracteres"
-                className={`bg-zinc-800 border-zinc-700 text-white pr-10 ${novaSenha && !senhaValida ? "border-red-500" : ""}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowNovaSenha(!showNovaSenha)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-              >
-                {showNovaSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {novaSenha && !senhaValida && (
-              <p className="text-red-400 text-xs mt-1">Mínimo 4 caracteres</p>
-            )}
-          </div>
-
-          {/* Confirmar senha */}
-          <div>
-            <Label className="text-zinc-400 text-sm">Confirmar nova senha</Label>
-            <div className="relative mt-1.5">
-              <Input
-                type={showConfirmar ? "text" : "password"}
-                value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Repita a nova senha"
-                className={`bg-zinc-800 border-zinc-700 text-white pr-10 ${confirmarSenha && !senhasConferem ? "border-red-500" : confirmarSenha && senhasConferem ? "border-emerald-500" : ""}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmar(!showConfirmar)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-              >
-                {showConfirmar ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {confirmarSenha && !senhasConferem && (
-              <p className="text-red-400 text-xs mt-1">As senhas não conferem</p>
-            )}
-            {confirmarSenha && senhasConferem && senhaValida && (
-              <p className="text-emerald-400 text-xs mt-1 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Senhas conferem
+            {/* Warning banner */}
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-600/5 border border-red-600/20">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-red-300/80 text-xs leading-relaxed">
+                Por segurança, você precisa criar uma senha pessoal antes de
+                continuar. A senha padrão{" "}
+                <code className="bg-red-600/20 px-1 rounded text-red-300">
+                  123456
+                </code>{" "}
+                não poderá ser usada novamente.
               </p>
-            )}
+            </div>
           </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={!podeSubmeter || trocarSenha.isPending}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white mt-2"
-          >
-            {trocarSenha.isPending ? "Salvando..." : "Definir Nova Senha e Entrar"}
-          </Button>
-        </CardContent>
-      </Card>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
+            {/* New password */}
+            <div className="space-y-2">
+              <Label className="text-zinc-400 text-sm">Nova senha</Label>
+              <div className="relative">
+                <Input
+                  type={showNovaSenha ? "text" : "password"}
+                  value={novaSenha}
+                  onChange={(e) => {
+                    setNovaSenha(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Mínimo 8 caracteres"
+                  className={cn(
+                    "bg-zinc-900 border-zinc-700 text-white pl-9 pr-10 placeholder:text-zinc-600 focus:border-red-600/50",
+                    novaSenha && !senhaValida && "border-red-500/50"
+                  )}
+                  autoFocus
+                  autoComplete="new-password"
+                />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <button
+                  type="button"
+                  onClick={() => setShowNovaSenha(!showNovaSenha)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  tabIndex={-1}
+                >
+                  {showNovaSenha ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {novaSenha && !senhaValida && (
+                <p className="text-red-400 text-xs">Mínimo 8 caracteres</p>
+              )}
+              {novaSenha && senhaValida && (
+                <p className="text-emerald-400 text-xs flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Senha válida
+                </p>
+              )}
+            </div>
 
-      <p className="mt-6 text-xs text-zinc-700">Doctor Auto Prime · Sistema Interno v2.0</p>
+            {/* Confirm password */}
+            <div className="space-y-2">
+              <Label className="text-zinc-400 text-sm">
+                Confirmar nova senha
+              </Label>
+              <div className="relative">
+                <Input
+                  type={showConfirmar ? "text" : "password"}
+                  value={confirmarSenha}
+                  onChange={(e) => {
+                    setConfirmarSenha(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Repita a nova senha"
+                  className={cn(
+                    "bg-zinc-900 border-zinc-700 text-white pl-9 pr-10 placeholder:text-zinc-600 focus:border-red-600/50",
+                    confirmarSenha &&
+                      !senhasConferem &&
+                      "border-red-500/50",
+                    confirmarSenha &&
+                      senhasConferem &&
+                      senhaValida &&
+                      "border-emerald-500/50"
+                  )}
+                  autoComplete="new-password"
+                />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmar(!showConfirmar)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  tabIndex={-1}
+                >
+                  {showConfirmar ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {confirmarSenha && !senhasConferem && (
+                <p className="text-red-400 text-xs">As senhas não conferem</p>
+              )}
+              {confirmarSenha && senhasConferem && senhaValida && (
+                <p className="text-emerald-400 text-xs flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Senhas conferem
+                </p>
+              )}
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-red-600/10 border border-red-600/20">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-red-300 text-xs leading-relaxed">{error}</p>
+              </div>
+            )}
+
+            {/* Submit */}
+            <Button
+              type="submit"
+              disabled={!podeSubmeter || loading}
+              className="w-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-40 mt-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Salvando...
+                </>
+              ) : (
+                "Definir Nova Senha e Entrar"
+              )}
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <p className="mt-8 text-xs text-zinc-700">
+        Doctor Auto Prime &middot; Sistema Interno v2.0
+      </p>
     </div>
   );
 }

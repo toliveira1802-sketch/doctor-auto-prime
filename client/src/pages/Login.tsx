@@ -1,351 +1,341 @@
 /**
  * Tela de Login — Doctor Auto Prime
- * Modo A: 4 quadrados de perfil → clicou → digita senha do perfil → entra
- * Modo B: Formulário username + senha (Doctor_Sophia, Doctor_Pedro, Doctor_Joao)
+ * PAGE 2: Username + Password login with selected profile context.
+ * Features: "Lembrar de mim", "Esqueci a senha", login attempt limiting.
+ * Flow: receives ?perfil= from profile selection → validates → redirects.
  */
-import { useState, useRef, useEffect } from "react";
-import { Users, BarChart3, ShieldCheck, Wrench, Car, KeyRound, ArrowLeft, Eye, EyeOff, Loader2, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
+import { useRole } from "@/contexts/RoleContext";
+import { toast } from "sonner";
+import {
+  Car,
+  Eye,
+  EyeOff,
+  Loader2,
+  User,
+  Lock,
+  ChevronLeft,
+  Shield,
+  BarChart3,
+  Users,
+  Wrench,
+  Info,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
-const PERFIS = [
-  {
-    id: "consultor",
-    label: "Consultor",
-    descricao: "Atendimento, OS e pátio",
-    icon: Users,
-    cor: "text-blue-400",
-    bg: "bg-blue-500/10 hover:bg-blue-500/20 active:bg-blue-500/30",
-    bgSelected: "bg-blue-500/25 border-blue-400",
-    borda: "border-blue-500/30 hover:border-blue-400",
-    nivelAcessoId: 3,
-    redirectPath: "/admin/dashboard",
-  },
-  {
-    id: "gestao",
-    label: "Gestão",
-    descricao: "Dashboards e estratégia",
-    icon: BarChart3,
-    cor: "text-purple-400",
-    bg: "bg-purple-500/10 hover:bg-purple-500/20 active:bg-purple-500/30",
-    bgSelected: "bg-purple-500/25 border-purple-400",
-    borda: "border-purple-500/30 hover:border-purple-400",
-    nivelAcessoId: 2,
-    redirectPath: "/gestao/visao-geral",
-  },
-  {
-    id: "administrador",
-    label: "Administrador",
-    descricao: "Acesso completo",
-    icon: ShieldCheck,
-    cor: "text-red-400",
-    bg: "bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30",
-    bgSelected: "bg-red-500/25 border-red-400",
-    borda: "border-red-500/30 hover:border-red-400",
-    nivelAcessoId: 1,
-    redirectPath: "/admin/dashboard",
-  },
-  {
-    id: "mecanico",
-    label: "Mecânico",
-    descricao: "OS atribuídas",
-    icon: Wrench,
-    cor: "text-orange-400",
-    bg: "bg-orange-500/10 hover:bg-orange-500/20 active:bg-orange-500/30",
-    bgSelected: "bg-orange-500/25 border-orange-400",
-    borda: "border-orange-500/30 hover:border-orange-400",
-    nivelAcessoId: 4,
-    redirectPath: "/mecanico",
-  },
-];
+// Profile metadata
+const PROFILE_META: Record<
+  string,
+  { label: string; Icon: React.ElementType; color: string }
+> = {
+  dev: { label: "Dev", Icon: Shield, color: "text-red-500" },
+  gestao: { label: "Gestão", Icon: BarChart3, color: "text-red-500" },
+  consultor: { label: "Consultor", Icon: Users, color: "text-red-500" },
+  mecanico: { label: "Mecânico", Icon: Wrench, color: "text-red-500" },
+};
 
-type Mode = "perfil" | "pin" | "username";
+// Role → redirect path
+const ROLE_REDIRECTS: Record<string, string> = {
+  dev: "/dev/painel",
+  gestao: "/gestao/os-ultimate",
+  consultor: "/admin/dashboard",
+  mecanico: "/mecanico",
+  cliente: "/cliente",
+};
 
 export default function Login() {
-  const [mode, setMode] = useState<Mode>("perfil");
-  const [selectedPerfil, setSelectedPerfil] = useState<typeof PERFIS[0] | null>(null);
-  const [pin, setPin] = useState("");
-  const [showPin, setShowPin] = useState(false);
-  const [loadingPin, setLoadingPin] = useState(false);
-  const [loadingForm, setLoadingForm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, navigate] = useLocation();
+  const search = useSearch();
+  const { setRoleInfo } = useRole();
 
-  // Form state (modo B)
+  // Extract profile from URL
+  const params = new URLSearchParams(search);
+  const perfil = params.get("perfil") ?? "";
+  const profileInfo = PROFILE_META[perfil];
+
+  // Form state
   const [username, setUsername] = useState("");
   const [senha, setSenha] = useState("");
   const [showSenha, setShowSenha] = useState(false);
+  const [lembrar, setLembrar] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
+  const [minutesLeft, setMinutesLeft] = useState(0);
+  const [showForgotDialog, setShowForgotDialog] = useState(false);
 
-  const pinInputRef = useRef<HTMLInputElement>(null);
-
-  // Foca no campo PIN quando entra no modo pin
+  // Redirect to profile selection if no profile
   useEffect(() => {
-    if (mode === "pin") {
-      setTimeout(() => pinInputRef.current?.focus(), 100);
+    if (!perfil || !profileInfo) {
+      navigate("/selecionar-perfil");
     }
-  }, [mode]);
+  }, [perfil, profileInfo, navigate]);
 
-  // ── Seleciona perfil e vai para tela de PIN ──────────────────────────────
-  function handlePerfilClick(perfil: typeof PERFIS[0]) {
-    setSelectedPerfil(perfil);
-    setPin("");
-    setError(null);
-    setMode("pin");
-  }
-
-  // ── Submete o PIN do perfil ──────────────────────────────────────────────
-  async function handlePinSubmit(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedPerfil || !pin) return;
-    setLoadingPin(true);
+    if (!username.trim() || !senha.trim() || loading || locked) return;
+
+    setLoading(true);
     setError(null);
+
     try {
-      const res = await fetch("/api/auth/local-login-perfil", {
+      const res = await fetch("/api/auth/local-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          nivelAcessoId: selectedPerfil.nivelAcessoId,
-          redirectPath: selectedPerfil.redirectPath,
-          pin,
+          username: username.trim(),
+          senha,
+          perfil,
+          lembrar,
         }),
       });
+
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Senha incorreta. Tente novamente.");
-        setLoadingPin(false);
-        setPin("");
-        setTimeout(() => pinInputRef.current?.focus(), 50);
+
+      if (res.status === 423) {
+        // Account locked
+        setLocked(true);
+        setMinutesLeft(data.minutesLeft ?? 15);
+        setError(data.error);
+        setLoading(false);
         return;
       }
-      window.location.replace(data.redirectPath);
-    } catch {
-      setError("Erro de conexão. Tente novamente.");
-      setLoadingPin(false);
-    }
-  }
 
-  // ── Login com username + senha (Modo B) ──────────────────────────────────
-  async function handleUsernameLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoadingForm(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/auth/local-login-username", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ username: username.trim(), senha }),
-      });
-      const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Usuário ou senha incorretos.");
-        setLoadingForm(false);
+        setLoading(false);
         return;
       }
+
+      // Success — save role info to context
+      setRoleInfo({
+        role: data.role as any,
+        nome: data.nome,
+        login: data.login ?? username.trim(),
+        colaboradorId: data.colaboradorId,
+        primeiroAcesso: data.primeiroAcesso,
+      });
+
+      // Check first access → redirect to change password
       if (data.primeiroAcesso) {
-        sessionStorage.setItem("trocar_senha_id", String(data.colaboradorId));
-        sessionStorage.setItem("trocar_senha_redirect", data.redirectPath);
-        window.location.replace("/trocar-senha");
+        toast.info("Primeiro acesso! Defina sua senha pessoal.");
+        navigate("/trocar-senha");
         return;
       }
-      window.location.replace(data.redirectPath);
+
+      toast.success(`Bem-vindo, ${data.nome}!`);
+      navigate(data.redirectPath ?? ROLE_REDIRECTS[data.role] ?? "/admin/dashboard");
     } catch {
       setError("Erro de conexão. Tente novamente.");
-      setLoadingForm(false);
+      setLoading(false);
     }
   }
 
+  if (!profileInfo) return null;
+
+  const ProfileIcon = profileInfo.Icon;
+
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-12">
       {/* Logo */}
-      <div className="flex flex-col items-center gap-3 mb-10">
-        <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20">
-          <Car className="w-10 h-10 text-primary" />
+      <div className="flex flex-col items-center gap-4 mb-10">
+        <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-red-600/30 flex items-center justify-center">
+          <Car className="w-8 h-8 text-red-500" />
         </div>
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white tracking-tight">Doctor Auto Prime</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {mode === "perfil" && "Selecione seu perfil para entrar"}
-            {mode === "pin" && `Acesso ${selectedPerfil?.label}`}
-            {mode === "username" && "Acesso com usuário e senha"}
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            Doctor Auto Prime
+          </h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            Sistema de Gestão Automotiva
           </p>
         </div>
       </div>
 
-      {/* ── MODO A: Quadrados de perfil ── */}
-      {mode === "perfil" && (
-        <>
-          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-            {PERFIS.map((perfil) => {
-              const Icon = perfil.icon;
-              return (
-                <button
-                  key={perfil.id}
-                  onClick={() => handlePerfilClick(perfil)}
-                  className={cn(
-                    "flex flex-col items-center gap-3 p-6 rounded-2xl border transition-all duration-150 cursor-pointer",
-                    perfil.bg,
-                    perfil.borda
-                  )}
-                >
-                  <div className="p-3 rounded-xl bg-black/20">
-                    <Icon className={cn("w-7 h-7", perfil.cor)} />
-                  </div>
-                  <div className="text-center">
-                    <p className={cn("font-semibold text-base", perfil.cor)}>{perfil.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-tight">{perfil.descricao}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={() => { setMode("username"); setError(null); }}
-            className="mt-8 flex items-center gap-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            Entrar com usuário e senha
-          </button>
-        </>
-      )}
-
-      {/* ── MODO PIN: campo de senha após selecionar perfil ── */}
-      {mode === "pin" && selectedPerfil && (
-        <form onSubmit={handlePinSubmit} className="w-full max-w-xs space-y-5">
-          {/* Card do perfil selecionado */}
-          <div className={cn(
-            "flex items-center gap-4 p-4 rounded-2xl border",
-            selectedPerfil.bgSelected
-          )}>
-            <div className="p-2.5 rounded-xl bg-black/20">
-              <selectedPerfil.icon className={cn("w-6 h-6", selectedPerfil.cor)} />
+      {/* Login card */}
+      <div className="w-full max-w-sm">
+        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-6">
+          {/* Profile badge */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-red-600/5 border border-red-600/20">
+            <div className="p-2 rounded-lg bg-red-600/10">
+              <ProfileIcon className="w-5 h-5 text-red-500" />
             </div>
             <div>
-              <p className={cn("font-semibold", selectedPerfil.cor)}>{selectedPerfil.label}</p>
-              <p className="text-xs text-gray-500">{selectedPerfil.descricao}</p>
+              <p className="text-sm font-semibold text-white">
+                Perfil: {profileInfo.label}
+              </p>
+              <p className="text-xs text-zinc-500">
+                Faça login para continuar
+              </p>
             </div>
           </div>
 
-          {/* Campo de senha */}
-          <div className="space-y-2">
-            <Label htmlFor="pin" className="text-gray-400 text-sm flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />
-              Senha de acesso
-            </Label>
-            <div className="relative">
-              <Input
-                id="pin"
-                ref={pinInputRef}
-                type={showPin ? "text" : "password"}
-                placeholder="••••••"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                disabled={loadingPin}
-                className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-primary/50 pr-10 text-center text-lg tracking-widest"
-                autoComplete="current-password"
-              />
+          <form onSubmit={handleLogin} className="space-y-4">
+            {/* Username */}
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-zinc-400 text-sm">
+                Usuário
+              </Label>
+              <div className="relative">
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Digite seu usuário"
+                  disabled={loading}
+                  className="bg-zinc-900 border-zinc-700 text-white pl-9 placeholder:text-zinc-600 focus:border-red-600/50 focus:ring-red-600/20"
+                  autoComplete="username"
+                  autoFocus
+                />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="senha" className="text-zinc-400 text-sm">
+                Senha
+              </Label>
+              <div className="relative">
+                <Input
+                  id="senha"
+                  type={showSenha ? "text" : "password"}
+                  value={senha}
+                  onChange={(e) => {
+                    setSenha(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Digite sua senha"
+                  disabled={loading}
+                  className="bg-zinc-900 border-zinc-700 text-white pl-9 pr-10 placeholder:text-zinc-600 focus:border-red-600/50 focus:ring-red-600/20"
+                  autoComplete="current-password"
+                />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <button
+                  type="button"
+                  onClick={() => setShowSenha(!showSenha)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showSenha ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember me + Forgot password */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="lembrar"
+                  checked={lembrar}
+                  onCheckedChange={(checked) => setLembrar(checked === true)}
+                  className="border-zinc-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                />
+                <Label
+                  htmlFor="lembrar"
+                  className="text-xs text-zinc-400 cursor-pointer select-none"
+                >
+                  Lembrar de mim
+                </Label>
+              </div>
               <button
                 type="button"
-                onClick={() => setShowPin(!showPin)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                onClick={() => setShowForgotDialog(true)}
+                className="text-xs text-red-500/80 hover:text-red-400 transition-colors"
               >
-                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                Esqueci a senha
               </button>
             </div>
-          </div>
 
-          <Button
-            type="submit"
-            disabled={loadingPin || !pin}
-            className="w-full"
-          >
-            {loadingPin ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Entrar
-          </Button>
+            {/* Error message */}
+            {error && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-red-600/10 border border-red-600/20">
+                <Info className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-red-300 text-xs leading-relaxed">{error}</p>
+              </div>
+            )}
 
+            {/* Submit button */}
+            <Button
+              type="submit"
+              disabled={loading || !username.trim() || !senha.trim() || locked}
+              className="w-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-40"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Entrando...
+                </>
+              ) : locked ? (
+                `Bloqueado (${minutesLeft}min)`
+              ) : (
+                "Entrar"
+              )}
+            </Button>
+          </form>
+
+          {/* Back to profile selection */}
           <button
-            type="button"
-            onClick={() => { setMode("perfil"); setError(null); setPin(""); }}
-            className="w-full flex items-center justify-center gap-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
+            onClick={() => navigate("/selecionar-perfil")}
+            className="w-full flex items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Escolher outro perfil
-          </button>
-        </form>
-      )}
-
-      {/* ── MODO B: Formulário username + senha ── */}
-      {mode === "username" && (
-        <form onSubmit={handleUsernameLogin} className="w-full max-w-sm space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username" className="text-gray-400 text-sm">Usuário</Label>
-            <Input
-              id="username"
-              type="text"
-              placeholder="Doctor_Sophia"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={loadingForm}
-              className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-primary/50"
-              autoComplete="username"
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="senha" className="text-gray-400 text-sm">Senha</Label>
-            <div className="relative">
-              <Input
-                id="senha"
-                type={showSenha ? "text" : "password"}
-                placeholder="••••••"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                disabled={loadingForm}
-                className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-primary/50 pr-10"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowSenha(!showSenha)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-              >
-                {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={loadingForm || !username || !senha}
-            className="w-full"
-          >
-            {loadingForm ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Entrar
-          </Button>
-
-          <button
-            type="button"
-            onClick={() => { setMode("perfil"); setError(null); setUsername(""); setSenha(""); }}
-            className="w-full flex items-center justify-center gap-2 text-xs text-gray-600 hover:text-gray-400 transition-colors mt-2"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            <ChevronLeft className="w-4 h-4" />
             Voltar para seleção de perfil
           </button>
-        </form>
-      )}
+        </div>
+      </div>
 
-      {/* Erro */}
-      {error && (
-        <p className="mt-5 text-sm text-red-400 text-center bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 max-w-sm w-full">
-          {error}
-        </p>
-      )}
+      {/* Forgot password dialog */}
+      <Dialog open={showForgotDialog} onOpenChange={setShowForgotDialog}>
+        <DialogContent className="bg-zinc-950 border-zinc-800 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white">Esqueci a senha</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Entre em contato com o administrador para resetar sua senha.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+            <Info className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <p className="text-zinc-300 text-sm leading-relaxed">
+              Apenas o perfil <strong className="text-red-400">Dev</strong> pode
+              resetar senhas. Sua senha será redefinida para o padrão e você
+              precisará criar uma nova no próximo login.
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowForgotDialog(false)}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            Entendi
+          </Button>
+        </DialogContent>
+      </Dialog>
 
-      <p className="mt-10 text-xs text-gray-700">Doctor Auto Prime · Sistema Interno v2.0</p>
+      {/* Footer */}
+      <p className="mt-10 text-xs text-zinc-700">
+        Doctor Auto Prime &middot; Sistema Interno v2.0
+      </p>
     </div>
   );
 }

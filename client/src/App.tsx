@@ -92,7 +92,7 @@ function Router() {
                 dev: "/dev/painel",
                 gestao: "/gestao/os-ultimate",
                 consultor: "/admin/dashboard",
-                mecanico: "/admin/patio",
+                mecanico: "/mecanico",
                 cliente: "/cliente",
               };
               window.location.replace(redirectMap[info.role] ?? "/selecionar-perfil");

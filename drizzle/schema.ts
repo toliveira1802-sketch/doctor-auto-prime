@@ -44,17 +44,23 @@ export const colaboradores = mysqlTable("01_colaboradores", {
   empresaId: int("empresaId").notNull(),
   nome: varchar("nome", { length: 200 }).notNull(),
   cargo: varchar("cargo", { length: 100 }),
+  setor: varchar("setor", { length: 100 }),
   email: varchar("email", { length: 320 }),
   username: varchar("username", { length: 100 }),
   telefone: varchar("telefone", { length: 20 }),
   cpf: varchar("cpf", { length: 20 }),
+  avatar: varchar("avatar", { length: 500 }),
   senha: varchar("senha", { length: 255 }).default("123456"),
   primeiroAcesso: boolean("primeiroAcesso").default(true),
   nivelAcessoId: int("nivelAcessoId").default(1),
   ativo: boolean("ativo").default(true),
+  failedAttempts: int("failedAttempts").default(0),
+  lockedUntil: timestamp("lockedUntil"),
   createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 });
 export type Colaborador = typeof colaboradores.$inferSelect;
+export type InsertColaborador = typeof colaboradores.$inferInsert;
 
 // ─── 02_NIVEL_DE_ACESSO ──────────────────────────────────────────────────────
 export const nivelDeAcesso = mysqlTable("02_nivelDeAcesso", {

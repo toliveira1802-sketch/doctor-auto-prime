@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { and, desc, eq, gte, like, lte, ne, sql } from "drizzle-orm";
 import { z } from "zod";
+import { verifyPassword, hashPassword, isBcryptHash, getHashedDefaultPassword } from "./passwordUtils";
 import {
   agendamentos,
   clientes,
@@ -61,43 +62,57 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
-    // Login local por role — autentica pelo banco de dados
+    // Login local por role — autentica pelo banco de dados (com bcrypt)
     roleLogin: publicProcedure
-      .input(z.object({ login: z.string(), senha: z.string() }))
+      .input(z.object({ login: z.string(), senha: z.string(), perfil: z.string().optional() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
 
-        // Busca colaborador pelo username (case-sensitive)
-        const [colab] = await db
-          .select({ id: colaboradores.id, nome: colaboradores.nome, username: colaboradores.username, senha: colaboradores.senha, primeiroAcesso: colaboradores.primeiroAcesso, nivelAcessoId: colaboradores.nivelAcessoId, ativo: colaboradores.ativo })
+        // Busca colaborador pelo username (case-insensitive)
+        const allColabs = await db
+          .select()
           .from(colaboradores)
-          .where(eq(colaboradores.username, input.login))
-          .limit(1);
+          .limit(50);
+        const colab = allColabs.find(
+          (c) => c.username?.toLowerCase() === input.login.toLowerCase()
+        );
 
         if (!colab || !colab.ativo) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário não encontrado ou inativo" });
         }
-        if (colab.senha !== input.senha) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha incorreta" });
+
+        // Check lockout
+        if (colab.lockedUntil && new Date(colab.lockedUntil) > new Date()) {
+          const mins = Math.ceil((new Date(colab.lockedUntil).getTime() - Date.now()) / 60000);
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `Conta bloqueada. Tente em ${mins} minuto(s).` });
         }
 
-        // Mapeia nivelAcessoId → role do sistema
-        const nivelToRole: Record<number, string> = {
-          1: "dev",      // Direção
-          2: "gestao",   // Gestão
-          3: "consultor", // Consultor Técnico
-          4: "mecanico", // Mecânico
-          5: "cliente",  // Cliente
-        };
-        // nivelAcessoId do banco: 1=Direção(10), 2=Gestão(8), 3=Consultor(5), 4=Mecânico(2), 5=Cliente(1)
+        // Verify password (bcrypt or plain-text legacy)
+        const storedPassword = colab.senha ?? "123456";
+        const passwordValid = await verifyPassword(input.senha, storedPassword);
+        if (!passwordValid) {
+          const newAttempts = (colab.failedAttempts ?? 0) + 1;
+          const updateData: Record<string, any> = { failedAttempts: newAttempts };
+          if (newAttempts >= 5) {
+            updateData.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+          }
+          await db.update(colaboradores).set(updateData).where(eq(colaboradores.id, colab.id));
+          const remaining = 5 - newAttempts;
+          throw new TRPCError({ code: "UNAUTHORIZED", message: remaining > 0 ? `Senha incorreta. ${remaining} tentativa(s) restante(s).` : "Conta bloqueada por excesso de tentativas." });
+        }
+
+        // Reset failed attempts
+        await db.update(colaboradores).set({ failedAttempts: 0, lockedUntil: null }).where(eq(colaboradores.id, colab.id));
+
+        // Migrate plain-text to bcrypt
+        if (!isBcryptHash(storedPassword)) {
+          const hashed = await hashPassword(storedPassword);
+          await db.update(colaboradores).set({ senha: hashed }).where(eq(colaboradores.id, colab.id));
+        }
+
         const nivelToRoleByDbId: Record<number, string> = {
-          1: "dev",
-          2: "gestao",
-          3: "consultor",
-          4: "mecanico",
-          5: "cliente",
-          6: "mecanico", // Terceirizado → mecânico
+          1: "dev", 2: "gestao", 3: "consultor", 4: "mecanico", 5: "cliente", 6: "mecanico",
         };
         const role = nivelToRoleByDbId[colab.nivelAcessoId ?? 5] ?? "consultor";
 
@@ -137,25 +152,27 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const hashedDefault = await getHashedDefaultPassword();
         await db.update(colaboradores)
-          .set({ senha: "123456", primeiroAcesso: true })
+          .set({ senha: hashedDefault, primeiroAcesso: true, failedAttempts: 0, lockedUntil: null })
           .where(eq(colaboradores.id, input.id));
         return { success: true };
       }),
 
     alterarSenha: devProcedure
-      .input(z.object({ id: z.number(), novaSenha: z.string().min(4) }))
+      .input(z.object({ id: z.number(), novaSenha: z.string().min(8) }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const hashed = await hashPassword(input.novaSenha);
         await db.update(colaboradores)
-          .set({ senha: input.novaSenha, primeiroAcesso: false })
+          .set({ senha: hashed, primeiroAcesso: false })
           .where(eq(colaboradores.id, input.id));
         return { success: true };
       }),
 
     trocarSenhaPropria: publicProcedure
-      .input(z.object({ colaboradorId: z.number(), senhaAtual: z.string(), novaSenha: z.string().min(4) }))
+      .input(z.object({ colaboradorId: z.number(), senhaAtual: z.string(), novaSenha: z.string().min(8) }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
@@ -165,11 +182,14 @@ export const appRouter = router({
           .where(eq(colaboradores.id, input.colaboradorId))
           .limit(1);
         if (!colab) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
-        if (colab.senha !== input.senhaAtual) {
+        const storedPassword = colab.senha ?? "123456";
+        const valid = await verifyPassword(input.senhaAtual, storedPassword);
+        if (!valid) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha atual incorreta" });
         }
+        const hashed = await hashPassword(input.novaSenha);
         await db.update(colaboradores)
-          .set({ senha: input.novaSenha, primeiroAcesso: false })
+          .set({ senha: hashed, primeiroAcesso: false })
           .where(eq(colaboradores.id, input.colaboradorId));
         return { success: true };
       }),
@@ -178,29 +198,34 @@ export const appRouter = router({
       .input(z.object({
         nome: z.string().min(2),
         cargo: z.string().optional(),
+        setor: z.string().optional(),
         username: z.string().min(3),
+        telefone: z.string().optional(),
         nivelAcessoId: z.number().default(3),
         empresaId: z.number().default(1),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        // Verifica se username já existe
         const [existing] = await db
           .select({ id: colaboradores.id })
           .from(colaboradores)
           .where(eq(colaboradores.username, input.username))
           .limit(1);
         if (existing) throw new TRPCError({ code: "CONFLICT", message: "Username já está em uso" });
+        const hashedDefault = await getHashedDefaultPassword();
         const result = await db.insert(colaboradores).values({
           nome: input.nome,
           cargo: input.cargo,
+          setor: input.setor,
           username: input.username,
-          senha: "123456",
+          telefone: input.telefone,
+          senha: hashedDefault,
           primeiroAcesso: true,
           nivelAcessoId: input.nivelAcessoId,
           empresaId: input.empresaId,
           ativo: true,
+          failedAttempts: 0,
         });
         return { id: Number((result as any).insertId), success: true };
       }),
