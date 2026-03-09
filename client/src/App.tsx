@@ -52,6 +52,7 @@ import TrocarSenha from "./pages/TrocarSenha";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import IaQG from "./pages/admin/IaQG";
 import { RouteGuard } from "./components/RouteGuard";
+import MusicPlayer from "./pages/MusicPlayer";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -61,6 +62,11 @@ function Router() {
   return (
     <RouteGuard>
     <Switch>
+      {/* Player de música DAP Radio */}
+      <Route path="/callback">
+        <MusicPlayer />
+      </Route>
+
       {/* Login local por email+senha */}
       <Route path="/login">
         <Login />
