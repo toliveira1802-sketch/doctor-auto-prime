@@ -51,6 +51,7 @@ import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import IaQG from "./pages/admin/IaQG";
+import { RouteGuard } from "./components/RouteGuard";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -58,6 +59,7 @@ function WithLayout({ children }: { children: React.ReactNode }) {
 
 function Router() {
   return (
+    <RouteGuard>
     <Switch>
       {/* Login local por email+senha */}
       <Route path="/login">
@@ -223,6 +225,7 @@ function Router() {
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
+    </RouteGuard>
   );
 }
 

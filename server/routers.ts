@@ -33,7 +33,7 @@ import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router, devProcedure, gestaoProcedure, internalProcedure } from "./_core/trpc";
 import { storagePut } from "./storage";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export const appRouter = router({
 
   // ─── USUÁRIOS (gerenciamento pelo Dev) ────────────────────────────────────
   usuarios: router({
-    list: publicProcedure.query(async () => {
+    list: devProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
       const rows = await db
@@ -132,7 +132,7 @@ export const appRouter = router({
       return rows;
     }),
 
-    resetSenha: publicProcedure
+    resetSenha: devProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -143,7 +143,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    alterarSenha: publicProcedure
+    alterarSenha: devProcedure
       .input(z.object({ id: z.number(), novaSenha: z.string().min(4) }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -174,7 +174,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    criarUsuario: publicProcedure
+    criarUsuario: devProcedure
       .input(z.object({
         nome: z.string().min(2),
         cargo: z.string().optional(),
@@ -205,7 +205,7 @@ export const appRouter = router({
         return { id: Number((result as any).insertId), success: true };
       }),
 
-    toggleAtivo: publicProcedure
+    toggleAtivo: devProcedure
       .input(z.object({ id: z.number(), ativo: z.boolean() }))
       .mutation(async ({ input }) => {
         const db = await getDb();

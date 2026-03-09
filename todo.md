@@ -404,3 +404,14 @@
 - [x] Ações na tabela: Reset (volta para 123456 + marca primeiroAcesso=true), Alterar senha (Dev define nova senha), Ativar/Desativar usuário
 - [x] Dialog "Criar Usuário": nome, cargo, username, nível de acesso — senha inicial 123456
 - [x] Usernames configurados no banco: Dev_thales, gestao_sophia, gestao_francisco, gestao_marcia, gestao_simone, consultor_pedro, consultor_joao, consultor_rony, consultor_antonio
+
+## Proteção de Rotas por Role
+
+- [x] Criar shared/rolePermissions.ts com mapa de permissões (ROUTE_PERMISSIONS + canAccess + ROLE_HOME)
+- [x] Criar RouteGuard.tsx no frontend — intercepta navegação e redireciona se role sem permissão
+- [x] Integrar RouteGuard no App.tsx envolvendo o Switch de rotas
+- [x] Adicionar header x-dap-role no tRPC client (main.tsx) para enviar role ao servidor
+- [x] Criar devProcedure, gestaoProcedure, internalProcedure no server/_core/trpc.ts
+- [x] Proteger procedures usuarios.list/resetSenha/alterarSenha/criarUsuario/toggleAtivo com devProcedure
+- [x] Testar: role gestao recebe FORBIDDEN (403) ao chamar usuarios.list
+- [x] Testar: role dev recebe dados (9 usuários) ao chamar usuarios.list
