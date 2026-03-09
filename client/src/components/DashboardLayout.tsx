@@ -260,12 +260,13 @@ function DashboardLayoutContent({
   // consultor: apenas POMBAL
   // mecanico: apenas POMBAL
   // cliente: nenhum (portal separado)
+  // Grupos visíveis por role — a ordem aqui define a ordem no sidebar
   const GROUPS_BY_ROLE: Record<string, string[]> = {
-    dev: ["POMBAL", "GESTÃO", "Dev"],
-    gestao: ["POMBAL", "GESTÃO"],
-    consultor: ["POMBAL"],
-    mecanico: ["POMBAL"],
-    cliente: [],
+    dev: ["Dev", "GESTÃO", "POMBAL"],      // Dev vê tudo: Dev primeiro, depois GESTÃO, depois POMBAL
+    gestao: ["GESTÃO", "POMBAL"],           // Gestão: apenas GESTÃO e POMBAL, sem Dev
+    consultor: ["POMBAL"],                  // Consultor: apenas POMBAL
+    mecanico: ["POMBAL"],                   // Mecânico: apenas POMBAL
+    cliente: [],                            // Cliente: nenhum (portal separado)
   };
   const allowedGroups = GROUPS_BY_ROLE[perfilAtual] ?? ["POMBAL"];
   const filteredMenuItems = menuItems
