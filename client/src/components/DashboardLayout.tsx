@@ -119,6 +119,32 @@ type MenuGroup = {
 
 const menuItems: MenuGroup[] = [
   {
+    group: "Dev",
+    items: [
+      { icon: Code2, label: "Navegador de Páginas", path: "/dev" },
+      { icon: Settings2, label: "Painel DEV", path: "/dev/painel" },
+    ],
+  },
+  {
+    group: "GESTÃO",
+    items: [
+      { icon: FileText, label: "OS Ultimate", path: "/gestao/os-ultimate" },
+      { icon: TrendingUp, label: "Visão Geral", path: "/gestao/visao-geral" },
+      { icon: Wrench, label: "Operacional", path: "/gestao/operacional" },
+      { icon: DollarSign, label: "Financeiro", path: "/gestao/financeiro" },
+      { icon: BarChart3, label: "Produtividade", path: "/gestao/produtividade" },
+      { icon: Users, label: "Colaboradores", path: "/gestao/colaboradores" },
+      { icon: Wrench, label: "Mecânicos", path: "/gestao/mecanicos" },
+      { icon: Target, label: "Metas", path: "/gestao/metas" },
+      { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
+      { icon: Lightbulb, label: "Melhorias", path: "/gestao/melhorias" },
+      { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },
+      { icon: UserCog, label: "RH", path: "/gestao/rh" },
+      { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
+      { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
+    ],
+  },
+  {
     group: "POMBAL",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
@@ -167,32 +193,6 @@ const menuItems: MenuGroup[] = [
           { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
         ],
       },
-    ],
-  },
-  {
-    group: "GESTÃO",
-    items: [
-      { icon: FileText, label: "OS Ultimate", path: "/gestao/os-ultimate" },
-      { icon: TrendingUp, label: "Visão Geral", path: "/gestao/visao-geral" },
-      { icon: Wrench, label: "Operacional", path: "/gestao/operacional" },
-      { icon: DollarSign, label: "Financeiro", path: "/gestao/financeiro" },
-      { icon: BarChart3, label: "Produtividade", path: "/gestao/produtividade" },
-      { icon: Users, label: "Colaboradores", path: "/gestao/colaboradores" },
-      { icon: Wrench, label: "Mecânicos", path: "/gestao/mecanicos" },
-      { icon: Target, label: "Metas", path: "/gestao/metas" },
-      { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
-      { icon: Lightbulb, label: "Melhorias", path: "/gestao/melhorias" },
-      { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },
-      { icon: UserCog, label: "RH", path: "/gestao/rh" },
-      { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
-      { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
-    ],
-  },
-  {
-    group: "Dev",
-    items: [
-      { icon: Code2, label: "Navegador de Páginas", path: "/dev" },
-      { icon: Settings2, label: "Painel DEV", path: "/dev/painel" },
     ],
   },
 ];
@@ -289,6 +289,16 @@ function DashboardLayoutContent({
     }))
     .filter(group => group.items.length > 0);
 
+  // Track collapsed groups (GESTÃO e POMBAL colapsam, Dev sempre aberto)
+  const COLLAPSIBLE_GROUPS = ["GESTÃO", "POMBAL"];
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    // Por padrão GESTÃO e POMBAL começam expandidos
+    return {};
+  });
+  const toggleGroup = (group: string) => {
+    setCollapsedGroups(prev => ({ ...prev, [group]: !prev[group] }));
+  };
+
   // Track open submenus
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(() => {
     // Auto-open submenu that contains the active path
@@ -377,14 +387,34 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 overflow-y-auto">
-            {filteredMenuItems.map((group, gi) => (
+            {filteredMenuItems.map((group, gi) => {
+              const isGroupCollapsed = COLLAPSIBLE_GROUPS.includes(group.group) && !!collapsedGroups[group.group];
+              const isCollapsibleGroup = COLLAPSIBLE_GROUPS.includes(group.group);
+              return (
               <div key={group.group}>
                 {gi > 0 && <SidebarSeparator className="mx-2 my-1" />}
                 {!isCollapsed && (
-                  <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                    {group.group}
-                  </p>
+                  isCollapsibleGroup ? (
+                    <button
+                      onClick={() => toggleGroup(group.group)}
+                      className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-accent/30 rounded-md transition-colors group/grp"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 group-hover/grp:text-muted-foreground transition-colors">
+                        {group.group}
+                      </p>
+                      <ChevronRight
+                        className={`h-3 w-3 text-muted-foreground/40 transition-transform duration-200 ${
+                          isGroupCollapsed ? "" : "rotate-90"
+                        }`}
+                      />
+                    </button>
+                  ) : (
+                    <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                      {group.group}
+                    </p>
+                  )
                 )}
+                {!isGroupCollapsed && (
                 <SidebarMenu className="px-2 pb-1">
                   {group.items.map(item => {
                     if (item.children) {
@@ -449,8 +479,10 @@ function DashboardLayoutContent({
                     );
                   })}
                 </SidebarMenu>
+                )}
               </div>
-            ))}
+              );
+            })}
             {/* Quick action */}
             {!isCollapsed && (
               <div className="px-3 pt-2 pb-1">
