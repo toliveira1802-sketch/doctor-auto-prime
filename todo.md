@@ -455,7 +455,7 @@
 
 ## Novas Funcionalidades — Sidebar Cliente + Perfil IA + Processos + Sininho
 - [ ] Adicionar submenu "Cliente" no sidebar DEV com página /dev/cliente
-- [ ] Persistir configs do Perfil IA na tabela system_config (procedure config.getPerfilIA + config.savePerfilIA)
+- [x] Persistir configs do Perfil IA na tabela system_config (procedure config.getPerfilIA + config.savePerfilIA)
 - [ ] Reestruturar /dev/processos com 3 subseções: Sistema, Local, Regras de Negócio
 - [ ] Criar botão de Atualizações com sininho no sidebar (tabela changelog no banco + badge de não lidos)
 
@@ -485,3 +485,16 @@
 - [x] Atualizar UsuariosTab no DevPanel: coluna "Mecânico Vinculado" com botão de vinculação
 - [x] Dialog de vinculação: select de mecânicos disponíveis com confirmação
 - [x] Login.tsx: salvar mecanicoRefId no RoleContext ao fazer login
+
+## Integração Perfil IA → invokeLLM (Mar 10 2026)
+
+- [x] Criar helper llmConfig.ts: getLLMConfig() lê model, temperatura, maxTokens, systemPrompt, modoDebug do banco
+- [x] Cache de 60s no getLLMConfig para evitar query a cada chamada
+- [x] Validações de segurança: temperatura [0,2], maxTokens [256,32768], fallback para defaults
+- [x] invokeLLM atualizado: usa model, temperature e max_tokens do banco (via getLLMConfig)
+- [x] thinking.budget_tokens proporcional ao max_tokens (10%, mín 128, máx 1024)
+- [x] config.setMany agora chama invalidateLLMConfigCache() após salvar
+- [x] Procedure config.getPerfilIA: retorna config ativa que o invokeLLM está usando
+- [x] Página PerfilIA: painel "Configuração Ativa no Servidor" mostra valores em uso
+- [x] Página PerfilIA: após salvar, refetch automático do perfilAtivo (1.5s delay para cache expirar)
+- [x] Vitest: 13 testes para llmConfig passando (42 testes totais, todos passando)

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Brain, Save, RefreshCw, Zap, MessageSquare, Bot, Loader2, CheckCircle2, Database } from "lucide-react";
+import { Brain, Save, RefreshCw, Zap, MessageSquare, Bot, Loader2, CheckCircle2, Database, Activity, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -44,6 +44,8 @@ export default function PerfilIA() {
 
   // Busca todas as configs do grupo ia.perfil
   const { data: configList, isLoading } = trpc.config.list.useQuery();
+  // Busca a config ativa que o invokeLLM está usando agora (com cache de 60s)
+  const { data: perfilAtivo, refetch: refetchPerfil } = trpc.config.getPerfilIA.useQuery();
   const utils = trpc.useUtils();
 
   const setMany = trpc.config.setMany.useMutation({
@@ -53,6 +55,8 @@ export default function PerfilIA() {
         icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
       });
       utils.config.list.invalidate();
+      // Aguarda 1.5s para o cache do servidor expirar e refaz a query de config ativa
+      setTimeout(() => refetchPerfil(), 1500);
     },
     onError: (e) => toast.error("Erro ao salvar: " + e.message),
   });
@@ -236,6 +240,52 @@ export default function PerfilIA() {
                 Restaurar padrão
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Config Ativa no Servidor */}
+        <Card className="md:col-span-2 bg-emerald-950/20 border-emerald-800/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Activity className="h-4 w-4 text-emerald-400" />
+              Configuração Ativa no Servidor
+              <Badge variant="outline" className="text-[10px] ml-auto border-emerald-700 text-emerald-400">
+                invokeLLM usa estes valores
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {perfilAtivo ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Modelo</p>
+                  <p className="text-sm font-mono font-medium text-emerald-300">{perfilAtivo.modelo}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Temperatura</p>
+                  <p className="text-sm font-mono font-medium text-emerald-300">{perfilAtivo.temperatura}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Max Tokens</p>
+                  <p className="text-sm font-mono font-medium text-emerald-300">{perfilAtivo.maxTokens.toLocaleString()}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Modo Debug</p>
+                  <p className="text-sm font-mono font-medium text-emerald-300">{perfilAtivo.modoDebug ? "Ativo" : "Inativo"}</p>
+                </div>
+                <div className="col-span-2 md:col-span-4 space-y-1">
+                  <p className="text-xs text-muted-foreground">System Prompt (primeiros 120 chars)</p>
+                  <p className="text-xs font-mono text-zinc-400 bg-zinc-900/50 rounded p-2 truncate">
+                    {perfilAtivo.systemPrompt.slice(0, 120)}{perfilAtivo.systemPrompt.length > 120 ? "..." : ""}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <AlertCircle className="h-4 w-4" />
+                Carregando configuração ativa...
+              </div>
+            )}
           </CardContent>
         </Card>
 

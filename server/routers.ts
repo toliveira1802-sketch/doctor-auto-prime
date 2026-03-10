@@ -37,6 +37,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router, devProcedure, gestaoProcedure, internalProcedure } from "./_core/trpc";
 import { storagePut } from "./storage";
+import { invalidateLLMConfigCache, getLLMConfig, LLM_DEFAULTS } from "./_core/llmConfig";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function getMonthRange(mes?: number, ano?: number) {
@@ -1623,8 +1624,23 @@ export const appRouter = router({
             .values({ chave: item.chave, valor: item.valor })
             .onDuplicateKeyUpdate({ set: { valor: item.valor } });
         }
+        // Invalida o cache do LLM para que a próxima chamada use os novos valores
+        invalidateLLMConfigCache();
         return { success: true, updated: input.length };
       }),
+
+    // Retorna as configs do Perfil IA com os valores atuais (banco ou defaults)
+    getPerfilIA: devProcedure.query(async () => {
+      const cfg = await getLLMConfig();
+      return {
+        modelo: cfg.model,
+        temperatura: cfg.temperature,
+        maxTokens: cfg.maxTokens,
+        systemPrompt: cfg.systemPrompt,
+        modoDebug: cfg.modoDebug,
+        defaults: LLM_DEFAULTS,
+      };
+    }),
   }),
 
   // ─── OS ANEXOS (MÍDIA) ───────────────────────────────────────────────────────
