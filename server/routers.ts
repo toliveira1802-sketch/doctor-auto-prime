@@ -126,6 +126,7 @@ export const appRouter = router({
           nome: colab.nome,
           login: colab.username ?? input.login,
           colaboradorId: colab.id,
+          mecanicoRefId: colab.mecanicoRefId ?? null,
           primeiroAcesso: colab.primeiroAcesso ?? false,
         };
       }),
@@ -1327,6 +1328,64 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error("DB unavailable");
         await db.update(agendamentos).set({ status: input.status }).where(eq(agendamentos.id, input.id));
+        return { success: true };
+      }),
+
+    // Lista agendamentos de um mecânico específico por data
+    listByMecanico: protectedProcedure
+      .input(z.object({
+        mecanicoId: z.number(),
+        data: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const targetDate = input.data ?? new Date().toISOString().split("T")[0];
+        const rows = await db
+          .select({ ag: agendamentos, cliente: clientes, veiculo: veiculos })
+          .from(agendamentos)
+          .leftJoin(clientes, eq(agendamentos.clienteId, clientes.id))
+          .leftJoin(veiculos, eq(agendamentos.veiculoId, veiculos.id))
+          .where(and(
+            eq(agendamentos.mecanicoId, input.mecanicoId),
+            sql`${agendamentos.dataAgendamento} = ${targetDate}`,
+          ))
+          .orderBy(agendamentos.horaAgendamento);
+        return rows.map((r) => ({
+          ...r.ag,
+          clienteNome: r.cliente?.nomeCompleto ?? "—",
+          clienteTelefone: r.cliente?.telefone ?? "—",
+          veiculoPlaca: r.veiculo?.placa ?? "—",
+          veiculoModelo: r.veiculo ? `${r.veiculo.marca ?? ""} ${r.veiculo.modelo ?? ""}`.trim() : "—",
+        }));
+      }),
+
+    atribuirMecanico: protectedProcedure
+      .input(z.object({ id: z.number(), mecanicoId: z.number().nullable() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(agendamentos)
+          .set({ mecanicoId: input.mecanicoId })
+          .where(eq(agendamentos.id, input.id));
+        return { success: true };
+      }),
+
+    updateStatusMecanico: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        statusMecanico: z.enum(["pendente", "confirmado", "concluido"]),
+        observacoesMecanico: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(agendamentos)
+          .set({
+            statusMecanico: input.statusMecanico,
+            ...(input.observacoesMecanico !== undefined && { observacoesMecanico: input.observacoesMecanico }),
+          })
+          .where(eq(agendamentos.id, input.id));
         return { success: true };
       }),
   }),

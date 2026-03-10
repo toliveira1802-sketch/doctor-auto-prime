@@ -201,6 +201,7 @@ export function registerLocalAuthRoutes(app: Express) {
         redirectPath,
         primeiroAcesso: isFirstAccess,
         colaboradorId: colab.id,
+        mecanicoRefId: colab.mecanicoRefId ?? null,
         login: colab.username ?? username,
       });
     } catch (error) {

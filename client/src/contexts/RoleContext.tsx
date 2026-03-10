@@ -7,6 +7,7 @@ interface RoleInfo {
   nome: string;
   login: string;
   colaboradorId?: number;
+  mecanicoRefId?: number | null;
   primeiroAcesso?: boolean;
 }
 

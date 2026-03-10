@@ -416,9 +416,17 @@
 - [x] Testar: role gestao recebe FORBIDDEN (403) ao chamar usuarios.list
 - [x] Testar: role dev recebe dados (9 usuários) ao chamar usuarios.list
 
-## Correções de Regras de Negócio — Autenticação
-- [ ] Diagnosticar e corrigir login do Dev (senha hash vs plain no banco)
-- [ ] Reset automático para 123456 após 3 tentativas erradas (não bloquear, resetar + primeiroAcesso=true)
-- [ ] Dev não precisa trocar senha no primeiro acesso (primeiroAcesso ignorado para nivelAcessoId=1)
-- [ ] Apenas Dev pode cadastrar/alterar/resetar usuários (devProcedure já protege)
-- [ ] Remover dicas de username visíveis na tela de login (segurança)
+## Correções de Regras de Negócio — Autenticação (Concluído)
+- [x] Diagnosticar e corrigir login do Dev (colunas faltantes setor/avatar/updatedAt no banco)
+- [x] Reset automático para 123456 após 3 tentativas erradas (sem lockout)
+- [x] Dev não precisa trocar senha no primeiro acesso (primeiroAcesso ignorado para nivelAcessoId=1)
+- [x] Apenas Dev pode cadastrar/alterar/resetar usuários (devProcedure protege)
+- [x] Dicas de username não expostas na tela de login
+
+## Agenda do Mecânico (Concluído)
+- [x] Adicionar mecanicoId, observacoesMecanico, statusMecanico na tabela 12_agendamentos
+- [x] Adicionar mecanicoRefId na tabela 01_colaboradores
+- [x] Atualizar schema Drizzle com novos campos
+- [x] Criar procedures agendamentos.listByMecanico, atribuirMecanico, updateStatusMecanico
+- [x] Adicionar aba Agenda na tela MecanicoView com seletor de data e cards de agendamento
+- [x] Dialog de atualização de status do agendamento pelo mecânico

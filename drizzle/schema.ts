@@ -56,6 +56,7 @@ export const colaboradores = mysqlTable("01_colaboradores", {
   ativo: boolean("ativo").default(true),
   failedAttempts: int("failedAttempts").default(0),
   lockedUntil: timestamp("lockedUntil"),
+  mecanicoRefId: int("mecanicoRefId"),  // FK para 03_mecanicos (só para colaboradores mecânicos)
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 });
@@ -243,7 +244,10 @@ export const agendamentos = mysqlTable("12_agendamentos", {
   motivoVisita: text("motivoVisita"),
   status: varchar("status", { length: 50 }).default("Agendado"),
   colaboradorId: int("colaboradorId"),
+  mecanicoId: int("mecanicoId"),                           // FK para 03_mecanicos
   observacoes: text("observacoes"),
+  observacoesMecanico: text("observacoesMecanico"),         // Anotações do mecânico
+  statusMecanico: varchar("statusMecanico", { length: 50 }).default("pendente"), // pendente | confirmado | concluido
   origem: varchar("origem", { length: 50 }).default("Sistema"),
   osId: int("osId"),
   createdAt: timestamp("createdAt").defaultNow(),
