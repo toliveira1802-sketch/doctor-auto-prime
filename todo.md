@@ -538,3 +538,22 @@
 - [x] Criar página /gestao/antes-depois (10 KPIs antes/depois com cards, radar e barras)
 - [x] Adicionar rotas no App.tsx e links no sidebar (Gestão + POMBAL + Dev)
 - [x] PERFIL_ACESSO atualizado para /gestao/antes-depois e /visaogeral
+
+## Agentes IA — System Prompts e Delegação (Mar 10 2026)
+
+- [ ] Persistir system prompts de Sophia, Simone e Raena no banco (system_config)
+- [ ] Router ia.orquestrar — Sophia analisa mensagem e delega para Simone (sistema) ou Raena (Kommo)
+- [ ] Router ia.simone — agente interno com acesso a OS, agendamentos, faturamento
+- [ ] Router ia.raena — agente Kommo com acesso a leads, pipeline, status
+- [ ] Atualizar IAPortal com chat multi-agente e delegação visível
+- [ ] Página /dev/qgia/perfil-ia: adicionar abas por agente (Sophia, Simone, Raena)
+
+## Agentes IA — Orquestração Sophia → Simone/Raena (Mar 10 2026)
+
+- [x] Persistir system prompts dos 3 agentes no banco (ia.agente.sophia/simone/raena.systemPrompt + temperatura + maxTokens + modelo + ativo)
+- [x] Criar helper getAgentConfig() no llmConfig.ts com cache 60s por agente e fallback para defaults
+- [x] Criar router agentes (list, getConfig, orquestrar, chat) no routers.ts
+- [x] Lógica de orquestração: Sophia usa JSON schema para decidir delegação (sophia | simone | raena)
+- [x] Simone recebe contexto de OS ativas do banco ao ser delegada
+- [x] Reconstruir IAPortal com chat multi-agente, delegação visível (Sophia → Simone/Raena), aba Agentes e aba Fluxo
+- [x] 0 erros TypeScript após todas as correções

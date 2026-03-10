@@ -37,7 +37,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router, devProcedure, gestaoProcedure, internalProcedure } from "./_core/trpc";
 import { storagePut } from "./storage";
-import { invalidateLLMConfigCache, getLLMConfig, LLM_DEFAULTS } from "./_core/llmConfig";
+import { invalidateLLMConfigCache, getLLMConfig, LLM_DEFAULTS, getAgentConfig } from "./_core/llmConfig";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function getMonthRange(mes?: number, ano?: number) {
@@ -2521,6 +2521,163 @@ Retorne APENAS JSON válido:
           createdAt: Date.now(),
         });
         return { id: Number((result as any).insertId), success: true };
+      }),
+  }),
+
+  // ─── AGENTES IA (Sophia → Simone | Raena) ─────────────────────────────────────────────────
+  agentes: router({
+    // Retorna as configs de todos os agentes (para o IAPortal)
+    list: devProcedure.query(async () => {
+      const agentIds = ["sophia", "simone", "raena"];
+      const configs = await Promise.all(
+        agentIds.map(async (id) => {
+          const cfg = await getAgentConfig(id);
+          return { id, ...cfg };
+        })
+      );
+      return configs;
+    }),
+
+    // Retorna config de um agente específico
+    getConfig: devProcedure
+      .input(z.object({ agentId: z.enum(["sophia", "simone", "raena"]) }))
+      .query(async ({ input }) => {
+        return getAgentConfig(input.agentId);
+      }),
+
+    // Orquestração: Sophia analisa a mensagem e decide para quem delegar
+    orquestrar: protectedProcedure
+      .input(z.object({
+        mensagem: z.string().min(1).max(2000),
+        historico: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).optional().default([]),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const sophiaCfg = await getAgentConfig("sophia");
+
+        // Sophia decide para quem delegar
+        const sophiaResp = await invokeLLM({
+          messages: [
+            { role: "system", content: sophiaCfg.systemPrompt },
+            ...input.historico.map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string })),
+            { role: "user", content: input.mensagem },
+          ],
+          max_tokens: sophiaCfg.maxTokens,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "delegacao",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  agente: { type: "string", enum: ["sophia", "simone", "raena"] },
+                  motivo: { type: "string" },
+                  mensagem: { type: "string" },
+                },
+                required: ["agente", "motivo", "mensagem"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        let delegacao: { agente: string; motivo: string; mensagem: string };
+        try {
+          const raw = (sophiaResp.choices?.[0]?.message?.content as string) ?? "{}";
+          delegacao = JSON.parse(raw);
+        } catch {
+          delegacao = { agente: "sophia", motivo: "Erro ao parsear JSON", mensagem: (sophiaResp.choices?.[0]?.message?.content as string) ?? "" };
+        }
+
+        // Se Sophia delegou para outro agente, executa o agente destino
+        if (delegacao.agente !== "sophia") {
+          const agenteCfg = await getAgentConfig(delegacao.agente);
+
+          // Contexto adicional para Simone (dados do sistema)
+          let contextoPatch = "";
+          if (delegacao.agente === "simone") {
+            const db = await getDb();
+            if (db) {
+              const osAtivas = await db
+                .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa })
+                .from(ordensServico)
+                .where(ne(ordensServico.status, "Entregue"))
+                .limit(20);
+              contextoPatch = `\n\nDADOS DO SISTEMA (OS ativas agora):\n${JSON.stringify(osAtivas, null, 2)}`;
+            }
+          }
+
+          const agenteResp = await invokeLLM({
+            messages: [
+              { role: "system", content: agenteCfg.systemPrompt + contextoPatch },
+              ...input.historico.map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string })),
+              { role: "user", content: delegacao.mensagem || input.mensagem },
+            ],
+            max_tokens: agenteCfg.maxTokens,
+          });
+
+          return {
+            agente: delegacao.agente as "sophia" | "simone" | "raena",
+            motivo: delegacao.motivo,
+            resposta: agenteResp.choices?.[0]?.message?.content ?? "",
+            delegado: true,
+          };
+        }
+
+        // Sophia respondeu diretamente
+        return {
+          agente: "sophia" as const,
+          motivo: delegacao.motivo,
+          resposta: delegacao.mensagem,
+          delegado: false,
+        };
+      }),
+
+    // Chat direto com um agente específico (sem orquestração)
+    chat: protectedProcedure
+      .input(z.object({
+        agentId: z.enum(["sophia", "simone", "raena"]),
+        mensagem: z.string().min(1).max(2000),
+        historico: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).optional().default([]),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const cfg = await getAgentConfig(input.agentId);
+
+        // Contexto adicional para Simone
+        let contextoPatch = "";
+        if (input.agentId === "simone") {
+          const db = await getDb();
+          if (db) {
+            const osAtivas = await db
+              .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa, totalOrcamento: ordensServico.totalOrcamento })
+              .from(ordensServico)
+              .where(ne(ordensServico.status, "Entregue"))
+              .limit(20);
+            contextoPatch = `\n\nDADOS DO SISTEMA (OS ativas agora):\n${JSON.stringify(osAtivas, null, 2)}`;
+          }
+        }
+
+        const resp = await invokeLLM({
+          messages: [
+            { role: "system", content: cfg.systemPrompt + contextoPatch },
+            ...input.historico.map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string })),
+            { role: "user", content: input.mensagem },
+          ],
+          max_tokens: cfg.maxTokens,
+        });
+
+        return {
+          agente: input.agentId,
+          resposta: resp.choices?.[0]?.message?.content ?? "",
+        };
       }),
   }),
 });
