@@ -441,3 +441,14 @@
 - [x] Submenu "Processos" no grupo DEV (operações, relatórios, campanhas)
 - [x] Item direto "Melhorias" no grupo DEV
 - [x] Grupos GESTÃO e POMBAL mantidos para os outros roles (sem alteração)
+
+## QG IA + Portal Dev IA + Processos (Concluído)
+- [x] Criar página /dev/ia-portal com cards dos 3 agentes Sophia Hub (Sophia, Simone, Ana)
+- [x] Criar página /dev/qgia/perfil-ia com configuração de modelo, temperatura, max tokens e system prompt
+- [x] Criar página /dev/qgia/temperatura-lead com critérios de pontuação e limiares configuráveis
+- [x] Criar página /dev/qgia/distribuicao-leads com regras de distribuição e carga dos consultores
+- [x] Criar página /dev/qgia/historico-pontuacao com tabela de eventos de pontuação por lead
+- [x] Criar página /dev/processos com 4 diagramas Mermaid interativos editáveis e exportáveis
+- [x] Expandir submenu QG IA no sidebar com 5 sub-itens (Portal IA, Perfil IA, Temperatura, Distribuição, Histórico)
+- [x] Atualizar Processos no sidebar para apontar para /dev/processos + sub-item Diagramas
+- [x] Registrar todas as 6 novas rotas no App.tsx

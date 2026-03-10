@@ -57,6 +57,9 @@ import {
   Layers,
   GitBranch,
   Cpu,
+  Bot,
+  Sliders,
+  Thermometer,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -175,7 +178,18 @@ const menuItems: MenuGroup[] = [
         ],
       },
       // Itens diretos adicionais
-      { icon: Brain, label: "QG IA", path: "/admin/ia-qg" },
+      {
+        icon: Brain,
+        label: "QG IA",
+        path: "/dev/ia-portal",
+        children: [
+          { icon: Bot, label: "Portal IA", path: "/dev/ia-portal" },
+          { icon: Sliders, label: "Perfil IA", path: "/dev/qgia/perfil-ia" },
+          { icon: Thermometer, label: "Temperatura de Lead", path: "/dev/qgia/temperatura-lead" },
+          { icon: GitBranch, label: "Distribuição de Leads", path: "/dev/qgia/distribuicao-leads" },
+          { icon: BarChart3, label: "Histórico de Pontuação", path: "/dev/qgia/historico-pontuacao" },
+        ],
+      },
       {
         icon: Monitor,
         label: "Sistema",
@@ -190,8 +204,9 @@ const menuItems: MenuGroup[] = [
       {
         icon: GitBranch,
         label: "Processos",
-        path: "/_dev_processos",
+        path: "/dev/processos",
         children: [
+          { icon: GitBranch, label: "Diagramas", path: "/dev/processos" },
           { icon: Activity, label: "Visão Geral Ops", path: "/gestao/operacoes" },
           { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
           { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },

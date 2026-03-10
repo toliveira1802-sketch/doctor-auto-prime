@@ -53,6 +53,12 @@ import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import IaQG from "./pages/admin/IaQG";
 import { RouteGuard } from "./components/RouteGuard";
 import MusicPlayer from "./pages/MusicPlayer";
+import IAPortal from "./pages/dev/IAPortal";
+import Processos from "./pages/dev/Processos";
+import PerfilIA from "./pages/dev/qgia/PerfilIA";
+import TemperaturaLead from "./pages/dev/qgia/TemperaturaLead";
+import DistribuicaoLeads from "./pages/dev/qgia/DistribuicaoLeads";
+import HistoricoPontuacao from "./pages/dev/qgia/HistoricoPontuacao";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -118,6 +124,24 @@ function Router() {
       </Route>
       <Route path="/dev/painel">
         <WithLayout><DevPanel /></WithLayout>
+      </Route>
+      <Route path="/dev/ia-portal">
+        <WithLayout><IAPortal /></WithLayout>
+      </Route>
+      <Route path="/dev/processos">
+        <WithLayout><Processos /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/perfil-ia">
+        <WithLayout><PerfilIA /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/temperatura-lead">
+        <WithLayout><TemperaturaLead /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/distribuicao-leads">
+        <WithLayout><DistribuicaoLeads /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/historico-pontuacao">
+        <WithLayout><HistoricoPontuacao /></WithLayout>
       </Route>
 
       {/* ── ADMIN ROUTES ─────────────────────────────────────────────── */}
