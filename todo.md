@@ -415,3 +415,10 @@
 - [x] Proteger procedures usuarios.list/resetSenha/alterarSenha/criarUsuario/toggleAtivo com devProcedure
 - [x] Testar: role gestao recebe FORBIDDEN (403) ao chamar usuarios.list
 - [x] Testar: role dev recebe dados (9 usuários) ao chamar usuarios.list
+
+## Correções de Regras de Negócio — Autenticação
+- [ ] Diagnosticar e corrigir login do Dev (senha hash vs plain no banco)
+- [ ] Reset automático para 123456 após 3 tentativas erradas (não bloquear, resetar + primeiroAcesso=true)
+- [ ] Dev não precisa trocar senha no primeiro acesso (primeiroAcesso ignorado para nivelAcessoId=1)
+- [ ] Apenas Dev pode cadastrar/alterar/resetar usuários (devProcedure já protege)
+- [ ] Remover dicas de username visíveis na tela de login (segurança)

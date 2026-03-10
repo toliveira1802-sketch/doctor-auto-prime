@@ -1030,51 +1030,52 @@ type PageEntry = {
   grupo: string;
   roles: string[];
   descricao?: string;
+  tabelas?: string[];
 };
 
 const TODAS_PAGINAS: PageEntry[] = [
-  // ── DEV ──────────────────────────────────────────────────────────────────
-  { grupo: "Dev", label: "Navegador de Páginas", path: "/dev", roles: ["dev"], descricao: "Lista todas as páginas do sistema com links diretos" },
-  { grupo: "Dev", label: "Painel DEV", path: "/dev/painel", roles: ["dev"], descricao: "Feature flags, integrações, banco, logs, usuários, mapa de páginas" },
+  // ── DEV ────────────────────────────────────────────────────────────────────────────────────
+  { grupo: "Dev", label: "Navegador de Páginas", path: "/dev", roles: ["dev"], descricao: "Lista todas as páginas do sistema com links diretos", tabelas: [] },
+  { grupo: "Dev", label: "Painel DEV", path: "/dev/painel", roles: ["dev"], descricao: "Feature flags, integrações, banco, logs, usuários, mapa de páginas", tabelas: ["01_colaboradores", "system_config", "23_system_logs"] },
 
-  // ── GESTÃO ────────────────────────────────────────────────────────────────
-  { grupo: "Gestão", label: "OS Ultimate", path: "/gestao/os-ultimate", roles: ["dev", "gestao"], descricao: "Painel gerencial completo de ordens de serviço com funil e ranking" },
-  { grupo: "Gestão", label: "Visão Geral", path: "/gestao/visao-geral", roles: ["dev", "gestao"], descricao: "KPIs estratégicos consolidados" },
-  { grupo: "Gestão", label: "Operacional", path: "/gestao/operacional", roles: ["dev", "gestao"], descricao: "OS ativas em tempo real, prontas para entrega, aguardando aprovação" },
-  { grupo: "Gestão", label: "Financeiro", path: "/gestao/financeiro", roles: ["dev", "gestao"], descricao: "Faturamento vs meta, mix de serviços" },
-  { grupo: "Gestão", label: "Produtividade", path: "/gestao/produtividade", roles: ["dev", "gestao"], descricao: "Ranking de mecânicos com score de qualidade" },
-  { grupo: "Gestão", label: "Colaboradores", path: "/gestao/colaboradores", roles: ["dev", "gestao"], descricao: "Equipe administrativa com perfis" },
-  { grupo: "Gestão", label: "Mecânicos", path: "/gestao/mecanicos", roles: ["dev", "gestao"], descricao: "Equipe técnica com grau, especialidade e score" },
-  { grupo: "Gestão", label: "Metas", path: "/gestao/metas", roles: ["dev", "gestao"], descricao: "Configuração e acompanhamento de metas" },
-  { grupo: "Gestão", label: "Relatórios", path: "/gestao/relatorios", roles: ["dev", "gestao"], descricao: "Relatórios gerenciais consolidados por período" },
-  { grupo: "Gestão", label: "Melhorias", path: "/gestao/melhorias", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Board de sugestões com votos e status" },
-  { grupo: "Gestão", label: "Campanhas", path: "/gestao/campanhas", roles: ["dev", "gestao"], descricao: "ROI por canal, funil de conversão, insights automáticos" },
-  { grupo: "Gestão", label: "RH", path: "/gestao/rh", roles: ["dev", "gestao"], descricao: "Equipe mecânicos e colaboradores admin" },
-  { grupo: "Gestão", label: "Operações", path: "/gestao/operacoes", roles: ["dev", "gestao"], descricao: "Distribuição OS, carga por mecânico, agendamentos" },
-  { grupo: "Gestão", label: "Tecnologia", path: "/gestao/tecnologia", roles: ["dev", "gestao"], descricao: "Status integrações, stack e roadmap 2026-2028" },
+  // ── GESTÃO ────────────────────────────────────────────────────────────────────────────
+  { grupo: "Gestão", label: "OS Ultimate", path: "/gestao/os-ultimate", roles: ["dev", "gestao"], descricao: "Painel gerencial completo de ordens de serviço com funil e ranking", tabelas: ["09_ordens_servico", "01_colaboradores", "03_mecanicos"] },
+  { grupo: "Gestão", label: "Visão Geral", path: "/gestao/visao-geral", roles: ["dev", "gestao"], descricao: "KPIs estratégicos consolidados", tabelas: ["09_ordens_servico", "12_agendamentos", "95_faturamento", "system_config", "03_mecanicos"] },
+  { grupo: "Gestão", label: "Operacional", path: "/gestao/operacional", roles: ["dev", "gestao"], descricao: "OS ativas em tempo real, prontas para entrega, aguardando aprovação", tabelas: ["09_ordens_servico"] },
+  { grupo: "Gestão", label: "Financeiro", path: "/gestao/financeiro", roles: ["dev", "gestao"], descricao: "Faturamento vs meta, mix de serviços", tabelas: ["95_faturamento", "09_ordens_servico", "system_config"] },
+  { grupo: "Gestão", label: "Produtividade", path: "/gestao/produtividade", roles: ["dev", "gestao"], descricao: "Ranking de mecânicos com score de qualidade", tabelas: ["03_mecanicos", "09_ordens_servico", "system_config"] },
+  { grupo: "Gestão", label: "Colaboradores", path: "/gestao/colaboradores", roles: ["dev", "gestao"], descricao: "Equipe administrativa com perfis", tabelas: ["01_colaboradores"] },
+  { grupo: "Gestão", label: "Mecânicos", path: "/gestao/mecanicos", roles: ["dev", "gestao"], descricao: "Equipe técnica com grau, especialidade e score", tabelas: ["03_mecanicos"] },
+  { grupo: "Gestão", label: "Metas", path: "/gestao/metas", roles: ["dev", "gestao"], descricao: "Configuração e acompanhamento de metas", tabelas: ["system_config", "95_faturamento", "09_ordens_servico", "01_colaboradores"] },
+  { grupo: "Gestão", label: "Relatórios", path: "/gestao/relatorios", roles: ["dev", "gestao"], descricao: "Relatórios gerenciais consolidados por período", tabelas: ["95_faturamento", "09_ordens_servico", "system_config", "03_mecanicos"] },
+  { grupo: "Gestão", label: "Melhorias", path: "/gestao/melhorias", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Board de sugestões com votos e status", tabelas: ["17_melhorias"] },
+  { grupo: "Gestão", label: "Campanhas", path: "/gestao/campanhas", roles: ["dev", "gestao"], descricao: "ROI por canal, funil de conversão, insights automáticos", tabelas: ["95_faturamento", "09_ordens_servico"] },
+  { grupo: "Gestão", label: "RH", path: "/gestao/rh", roles: ["dev", "gestao"], descricao: "Equipe mecânicos e colaboradores admin", tabelas: ["01_colaboradores", "03_mecanicos", "13_mecanico_feedback"] },
+  { grupo: "Gestão", label: "Operações", path: "/gestao/operacoes", roles: ["dev", "gestao"], descricao: "Distribuição OS, carga por mecânico, agendamentos", tabelas: ["12_agendamentos", "09_ordens_servico", "05_pendencias"] },
+  { grupo: "Gestão", label: "Tecnologia", path: "/gestao/tecnologia", roles: ["dev", "gestao"], descricao: "Status integrações, stack e roadmap 2026-2028", tabelas: ["15_kommo_tokens", "17_melhorias"] },
 
-  // ── POMBAL (Admin) ────────────────────────────────────────────────────────
-  { grupo: "POMBAL", label: "Dashboard", path: "/admin/dashboard", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "KPIs principais: pátio, agendamentos, faturamento, ticket médio" },
-  { grupo: "POMBAL", label: "Pátio Kanban", path: "/admin/patio", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Kanban drag-and-drop + mapa da oficina" },
-  { grupo: "POMBAL", label: "Agenda", path: "/admin/agenda", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Agenda de mecânicos por horário" },
-  { grupo: "POMBAL", label: "Nova OS", path: "/admin/nova-os", roles: ["dev", "gestao", "consultor"], descricao: "Fluxo completo de abertura de OS" },
-  { grupo: "POMBAL", label: "Ordens de Serviço", path: "/admin/os", roles: ["dev", "gestao", "consultor"], descricao: "Lista de OS com filtros por status e consultor" },
-  { grupo: "POMBAL", label: "Clientes", path: "/admin/clientes", roles: ["dev", "gestao", "consultor"], descricao: "CRM: lista de clientes com histórico de OS e interações" },
-  { grupo: "POMBAL", label: "Financeiro", path: "/admin/financeiro", roles: ["dev", "gestao"], descricao: "Faturamento mensal, ticket médio, histórico 6 meses" },
-  { grupo: "POMBAL", label: "Produtividade", path: "/admin/produtividade", roles: ["dev", "gestao"], descricao: "Ranking de mecânicos com gráfico de barras" },
-  { grupo: "POMBAL", label: "Agenda Mecânicos", path: "/admin/agenda-mecanicos", roles: ["dev", "gestao"], descricao: "Visão de agenda por mecânico" },
-  { grupo: "POMBAL", label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics", roles: ["dev", "gestao"], descricao: "Analytics detalhado por mecânico" },
-  { grupo: "POMBAL", label: "Avaliação Diária", path: "/admin/mecanicos/feedback", roles: ["dev", "gestao"], descricao: "Feedback e avaliação diária dos mecânicos" },
-  { grupo: "POMBAL", label: "QG das IAs", path: "/admin/ia-qg", roles: ["dev", "gestao", "consultor"], descricao: "Central de agentes IA: Ana, Lead Scoring, Reativação" },
-  { grupo: "POMBAL", label: "Configurações", path: "/admin/configuracoes", roles: ["dev", "gestao"], descricao: "Metas financeiras, metas por consultor, dados da empresa" },
-  { grupo: "POMBAL", label: "Usuários", path: "/admin/usuarios", roles: ["dev"], descricao: "Gerenciamento de usuários do sistema" },
-  { grupo: "POMBAL", label: "Integrações", path: "/admin/integracoes", roles: ["dev"], descricao: "Status e configuração de integrações externas" },
-  { grupo: "POMBAL", label: "Migração Trello", path: "/admin/trello-migracao", roles: ["dev", "gestao"], descricao: "Sincronização de cards Trello e geração de planilha" },
+  // ── POMBAL (Admin) ──────────────────────────────────────────────────────────────────────────
+  { grupo: "POMBAL", label: "Dashboard", path: "/admin/dashboard", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "KPIs principais: pátio, agendamentos, faturamento, ticket médio", tabelas: ["09_ordens_servico", "12_agendamentos", "95_faturamento", "system_config", "05_pendencias"] },
+  { grupo: "POMBAL", label: "Pátio Kanban", path: "/admin/patio", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Kanban drag-and-drop + mapa da oficina", tabelas: ["09_ordens_servico", "07_clientes", "03_mecanicos", "08_veiculos"] },
+  { grupo: "POMBAL", label: "Agenda", path: "/admin/agenda", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Agenda de mecânicos por horário", tabelas: ["12_agendamentos", "07_clientes", "03_mecanicos", "08_veiculos", "01_colaboradores"] },
+  { grupo: "POMBAL", label: "Nova OS", path: "/admin/nova-os", roles: ["dev", "gestao", "consultor"], descricao: "Fluxo completo de abertura de OS", tabelas: ["09_ordens_servico", "07_clientes", "08_veiculos", "03_mecanicos", "01_colaboradores", "06_recursos"] },
+  { grupo: "POMBAL", label: "Ordens de Serviço", path: "/admin/os", roles: ["dev", "gestao", "consultor"], descricao: "Lista de OS com filtros por status e consultor", tabelas: ["09_ordens_servico", "07_clientes"] },
+  { grupo: "POMBAL", label: "Clientes", path: "/admin/clientes", roles: ["dev", "gestao", "consultor"], descricao: "CRM: lista de clientes com histórico de OS e interações", tabelas: ["07_clientes"] },
+  { grupo: "POMBAL", label: "Financeiro", path: "/admin/financeiro", roles: ["dev", "gestao"], descricao: "Faturamento mensal, ticket médio, histórico 6 meses", tabelas: ["95_faturamento", "09_ordens_servico", "system_config"] },
+  { grupo: "POMBAL", label: "Produtividade", path: "/admin/produtividade", roles: ["dev", "gestao"], descricao: "Ranking de mecânicos com gráfico de barras", tabelas: ["03_mecanicos", "09_ordens_servico", "system_config"] },
+  { grupo: "POMBAL", label: "Agenda Mecânicos", path: "/admin/agenda-mecanicos", roles: ["dev", "gestao"], descricao: "Visão de agenda por mecânico", tabelas: ["12_agendamentos", "03_mecanicos", "09_ordens_servico"] },
+  { grupo: "POMBAL", label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics", roles: ["dev", "gestao"], descricao: "Analytics detalhado por mecânico", tabelas: ["03_mecanicos", "09_ordens_servico"] },
+  { grupo: "POMBAL", label: "Avaliação Diária", path: "/admin/mecanicos/feedback", roles: ["dev", "gestao"], descricao: "Feedback e avaliação diária dos mecânicos", tabelas: ["13_mecanico_feedback", "03_mecanicos"] },
+  { grupo: "POMBAL", label: "QG das IAs", path: "/admin/ia-qg", roles: ["dev", "gestao", "consultor"], descricao: "Central de agentes IA: Ana, Lead Scoring, Reativação", tabelas: ["21_lead_scores", "22_lead_score_history", "16_kommo_leads"] },
+  { grupo: "POMBAL", label: "Configurações", path: "/admin/configuracoes", roles: ["dev", "gestao"], descricao: "Metas financeiras, metas por consultor, dados da empresa", tabelas: ["system_config", "01_colaboradores"] },
+  { grupo: "POMBAL", label: "Usuários", path: "/admin/usuarios", roles: ["dev"], descricao: "Gerenciamento de usuários do sistema", tabelas: ["01_colaboradores", "02_nivelDeAcesso"] },
+  { grupo: "POMBAL", label: "Integrações", path: "/admin/integracoes", roles: ["dev"], descricao: "Status e configuração de integrações externas", tabelas: ["system_config"] },
+  { grupo: "POMBAL", label: "Migração Trello", path: "/admin/trello-migracao", roles: ["dev", "gestao"], descricao: "Sincronização de cards Trello e geração de planilha", tabelas: ["18_trello_sync_log", "19_trello_card_overrides", "07_clientes", "09_ordens_servico", "08_veiculos"] },
 
-  // ── OUTROS ────────────────────────────────────────────────────────────────
-  { grupo: "Acesso", label: "Selecionar Perfil", path: "/selecionar-perfil", roles: ["público"], descricao: "Tela de login — seleção de role + username/senha" },
-  { grupo: "Acesso", label: "Trocar Senha", path: "/trocar-senha", roles: ["todos"], descricao: "Troca de senha obrigatória no primeiro acesso" },
-  { grupo: "Acesso", label: "Mecânico", path: "/mecanico", roles: ["mecanico"], descricao: "Visão simplificada para mecânicos" },
+  // ── OUTROS ────────────────────────────────────────────────────────────────────────────────────
+  { grupo: "Acesso", label: "Selecionar Perfil", path: "/selecionar-perfil", roles: ["público"], descricao: "Tela de login — seleção de role + username/senha", tabelas: ["01_colaboradores"] },
+  { grupo: "Acesso", label: "Trocar Senha", path: "/trocar-senha", roles: ["todos"], descricao: "Troca de senha obrigatória no primeiro acesso", tabelas: ["01_colaboradores"] },
+  { grupo: "Acesso", label: "Mecânico", path: "/mecanico", roles: ["mecanico"], descricao: "Visão simplificada para mecânicos", tabelas: ["09_ordens_servico", "07_clientes", "03_mecanicos", "08_veiculos"] },
 ];
 
 const GRUPO_COR: Record<string, string> = {

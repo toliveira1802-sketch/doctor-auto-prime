@@ -19,8 +19,8 @@ import {
   getHashedDefaultPassword,
 } from "./passwordUtils";
 
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_FAILED_ATTEMPTS = 3; // Após 3 erros, reset automático para 123456
+const LOCK_DURATION_MS = 15 * 60 * 1000; // mantido para compatibilidade
 
 // Mapeamento nivelAcessoId → role do sistema
 function getRoleFromNivel(nivelAcessoId: number): string {
@@ -104,48 +104,32 @@ export function registerLocalAuthRoutes(app: Express) {
         return;
       }
 
-      // Check if account is locked
-      if (colab.lockedUntil && new Date(colab.lockedUntil) > new Date()) {
-        const minutesLeft = Math.ceil(
-          (new Date(colab.lockedUntil).getTime() - Date.now()) / 60000
-        );
-        res.status(423).json({
-          error: `Conta bloqueada por excesso de tentativas. Tente novamente em ${minutesLeft} minuto(s).`,
-          locked: true,
-          minutesLeft,
-        });
-        return;
-      }
-
       // Verify password (supports both plain-text legacy and bcrypt)
       const storedPassword = colab.senha ?? "123456";
       const passwordValid = await verifyPassword(senha, storedPassword);
 
       if (!passwordValid) {
-        // Increment failed attempts
         const newAttempts = (colab.failedAttempts ?? 0) + 1;
-        const updateData: Record<string, any> = { failedAttempts: newAttempts };
-
         if (newAttempts >= MAX_FAILED_ATTEMPTS) {
-          updateData.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
-        }
-
-        await drizzle
-          .update(colaboradores)
-          .set(updateData)
-          .where(eq(colaboradores.id, colab.id));
-
-        const remaining = MAX_FAILED_ATTEMPTS - newAttempts;
-        if (remaining > 0) {
+          // Regra: após 3 erros consecutivos, reset automático para 123456 + marca primeiroAcesso
+          const hashedDefault = await getHashedDefaultPassword();
+          await drizzle
+            .update(colaboradores)
+            .set({ senha: hashedDefault, primeiroAcesso: true, failedAttempts: 0, lockedUntil: null })
+            .where(eq(colaboradores.id, colab.id));
           res.status(401).json({
-            error: `Senha incorreta. ${remaining} tentativa(s) restante(s).`,
-            attemptsRemaining: remaining,
+            error: "Senha resetada para 123456 após 3 tentativas erradas. Use a senha padrão e troque no primeiro acesso.",
+            resetToDefault: true,
           });
         } else {
-          res.status(423).json({
-            error: "Conta bloqueada por excesso de tentativas. Tente novamente em 15 minutos.",
-            locked: true,
-            minutesLeft: 15,
+          await drizzle
+            .update(colaboradores)
+            .set({ failedAttempts: newAttempts })
+            .where(eq(colaboradores.id, colab.id));
+          const remaining = MAX_FAILED_ATTEMPTS - newAttempts;
+          res.status(401).json({
+            error: `Senha incorreta. ${remaining} tentativa(s) restante(s) antes do reset automático para 123456.`,
+            attemptsRemaining: remaining,
           });
         }
         return;
@@ -183,8 +167,8 @@ export function registerLocalAuthRoutes(app: Express) {
 
       const redirectPath = getRedirectPath(perfil && role === "dev" ? perfil : role);
 
-      // Check if first access (default password)
-      const isFirstAccess = colab.primeiroAcesso === true;
+      // Check if first access (default password) — Dev nunca precisa trocar senha
+      const isFirstAccess = colab.primeiroAcesso === true && role !== "dev";
 
       // Create session
       const openId = `local_${colab.id}`;

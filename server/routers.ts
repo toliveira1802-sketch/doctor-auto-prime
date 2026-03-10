@@ -82,34 +82,39 @@ export const appRouter = router({
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário não encontrado ou inativo" });
         }
 
-        // Check lockout
-        if (colab.lockedUntil && new Date(colab.lockedUntil) > new Date()) {
-          const mins = Math.ceil((new Date(colab.lockedUntil).getTime() - Date.now()) / 60000);
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `Conta bloqueada. Tente em ${mins} minuto(s).` });
-        }
-
         // Verify password (bcrypt or plain-text legacy)
         const storedPassword = colab.senha ?? "123456";
         const passwordValid = await verifyPassword(input.senha, storedPassword);
+
         if (!passwordValid) {
           const newAttempts = (colab.failedAttempts ?? 0) + 1;
-          const updateData: Record<string, any> = { failedAttempts: newAttempts };
-          if (newAttempts >= 5) {
-            updateData.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+          if (newAttempts >= 3) {
+            // Regra: após 3 erros consecutivos, reset automático para 123456 + marca primeiroAcesso
+            const hashedDefault = await getHashedDefaultPassword();
+            await db.update(colaboradores)
+              .set({ senha: hashedDefault, primeiroAcesso: true, failedAttempts: 0, lockedUntil: null })
+              .where(eq(colaboradores.id, colab.id));
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Senha resetada para 123456 após 3 tentativas erradas. Use a senha padrão e troque no primeiro acesso."
+            });
           }
-          await db.update(colaboradores).set(updateData).where(eq(colaboradores.id, colab.id));
-          const remaining = 5 - newAttempts;
-          throw new TRPCError({ code: "UNAUTHORIZED", message: remaining > 0 ? `Senha incorreta. ${remaining} tentativa(s) restante(s).` : "Conta bloqueada por excesso de tentativas." });
+          await db.update(colaboradores)
+            .set({ failedAttempts: newAttempts })
+            .where(eq(colaboradores.id, colab.id));
+          const remaining = 3 - newAttempts;
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: `Senha incorreta. ${remaining} tentativa(s) restante(s) antes do reset automático para 123456.`
+          });
         }
 
-        // Reset failed attempts
-        await db.update(colaboradores).set({ failedAttempts: 0, lockedUntil: null }).where(eq(colaboradores.id, colab.id));
-
-        // Migrate plain-text to bcrypt
+        // Login bem-sucedido: resetar contador de tentativas e migrar plain-text para bcrypt
+        const updateOnSuccess: Record<string, unknown> = { failedAttempts: 0, lockedUntil: null };
         if (!isBcryptHash(storedPassword)) {
-          const hashed = await hashPassword(storedPassword);
-          await db.update(colaboradores).set({ senha: hashed }).where(eq(colaboradores.id, colab.id));
+          updateOnSuccess.senha = await hashPassword(storedPassword);
         }
+        await db.update(colaboradores).set(updateOnSuccess).where(eq(colaboradores.id, colab.id));
 
         const nivelToRoleByDbId: Record<number, string> = {
           1: "dev", 2: "gestao", 3: "consultor", 4: "mecanico", 5: "cliente", 6: "mecanico",

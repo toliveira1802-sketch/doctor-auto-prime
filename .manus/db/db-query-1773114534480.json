@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Adicionar colunas de controle de tentativas (se não existirem)\nALTER TABLE `01_colaboradores` \n  ADD COLUMN IF NOT EXISTS `failedAttempts` INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `lockedUntil` TIMESTAMP NULL DEFAULT NULL;\n\n-- Corrigir gestao_simone: ativar e corrigir nivelAcessoId para 2 (gestao)\nUPDATE `01_colaboradores` \nSET ativo = 1, nivelAcessoId = 2, primeiroAcesso = 1\nWHERE username = 'gestao_simone';\n\n-- Resetar failedAttempts de todos os usuários para 0\nUPDATE `01_colaboradores` SET failedAttempts = 0, lockedUntil = NULL WHERE username IS NOT NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \n-- Adicionar colunas de controle de tentativas (se não existirem)\nALTER TABLE `01_colaboradores` \n  ADD COLUMN IF NOT EXISTS `failedAttempts` INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `lockedUntil` TIMESTAMP NULL DEFAULT NULL;\n\n-- Corrigir gestao_simone: ativar e corrigir nivelAcessoId para 2 (gestao)\nUPDATE `01_colaboradores` \nSET ativo = 1, nivelAcessoId = 2, primeiroAcesso = 1\nWHERE username = 'gestao_simone';\n\n-- Resetar failedAttempts de todos os usuários para 0\nUPDATE `01_colaboradores` SET failedAttempts = 0, lockedUntil = NULL WHERE username IS NOT NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 839
+}
