@@ -452,3 +452,36 @@
 - [x] Expandir submenu QG IA no sidebar com 5 sub-itens (Portal IA, Perfil IA, Temperatura, Distribuição, Histórico)
 - [x] Atualizar Processos no sidebar para apontar para /dev/processos + sub-item Diagramas
 - [x] Registrar todas as 6 novas rotas no App.tsx
+
+## Novas Funcionalidades — Sidebar Cliente + Perfil IA + Processos + Sininho
+- [ ] Adicionar submenu "Cliente" no sidebar DEV com página /dev/cliente
+- [ ] Persistir configs do Perfil IA na tabela system_config (procedure config.getPerfilIA + config.savePerfilIA)
+- [ ] Reestruturar /dev/processos com 3 subseções: Sistema, Local, Regras de Negócio
+- [ ] Criar botão de Atualizações com sininho no sidebar (tabela changelog no banco + badge de não lidos)
+
+## Novas Funcionalidades — Sidebar DEV + IA + Processos + Sininho (Concluído)
+
+- [x] Adicionar submenu Cliente no sidebar DEV + página /dev/cliente
+- [x] Persistir configs do Perfil IA na tabela system_config via trpc.config.get/set
+- [x] Reestruturar /dev/processos com 3 categorias: Sistema, Local, Regras de Negócio
+- [x] Criar tabela 99_changelog no banco
+- [x] Adicionar procedures changelog.list, unreadCount, markRead, markAllRead, create
+- [x] Criar componente ChangelogBell com popover de notificações
+- [x] Adicionar sininho no footer do sidebar (visível para todos os roles)
+
+## Atualizações — Sessão Mar 10 2026
+
+- [x] Tabela 99_changelog criada no banco com 10 entradas reais do histórico do sistema
+- [x] Corrigir tipo lidoPor no schema (never[] → string JSON)
+- [x] Corrigir insert do changelog no routers.ts (lidoPor como JSON string)
+- [x] Reconstruir MecanicoView do zero com conceito "Caminho de Aprendizado" gamificado
+- [x] MecanicoView: trilha visual de etapas com XP, filtro por etapa, cards de OS com status
+- [x] MecanicoView: aba Agenda integrada com agendamentos por mecânico vinculado
+- [x] MecanicoView: barra de XP e sistema de níveis (Iniciante → Mestre)
+- [x] Criar página /dev/sistema com status de integrações em tempo real (Banco, Kommo, Trello, OpenAI, WhatsApp, Webhook)
+- [x] Adicionar "Status & Integrações" no submenu Sistema do sidebar DEV
+- [x] Adicionar procedure usuarios.vincularMecanico (vincula colaborador ao mecânico da tabela 03_mecanicos)
+- [x] Adicionar procedure usuarios.listComMecanico (inclui mecanicoRefId na listagem)
+- [x] Atualizar UsuariosTab no DevPanel: coluna "Mecânico Vinculado" com botão de vinculação
+- [x] Dialog de vinculação: select de mecânicos disponíveis com confirmação
+- [x] Login.tsx: salvar mecanicoRefId no RoleContext ao fazer login

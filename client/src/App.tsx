@@ -59,6 +59,8 @@ import PerfilIA from "./pages/dev/qgia/PerfilIA";
 import TemperaturaLead from "./pages/dev/qgia/TemperaturaLead";
 import DistribuicaoLeads from "./pages/dev/qgia/DistribuicaoLeads";
 import HistoricoPontuacao from "./pages/dev/qgia/HistoricoPontuacao";
+import ClientePortal from "./pages/dev/ClientePortal";
+import Sistema from "./pages/dev/Sistema";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -142,6 +144,12 @@ function Router() {
       </Route>
       <Route path="/dev/qgia/historico-pontuacao">
         <WithLayout><HistoricoPontuacao /></WithLayout>
+      </Route>
+      <Route path="/dev/cliente">
+        <WithLayout><ClientePortal /></WithLayout>
+      </Route>
+      <Route path="/dev/sistema">
+        <WithLayout><Sistema /></WithLayout>
       </Route>
 
       {/* ── ADMIN ROUTES ─────────────────────────────────────────────── */}

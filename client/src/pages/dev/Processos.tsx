@@ -47,7 +47,7 @@ const DIAGRAMAS_PADRAO: Diagrama[] = [
     id: "fluxo-os",
     titulo: "Fluxo de Ordem de Serviço",
     descricao: "Do agendamento à entrega do veículo",
-    categoria: "Operacional",
+    categoria: "Sistema",
     updatedAt: "2026-03-10",
     codigo: `flowchart TD
     A([🚗 Cliente Entra em Contato]) --> B{Canal}
@@ -114,7 +114,7 @@ const DIAGRAMAS_PADRAO: Diagrama[] = [
     id: "fluxo-ia",
     titulo: "Orquestração de Agentes IA",
     descricao: "Sophia Hub — fluxo de decisão dos agentes",
-    categoria: "IA",
+    categoria: "Sistema",
     updatedAt: "2026-03-10",
     codigo: `flowchart LR
     A([📥 Demanda Recebida]) --> B[👑 Sophia\nOrquestradora]
@@ -139,7 +139,7 @@ const DIAGRAMAS_PADRAO: Diagrama[] = [
     id: "roadmap-marcas",
     titulo: "Roadmap de Expansão por Marcas",
     descricao: "Estratégia 2026-2028 de domínio por marca",
-    categoria: "Estratégia",
+    categoria: "Regras de Negócio",
     updatedAt: "2026-03-10",
     codigo: `timeline
     title Doctor Auto Prime — Roadmap de Marcas
@@ -151,6 +151,137 @@ const DIAGRAMAS_PADRAO: Diagrama[] = [
         BMW : Certificação BMW
     section 2028 — Elite
         Porsche : Cravar bandeira na Porsche`,
+  },
+  // LOCAL
+  {
+    id: "layout-fisico",
+    titulo: "Layout Físico da Oficina",
+    descricao: "Distribuição dos elevadores e áreas de trabalho",
+    categoria: "Local",
+    updatedAt: "2026-03-10",
+    codigo: `graph LR
+    subgraph RAPIDO["\u26a1 Rápido - Cash Flow"]
+      E1[Elevador 1]
+      E2[Elevador 2]
+    end
+    subgraph MEDIO["\u2699️ Médio"]
+      E3[Elevador 3]
+      E4[Elevador 4]
+      E5[Elevador 5]
+      E6[Elevador 6]
+      W1[Baia 1]
+      W2[Baia 2]
+    end
+    subgraph DEMORADO["\uD83D\uDD27 Demorado - Alta Margem"]
+      E7[Elevador 7]
+      E8[Elevador 8]
+      W3[Baia 3]
+      W4[Baia 4]
+    end
+    subgraph PROJETO["\uD83C\uDFC6 Projeto"]
+      B1[Box 1]
+      B2[Box 2]
+    end
+    subgraph ESPECIAL["\uD83C\uDFAF Especial"]
+      E9[Elevador 9 - Diagnóstico]
+      REMAP[Box Remap]
+      DINO[Dinamômetro]
+      AC[Area AC]
+    end
+    style RAPIDO fill:#16a34a22
+    style MEDIO fill:#f59e0b22
+    style DEMORADO fill:#7c3aed22
+    style PROJETO fill:#dc262622
+    style ESPECIAL fill:#0ea5e922`,
+  },
+  {
+    id: "fluxo-agendamento",
+    titulo: "Fluxo de Agendamento",
+    descricao: "Do lead ao agendamento confirmado na oficina",
+    categoria: "Local",
+    updatedAt: "2026-03-10",
+    codigo: `sequenceDiagram
+    participant C as Cliente
+    participant K as Kommo CRM
+    participant S as Sophia IA
+    participant CON as Consultor
+    participant SIS as Sistema DAP
+
+    C->>K: Contato WhatsApp ou Instagram
+    K->>S: Novo lead detectado
+    S->>S: Pontua temperatura do lead
+    S->>CON: Distribui lead por regras
+    CON->>C: Primeiro contato
+    C->>CON: Confirma interesse
+    CON->>SIS: Cria agendamento
+    SIS->>C: Confirmacao automatica
+    SIS->>CON: Notificacao na agenda`,
+  },
+  // REGRAS DE NEGOCIO
+  {
+    id: "regras-acesso",
+    titulo: "Regras de Acesso por Role",
+    descricao: "Permissões e restrições por nível de acesso",
+    categoria: "Regras de Negócio",
+    updatedAt: "2026-03-10",
+    codigo: `flowchart TD
+    subgraph DEV["Dev - Thales"]
+      D1[Acesso total ao sistema]
+      D2[Altera senhas]
+      D3[Cadastra usuarios]
+      D4[Configura IA]
+    end
+    subgraph GESTAO["Gestao"]
+      G1[OS Ultimate]
+      G2[Financeiro]
+      G3[Metas e Relatorios]
+      G4[Sem acesso Dev]
+    end
+    subgraph CONSULTOR["Consultor"]
+      C1[Patio e Agenda]
+      C2[Clientes e OS]
+      C3[Sem acesso Gestao]
+    end
+    subgraph MECANICO["Mecanico"]
+      M1[Patio proprio]
+      M2[Agenda do dia]
+      M3[Sem acesso Consultor]
+    end
+    style DEV fill:#7c3aed22
+    style GESTAO fill:#3b82f622
+    style CONSULTOR fill:#16a34a22
+    style MECANICO fill:#f59e0b22`,
+  },
+  {
+    id: "regras-senha",
+    titulo: "Política de Senhas",
+    descricao: "Regras de senha, primeiro acesso e reset automático",
+    categoria: "Regras de Negócio",
+    updatedAt: "2026-03-10",
+    codigo: `flowchart TD
+    A([Novo usuario criado pelo Dev]) --> B[Senha inicial 123456
+primeiroAcesso=true]
+    B --> C[1o Login]
+    C --> D[Obrigatorio trocar senha]
+    D --> E[primeiroAcesso=false
+Senha nova salva com bcrypt]
+    E --> F([Acesso liberado])
+
+    G([Login com senha errada]) --> H{Tentativa no?}
+    H -->|1a ou 2a| I[Mensagem de erro]
+    I --> G
+    H -->|3a| J[Reset automatico
+Senha volta para 123456
+primeiroAcesso=true]
+    J --> C
+
+    K([Somente Dev]) --> L[Pode alterar senha
+de qualquer usuario]
+    K --> M[Pode resetar senha]
+    K --> N[Pode ativar ou desativar usuarios]
+    style A fill:#7c3aed,color:#fff
+    style J fill:#f59e0b,color:#000
+    style K fill:#7c3aed,color:#fff`,
   },
 ];
 
@@ -230,10 +361,9 @@ export default function Processos() {
 
   const CATEGORIAS = Array.from(new Set(diagramas.map((d) => d.categoria)));
   const CAT_COLORS: Record<string, string> = {
-    Operacional: "#22c55e",
     Sistema: "#3b82f6",
-    IA: "#c8a96e",
-    Estratégia: "#a855f7",
+    Local: "#22c55e",
+    "Regras de Negócio": "#f59e0b",
   };
 
   return (

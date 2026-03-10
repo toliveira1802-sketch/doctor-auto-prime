@@ -4,6 +4,7 @@ import {
   date,
   decimal,
   int,
+  json,
   mysqlEnum,
   mysqlTable,
   text,
@@ -528,3 +529,18 @@ export const systemLogs = mysqlTable("23_system_logs", {
 });
 export type SystemLog = typeof systemLogs.$inferSelect;
 export type InsertSystemLog = typeof systemLogs.$inferInsert;
+
+// ─── 99_CHANGELOG ─────────────────────────────────────────────────────────────
+// Registro de atualizações do sistema com notificação por sininho
+export const changelog = mysqlTable("99_changelog", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 200 }).notNull(),
+  descricao: text("descricao").notNull(),
+  tipo: mysqlEnum("tipo", ["feature", "fix", "improvement", "breaking"]).notNull().default("feature"),
+  versao: varchar("versao", { length: 20 }).notNull().default("1.0.0"),
+  autor: varchar("autor", { length: 100 }).notNull().default("Dev_thales"),
+  lidoPor: text("lido_por"),
+  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+});
+export type Changelog = typeof changelog.$inferSelect;
+export type InsertChangelog = typeof changelog.$inferInsert;

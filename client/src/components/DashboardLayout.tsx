@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useRole } from "@/contexts/RoleContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ChangelogBell } from "@/components/ChangelogBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +61,7 @@ import {
   Bot,
   Sliders,
   Thermometer,
+  User,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -195,9 +197,10 @@ const menuItems: MenuGroup[] = [
         label: "Sistema",
         path: "/_dev_sistema",
         children: [
+          { icon: Activity, label: "Status & Integrações", path: "/dev/sistema" },
           { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
           { icon: UserCog, label: "Usuários", path: "/admin/usuarios" },
-          { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
+          { icon: Zap, label: "Integrações (Legacy)", path: "/admin/integracoes" },
           { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
         ],
       },
@@ -213,6 +216,7 @@ const menuItems: MenuGroup[] = [
         ],
       },
       { icon: Lightbulb, label: "Melhorias", path: "/gestao/melhorias" },
+      { icon: User, label: "Cliente", path: "/dev/cliente" },
     ],
   },
   {
@@ -590,6 +594,12 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            {/* Sininho de atualizações do sistema */}
+            {!isCollapsed && (
+              <div className="flex items-center justify-end px-1 pb-1">
+                <ChangelogBell />
+              </div>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">

@@ -781,11 +781,15 @@ const NIVEL_LABEL: Record<number, { label: string; cor: string }> = {
 };
 
 function UsuariosTab() {
-  const { data: usuarios = [], refetch } = trpc.usuarios.list.useQuery();
+  const { data: usuarios = [], refetch } = trpc.usuarios.listComMecanico.useQuery();
   const resetSenha = trpc.usuarios.resetSenha.useMutation({ onSuccess: () => { refetch(); toast.success("Senha resetada para 123456!"); } });
   const alterarSenha = trpc.usuarios.alterarSenha.useMutation({ onSuccess: () => { setDialogAlterar(null); refetch(); toast.success("Senha alterada com sucesso!"); } });
   const criarUsuario = trpc.usuarios.criarUsuario.useMutation({ onSuccess: () => { setDialogCriar(false); refetch(); toast.success("Usuário criado!"); } });
   const toggleAtivo = trpc.usuarios.toggleAtivo.useMutation({ onSuccess: () => { refetch(); toast.success("Status atualizado!"); } });
+  const vincularMecanico = trpc.usuarios.vincularMecanico.useMutation({ onSuccess: () => { refetch(); toast.success("Mecânico vinculado!"); setDialogVincular(null); } });
+
+  // Busca lista de mecânicos para o select de vinculação
+  const { data: mecanicosDisponiveis = [] } = trpc.mecanicos.list.useQuery();
 
   const [dialogAlterar, setDialogAlterar] = useState<{ id: number; nome: string } | null>(null);
   const [novaSenha, setNovaSenha] = useState("");
@@ -795,6 +799,8 @@ function UsuariosTab() {
   const [novoCargo, setNovoCargo] = useState("");
   const [novoUsername, setNovoUsername] = useState("");
   const [novoNivel, setNovoNivel] = useState(3);
+  const [dialogVincular, setDialogVincular] = useState<{ id: number; nome: string; mecanicoRefId: number | null } | null>(null);
+  const [mecanicoSelecionado, setMecanicoSelecionado] = useState<string>("nenhum");
 
   const handleAlterar = () => {
     if (!dialogAlterar || !novaSenha.trim()) return;
@@ -824,6 +830,7 @@ function UsuariosTab() {
                   <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Nome</th>
                   <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Username (login)</th>
                   <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Nível / Role</th>
+                  <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Mecânico Vinculado</th>
                   <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">Senha Padrão</th>
                   <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">1º Acesso</th>
                   <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">Status</th>
@@ -845,6 +852,34 @@ function UsuariosTab() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-medium ${nivel.cor}`}>{nivel.label}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.nivelAcessoId === 4 ? (
+                          u.mecanicoRefId ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-amber-300 font-medium">
+                                {mecanicosDisponiveis.find((m: any) => m.id === u.mecanicoRefId)?.nome ?? `ID ${u.mecanicoRefId}`}
+                              </span>
+                              <button
+                                onClick={() => { setDialogVincular({ id: u.id, nome: u.nome, mecanicoRefId: u.mecanicoRefId ?? null }); setMecanicoSelecionado(String(u.mecanicoRefId ?? "nenhum")); }}
+                                className="text-zinc-500 hover:text-amber-400 transition-colors"
+                                title="Alterar vinculação"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setDialogVincular({ id: u.id, nome: u.nome, mecanicoRefId: null }); setMecanicoSelecionado("nenhum"); }}
+                              className="flex items-center gap-1 text-xs text-zinc-500 hover:text-amber-400 transition-colors border border-dashed border-zinc-700 hover:border-amber-500/50 px-2 py-0.5 rounded"
+                            >
+                              <Wrench className="w-3 h-3" />
+                              Vincular
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-xs text-zinc-600">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {senhaEhPadrao
@@ -962,6 +997,63 @@ function UsuariosTab() {
               disabled={!novaSenha.trim() || alterarSenha.isPending}
             >
               {alterarSenha.isPending ? "Salvando..." : "Salvar Senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Vincular Mecânico */}
+      <Dialog open={!!dialogVincular} onOpenChange={(o) => !o && setDialogVincular(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-amber-400" />
+              Vincular Mecânico — {dialogVincular?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-zinc-400 text-sm">
+              Selecione o mecânico da tabela <code className="text-amber-400 text-xs">03_mecanicos</code> que corresponde a este usuário.
+              Isso permite que a agenda e as OS apareçam corretamente na tela do mecânico.
+            </p>
+            <div>
+              <Label className="text-zinc-400 text-sm">Mecânico</Label>
+              <Select value={mecanicoSelecionado} onValueChange={setMecanicoSelecionado}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1">
+                  <SelectValue placeholder="Selecione o mecânico" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectItem value="nenhum">— Nenhum (desvincular) —</SelectItem>
+                  {mecanicosDisponiveis.map((m: any) => (
+                    <SelectItem key={m.id} value={String(m.id)}>
+                      {m.nome} {m.especialidade ? `· ${m.especialidade}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {mecanicoSelecionado !== "nenhum" && (
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-xs text-amber-300">
+                  O usuário <strong>{dialogVincular?.nome}</strong> verá na aba Agenda apenas os agendamentos atribuídos ao mecânico selecionado.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogVincular(null)}>Cancelar</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700"
+              onClick={() => {
+                if (!dialogVincular) return;
+                vincularMecanico.mutate({
+                  colaboradorId: dialogVincular.id,
+                  mecanicoRefId: mecanicoSelecionado === "nenhum" ? null : Number(mecanicoSelecionado),
+                });
+              }}
+              disabled={vincularMecanico.isPending}
+            >
+              {vincularMecanico.isPending ? "Salvando..." : "Confirmar Vinculação"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -126,6 +126,7 @@ export default function Login() {
         nome: data.nome,
         login: data.login ?? username.trim(),
         colaboradorId: data.colaboradorId,
+        mecanicoRefId: data.mecanicoRefId ?? null,
         primeiroAcesso: data.primeiroAcesso,
       });
 

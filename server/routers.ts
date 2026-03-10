@@ -29,6 +29,7 @@ import {
   leadScores,
   leadScoreHistory,
   systemLogs,
+  changelog,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -246,6 +247,39 @@ export const appRouter = router({
           .where(eq(colaboradores.id, input.id));
         return { success: true };
       }),
+
+    // Vincula um colaborador mecânico ao registro em 03_mecanicos
+    vincularMecanico: devProcedure
+      .input(z.object({ colaboradorId: z.number(), mecanicoRefId: z.number().nullable() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.update(colaboradores)
+          .set({ mecanicoRefId: input.mecanicoRefId })
+          .where(eq(colaboradores.id, input.colaboradorId));
+        return { success: true };
+      }),
+
+    // Lista colaboradores com mecanicoRefId incluído
+    listComMecanico: devProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select({
+          id: colaboradores.id,
+          nome: colaboradores.nome,
+          cargo: colaboradores.cargo,
+          username: colaboradores.username,
+          senha: colaboradores.senha,
+          primeiroAcesso: colaboradores.primeiroAcesso,
+          nivelAcessoId: colaboradores.nivelAcessoId,
+          ativo: colaboradores.ativo,
+          mecanicoRefId: colaboradores.mecanicoRefId,
+        })
+        .from(colaboradores)
+        .orderBy(colaboradores.nivelAcessoId, colaboradores.nome);
+      return rows;
+    }),
   }),
 
   // ─── DASHBOARD KPIs ────────────────────────────────────────────────────────
@@ -2396,6 +2430,81 @@ Retorne APENAS JSON válido:
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         await db.update(melhorias).set({ status: input.status }).where(eq(melhorias.id, input.id));
         return { success: true };
+      }),
+  }),
+
+  // ─── CHANGELOG (sininho de atualizações) ────────────────────────────────────────────────────
+  changelog: router({
+    list: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(changelog).orderBy(desc(changelog.createdAt)).limit(50);
+    }),
+
+    unreadCount: publicProcedure
+      .input(z.object({ colaboradorId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { count: 0 };
+        const rows = await db.select({ lidoPor: changelog.lidoPor, id: changelog.id }).from(changelog).orderBy(desc(changelog.createdAt)).limit(50);
+        const unread = rows.filter(r => {
+          const lidos: number[] = JSON.parse(r.lidoPor ?? "[]");
+          return !lidos.includes(input.colaboradorId);
+        });
+        return { count: unread.length };
+      }),
+
+    markRead: publicProcedure
+      .input(z.object({ id: z.number(), colaboradorId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [row] = await db.select({ lidoPor: changelog.lidoPor }).from(changelog).where(eq(changelog.id, input.id)).limit(1);
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+        const lidos: number[] = JSON.parse(row.lidoPor ?? "[]");
+        if (!lidos.includes(input.colaboradorId)) {
+          lidos.push(input.colaboradorId);
+          await db.update(changelog).set({ lidoPor: JSON.stringify(lidos) }).where(eq(changelog.id, input.id));
+        }
+        return { success: true };
+      }),
+
+    markAllRead: publicProcedure
+      .input(z.object({ colaboradorId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const rows = await db.select({ id: changelog.id, lidoPor: changelog.lidoPor }).from(changelog);
+        for (const row of rows) {
+          const lidos: number[] = JSON.parse(row.lidoPor ?? "[]");
+          if (!lidos.includes(input.colaboradorId)) {
+            lidos.push(input.colaboradorId);
+            await db.update(changelog).set({ lidoPor: JSON.stringify(lidos) }).where(eq(changelog.id, row.id));
+          }
+        }
+        return { success: true };
+      }),
+
+    create: devProcedure
+      .input(z.object({
+        titulo: z.string().min(3),
+        descricao: z.string().min(5),
+        tipo: z.enum(["feature", "fix", "improvement", "breaking"]).default("feature"),
+        versao: z.string().default("1.0.0"),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const result = await db.insert(changelog).values({
+          titulo: input.titulo,
+          descricao: input.descricao,
+          tipo: input.tipo,
+          versao: input.versao,
+          autor: "Dev_thales",
+          lidoPor: "[]",
+          createdAt: Date.now(),
+        });
+        return { id: Number((result as any).insertId), success: true };
       }),
   }),
 });

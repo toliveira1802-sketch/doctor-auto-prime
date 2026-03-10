@@ -1,0 +1,9 @@
+{
+  "query": "\nCREATE TABLE IF NOT EXISTS `99_changelog` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `titulo` varchar(200) NOT NULL,\n  `descricao` text NOT NULL,\n  `tipo` enum('feature','fix','improvement','breaking') NOT NULL DEFAULT 'feature',\n  `versao` varchar(20) NOT NULL DEFAULT '1.0.0',\n  `autor` varchar(100) NOT NULL DEFAULT 'Dev_thales',\n  `lido_por` text NULL,\n  `createdAt` bigint NOT NULL\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nCREATE TABLE IF NOT EXISTS `99_changelog` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `titulo` varchar(200) NOT NULL,\n  `descricao` text NOT NULL,\n  `tipo` enum('feature','fix','improvement','breaking') NOT NULL DEFAULT 'feature',\n  `versao` varchar(20) NOT NULL DEFAULT '1.0.0',\n  `autor` varchar(100) NOT NULL DEFAULT 'Dev_thales',\n  `lido_por` text NULL,\n  `createdAt` bigint NOT NULL\n);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 429
+}
