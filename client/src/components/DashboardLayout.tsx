@@ -62,6 +62,7 @@ import {
   Sliders,
   Thermometer,
   User,
+  AlertTriangle,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -244,6 +245,8 @@ const menuItems: MenuGroup[] = [
       { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
       { icon: Activity, label: "Visão Geral", path: "/gestao/visao-geral" },
       { icon: Car, label: "Pátio", path: "/admin/patio" },
+      { icon: CalendarClock, label: "Agenda Mec.", path: "/admin/agenda-mecanicos" },
+      { icon: AlertTriangle, label: "Pendências", path: "/admin/pendencias" },
       { icon: CalendarClock, label: "Agenda", path: "/admin/agenda" },
       {
         icon: FolderOpen,
@@ -261,7 +264,6 @@ const menuItems: MenuGroup[] = [
         children: [
           { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
           { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
-          { icon: CalendarClock, label: "Agenda Mec.", path: "/admin/agenda-mecanicos" },
           { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
           { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
         ],
@@ -275,6 +277,15 @@ const menuItems: MenuGroup[] = [
         icon: Lightbulb,
         label: "Melhorias",
         path: "/gestao/melhorias",
+      },
+      {
+        icon: GitBranch,
+        label: "Processos",
+        path: "/_processos",
+        children: [
+          { icon: Car, label: "Processos do Pátio", path: "/admin/processosPatio" },
+          { icon: Monitor, label: "Processos do Sistema", path: "/admin/processosSistema" },
+        ],
       },
       {
         icon: Monitor,

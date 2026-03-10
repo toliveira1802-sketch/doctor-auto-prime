@@ -51,6 +51,9 @@ import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import IaQG from "./pages/admin/IaQG";
+import AdminPendencias from "./pages/admin/AdminPendencias";
+import AdminProcessosPatio from "./pages/admin/AdminProcessosPatio";
+import AdminProcessosSistema from "./pages/admin/AdminProcessosSistema";
 import { RouteGuard } from "./components/RouteGuard";
 import MusicPlayer from "./pages/MusicPlayer";
 import IAPortal from "./pages/dev/IAPortal";
@@ -218,6 +221,15 @@ function Router() {
       </Route>
       <Route path="/admin/ia-qg">
         <WithLayout><IaQG /></WithLayout>
+      </Route>
+      <Route path="/admin/pendencias">
+        <WithLayout><AdminPendencias /></WithLayout>
+      </Route>
+      <Route path="/admin/processosPatio">
+        <WithLayout><AdminProcessosPatio /></WithLayout>
+      </Route>
+      <Route path="/admin/processosSistema">
+        <WithLayout><AdminProcessosSistema /></WithLayout>
       </Route>
 
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}

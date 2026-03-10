@@ -502,3 +502,13 @@
 - [x] Página PerfilIA: painel "Configuração Ativa no Servidor" mostra valores em uso
 - [x] Página PerfilIA: após salvar, refetch automático do perfilAtivo (1.5s delay para cache expirar)
 - [x] Vitest: 13 testes para llmConfig passando (42 testes totais, todos passando)
+
+## Mapa de Navegação Admin (Mar 10 2026)
+
+- [x] Criar página /admin/pendencias (lista de pendências do pátio — em vermelho no diagrama = crítico)
+- [x] Criar página /admin/processosPatio (processos do pátio com diagramas mermaid)
+- [x] Criar página /admin/processosSistema (processos do sistema com diagramas mermaid)
+- [x] Atualizar sidebar Admin: adicionar Pendências, Processos (sub-menu Patio + Sistema), AlertTriangle icon
+- [x] Registrar todas as novas rotas no App.tsx
+- [x] Instalar mermaid como dependência
+- [ ] /visaogeral ainda não criada (aguardando definição do conteúdo)
