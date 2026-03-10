@@ -430,3 +430,14 @@
 - [x] Criar procedures agendamentos.listByMecanico, atribuirMecanico, updateStatusMecanico
 - [x] Adicionar aba Agenda na tela MecanicoView com seletor de data e cards de agendamento
 - [x] Dialog de atualização de status do agendamento pelo mecânico
+
+## Sidebar DEV Reestruturado (Concluído)
+- [x] Grupo DEV: Navegador de Páginas + Painel DEV no topo
+- [x] Submenu colapsável "Gestão" dentro do grupo DEV (acesso rápido a todas as telas de gestão)
+- [x] Submenu colapsável "Pombal" dentro do grupo DEV (acesso rápido a todas as telas operacionais)
+- [x] Submenu colapsável "Mecânico" dentro do grupo DEV (pátio mecânico, agenda, analytics)
+- [x] Item direto "QG IA" no grupo DEV
+- [x] Submenu "Sistema" no grupo DEV (configurações, usuários, integrações, Trello)
+- [x] Submenu "Processos" no grupo DEV (operações, relatórios, campanhas)
+- [x] Item direto "Melhorias" no grupo DEV
+- [x] Grupos GESTÃO e POMBAL mantidos para os outros roles (sem alteração)

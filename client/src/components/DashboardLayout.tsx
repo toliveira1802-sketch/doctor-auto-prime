@@ -54,6 +54,9 @@ import {
   Activity,
   Brain,
   Settings2,
+  Layers,
+  GitBranch,
+  Cpu,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -121,8 +124,80 @@ const menuItems: MenuGroup[] = [
   {
     group: "Dev",
     items: [
+      // Itens diretos do Dev
       { icon: Code2, label: "Navegador de Páginas", path: "/dev" },
       { icon: Settings2, label: "Painel DEV", path: "/dev/painel" },
+      // Submenus modais das outras visões (Dev vê tudo inline)
+      {
+        icon: BarChart3,
+        label: "Gestão",
+        path: "/_dev_gestao",
+        children: [
+          { icon: FileText, label: "OS Ultimate", path: "/gestao/os-ultimate" },
+          { icon: TrendingUp, label: "Visão Geral", path: "/gestao/visao-geral" },
+          { icon: Wrench, label: "Operacional", path: "/gestao/operacional" },
+          { icon: DollarSign, label: "Financeiro", path: "/gestao/financeiro" },
+          { icon: BarChart3, label: "Produtividade", path: "/gestao/produtividade" },
+          { icon: Users, label: "Colaboradores", path: "/gestao/colaboradores" },
+          { icon: Wrench, label: "Mecânicos", path: "/gestao/mecanicos" },
+          { icon: Target, label: "Metas", path: "/gestao/metas" },
+          { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
+          { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },
+          { icon: UserCog, label: "RH", path: "/gestao/rh" },
+          { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
+          { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
+        ],
+      },
+      {
+        icon: Car,
+        label: "Pombal",
+        path: "/_dev_pombal",
+        children: [
+          { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+          { icon: Car, label: "Pátio", path: "/admin/patio" },
+          { icon: CalendarClock, label: "Agenda", path: "/admin/agenda" },
+          { icon: Users, label: "Clientes", path: "/admin/clientes" },
+          { icon: ClipboardList, label: "Ordens de Serviço", path: "/admin/os" },
+          { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
+          { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
+          { icon: CalendarClock, label: "Agenda Mec.", path: "/admin/agenda-mecanicos" },
+          { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
+        ],
+      },
+      {
+        icon: Wrench,
+        label: "Mecânico",
+        path: "/_dev_mecanico",
+        children: [
+          { icon: Car, label: "Pátio do Mecânico", path: "/mecanico" },
+          { icon: CalendarClock, label: "Agenda Mecânico", path: "/admin/agenda-mecanicos" },
+          { icon: BarChart3, label: "Analytics", path: "/admin/mecanicos/analytics" },
+        ],
+      },
+      // Itens diretos adicionais
+      { icon: Brain, label: "QG IA", path: "/admin/ia-qg" },
+      {
+        icon: Monitor,
+        label: "Sistema",
+        path: "/_dev_sistema",
+        children: [
+          { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
+          { icon: UserCog, label: "Usuários", path: "/admin/usuarios" },
+          { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
+          { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
+        ],
+      },
+      {
+        icon: GitBranch,
+        label: "Processos",
+        path: "/_dev_processos",
+        children: [
+          { icon: Activity, label: "Visão Geral Ops", path: "/gestao/operacoes" },
+          { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
+          { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },
+        ],
+      },
+      { icon: Lightbulb, label: "Melhorias", path: "/gestao/melhorias" },
     ],
   },
   {
