@@ -486,6 +486,10 @@
 - [x] Dialog de vinculação: select de mecânicos disponíveis com confirmação
 - [x] Login.tsx: salvar mecanicoRefId no RoleContext ao fazer login
 
+## Fix Rota /admin (Mar 10 2026)
+
+- [x] Adicionar rota /admin que redireciona para /admin/dashboard (corrige 404 no preview)
+
 ## Integração Perfil IA → invokeLLM (Mar 10 2026)
 
 - [x] Criar helper llmConfig.ts: getLLMConfig() lê model, temperatura, maxTokens, systemPrompt, modoDebug do banco

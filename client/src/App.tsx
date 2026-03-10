@@ -153,6 +153,12 @@ function Router() {
       </Route>
 
       {/* ── ADMIN ROUTES ─────────────────────────────────────────────── */}
+      <Route path="/admin">
+        {() => {
+          window.location.replace("/admin/dashboard");
+          return null;
+        }}
+      </Route>
       <Route path="/admin/dashboard">
         <WithLayout><AdminDashboard /></WithLayout>
       </Route>
