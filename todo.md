@@ -512,3 +512,15 @@
 - [x] Registrar todas as novas rotas no App.tsx
 - [x] Instalar mermaid como dependência
 - [ ] /visaogeral ainda não criada (aguardando definição do conteúdo)
+
+## OS Ultimate Reconstruída (Mar 10 2026)
+
+- [x] KPIs com delta vs mês anterior (faturamento, qtde OS, ticket médio)
+- [x] Alertas críticos em tempo real (OS paradas +48h, aguardando aprovação +24h, prontas sem retirada)
+- [x] Funil de status clicável (filtra tabela ao clicar no status)
+- [x] Mix de serviços com valores reais (Rápido/Médio/Demorado/Projeto) e faturamento por categoria
+- [x] Ranking mecânicos expandível (clica para ver placas trabalhadas), badge "ativo" em execução
+- [x] Tabela com busca full-text (OS, placa, cliente, veículo), filtro por consultor + mecânico + status
+- [x] Coluna Mecânico na tabela de OS
+- [x] Exportação CSV do período filtrado
+- [x] Comparação mês anterior com setas de tendência
