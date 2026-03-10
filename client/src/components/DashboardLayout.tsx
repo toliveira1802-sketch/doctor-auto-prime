@@ -108,6 +108,8 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/gestao/rh": ["gestor", "admin"],
   "/gestao/operacoes": ["gestor", "admin"],
   "/gestao/tecnologia": ["gestor", "admin"],
+  "/gestao/antes-depois": ["gestor", "admin"],
+  "/visaogeral": ["consultor", "gestor", "admin"],
   // Dev — apenas admin (Thales)
   "/dev": ["admin"],
   "/dev/painel": ["admin"],
@@ -152,6 +154,7 @@ const menuItems: MenuGroup[] = [
           { icon: UserCog, label: "RH", path: "/gestao/rh" },
           { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
           { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
+          { icon: TrendingUp, label: "Antes & Depois", path: "/gestao/antes-depois" },
         ],
       },
       {
@@ -237,13 +240,14 @@ const menuItems: MenuGroup[] = [
       { icon: UserCog, label: "RH", path: "/gestao/rh" },
       { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
       { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
+      { icon: TrendingUp, label: "Antes & Depois", path: "/gestao/antes-depois" },
     ],
   },
   {
     group: "POMBAL",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
-      { icon: Activity, label: "Visão Geral", path: "/gestao/visao-geral" },
+      { icon: Activity, label: "Visão Geral", path: "/visaogeral" },
       { icon: Car, label: "Pátio", path: "/admin/patio" },
       { icon: CalendarClock, label: "Agenda Mec.", path: "/admin/agenda-mecanicos" },
       { icon: AlertTriangle, label: "Pendências", path: "/admin/pendencias" },

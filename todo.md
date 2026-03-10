@@ -524,3 +524,17 @@
 - [x] Coluna Mecânico na tabela de OS
 - [x] Exportação CSV do período filtrado
 - [x] Comparação mês anterior com setas de tendência
+
+## Três Melhorias (Mar 10 2026)
+
+- [ ] Gráfico de evolução mensal (últimos 6 meses) na OS Ultimate
+- [ ] Página /visaogeral — pátio + pendências + agenda do dia (visão executiva)
+- [ ] Página /gestao/antes-depois — comparação KPIs pré/pós implantação do sistema
+
+## Três Melhorias — Mar 10 2026
+
+- [x] Gráfico de evolução mensal na OS Ultimate (recharts, dashboard.financeiro, historicoMensal)
+- [x] Criar página /visaogeral (visão executiva consolidada: pátio + pendências + agenda + metas)
+- [x] Criar página /gestao/antes-depois (10 KPIs antes/depois com cards, radar e barras)
+- [x] Adicionar rotas no App.tsx e links no sidebar (Gestão + POMBAL + Dev)
+- [x] PERFIL_ACESSO atualizado para /gestao/antes-depois e /visaogeral

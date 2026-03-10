@@ -17,6 +17,9 @@ import {
   BarChart3, FileText, ChevronLeft, Search, Download, Users,
   Zap, Target, Activity, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
+} from "recharts";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const STATUS_ORDER = [
@@ -98,6 +101,10 @@ export default function GestaoOSUltimate() {
 
   // ── Dados ──────────────────────────────────────────────────────────────────
   const { data: osList, isLoading } = trpc.os.list.useQuery({ limit: 1000 });
+  const { data: financeiro } = trpc.dashboard.financeiro.useQuery(
+    { mes: String(periodoMes + 1) },
+    { staleTime: 60_000 }
+  );
   const { data: mecanicosList } = trpc.mecanicos.list.useQuery();
   const { data: colaboradoresList } = trpc.colaboradores.list.useQuery();
 
@@ -433,6 +440,43 @@ export default function GestaoOSUltimate() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Gráfico evolução mensal ────────────────────────────────────────── */}
+      {financeiro?.historicoMensal && financeiro.historicoMensal.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-400" />
+              Evolução de Faturamento — Últimos 6 Meses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={financeiro.historicoMensal} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradFat" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false} tickLine={false}
+                  tickFormatter={(v: number) => v >= 1000 ? `R$${(v/1000).toFixed(0)}k` : `R$${v}`}
+                  width={52}
+                />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number) => [v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Faturamento']}
+                />
+                <Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#gradFat)" dot={{ r: 3, fill: 'hsl(var(--primary))' }} activeDot={{ r: 5 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Ranking mecânicos ──────────────────────────────────────────────── */}
       {rankingMecanicos.length > 0 && (

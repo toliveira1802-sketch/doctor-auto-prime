@@ -64,6 +64,8 @@ import DistribuicaoLeads from "./pages/dev/qgia/DistribuicaoLeads";
 import HistoricoPontuacao from "./pages/dev/qgia/HistoricoPontuacao";
 import ClientePortal from "./pages/dev/ClientePortal";
 import Sistema from "./pages/dev/Sistema";
+import VisaoGeral from "./pages/VisaoGeral";
+import GestaoAntesDePois from "./pages/gestao/GestaoAntesDePois";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -232,6 +234,11 @@ function Router() {
         <WithLayout><AdminProcessosSistema /></WithLayout>
       </Route>
 
+      {/* Visão Geral executiva */}
+      <Route path="/visaogeral">
+        <WithLayout><VisaoGeral /></WithLayout>
+      </Route>
+
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}
       <Route path="/gestao/os-ultimate">
         <WithLayout><GestaoOSUltimate /></WithLayout>
@@ -275,6 +282,9 @@ function Router() {
       </Route>
       <Route path="/gestao/tecnologia">
         <WithLayout><GestaoTecnologia /></WithLayout>
+      </Route>
+      <Route path="/gestao/antes-depois">
+        <WithLayout><GestaoAntesDePois /></WithLayout>
       </Route>
 
       {/* 404 */}
