@@ -52,6 +52,21 @@ import Login from "./pages/Login";
 import TrocarSenha from "./pages/TrocarSenha";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import IaQG from "./pages/admin/IaQG";
+import AdminPendencias from "./pages/admin/AdminPendencias";
+import AdminProcessosPatio from "./pages/admin/AdminProcessosPatio";
+import AdminProcessosSistema from "./pages/admin/AdminProcessosSistema";
+import { RouteGuard } from "./components/RouteGuard";
+import MusicPlayer from "./pages/MusicPlayer";
+import IAPortal from "./pages/dev/IAPortal";
+import Processos from "./pages/dev/Processos";
+import PerfilIA from "./pages/dev/qgia/PerfilIA";
+import TemperaturaLead from "./pages/dev/qgia/TemperaturaLead";
+import DistribuicaoLeads from "./pages/dev/qgia/DistribuicaoLeads";
+import HistoricoPontuacao from "./pages/dev/qgia/HistoricoPontuacao";
+import ClientePortal from "./pages/dev/ClientePortal";
+import Sistema from "./pages/dev/Sistema";
+import VisaoGeral from "./pages/VisaoGeral";
+import GestaoAntesDePois from "./pages/gestao/GestaoAntesDePois";
 
 function WithLayout({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -59,7 +74,13 @@ function WithLayout({ children }: { children: React.ReactNode }) {
 
 function Router() {
   return (
+    <RouteGuard>
     <Switch>
+      {/* Player de música DAP Radio */}
+      <Route path="/callback">
+        <MusicPlayer />
+      </Route>
+
       {/* Login local por email+senha */}
       <Route path="/login">
         <Login />
@@ -91,7 +112,7 @@ function Router() {
                 dev: "/dev/painel",
                 gestao: "/gestao/os-ultimate",
                 consultor: "/admin/dashboard",
-                mecanico: "/admin/patio",
+                mecanico: "/mecanico",
                 cliente: "/cliente",
               };
               window.location.replace(redirectMap[info.role] ?? "/selecionar-perfil");
@@ -112,8 +133,38 @@ function Router() {
       <Route path="/dev/painel">
         <WithLayout><DevPanel /></WithLayout>
       </Route>
+      <Route path="/dev/ia-portal">
+        <WithLayout><IAPortal /></WithLayout>
+      </Route>
+      <Route path="/dev/processos">
+        <WithLayout><Processos /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/perfil-ia">
+        <WithLayout><PerfilIA /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/temperatura-lead">
+        <WithLayout><TemperaturaLead /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/distribuicao-leads">
+        <WithLayout><DistribuicaoLeads /></WithLayout>
+      </Route>
+      <Route path="/dev/qgia/historico-pontuacao">
+        <WithLayout><HistoricoPontuacao /></WithLayout>
+      </Route>
+      <Route path="/dev/cliente">
+        <WithLayout><ClientePortal /></WithLayout>
+      </Route>
+      <Route path="/dev/sistema">
+        <WithLayout><Sistema /></WithLayout>
+      </Route>
 
       {/* ── ADMIN ROUTES ─────────────────────────────────────────────── */}
+      <Route path="/admin">
+        {() => {
+          window.location.replace("/admin/dashboard");
+          return null;
+        }}
+      </Route>
       <Route path="/admin/dashboard">
         <WithLayout><AdminDashboard /></WithLayout>
       </Route>
@@ -174,6 +225,20 @@ function Router() {
       <Route path="/admin/ia-qg">
         <WithLayout><IaQG /></WithLayout>
       </Route>
+      <Route path="/admin/pendencias">
+        <WithLayout><AdminPendencias /></WithLayout>
+      </Route>
+      <Route path="/admin/processosPatio">
+        <WithLayout><AdminProcessosPatio /></WithLayout>
+      </Route>
+      <Route path="/admin/processosSistema">
+        <WithLayout><AdminProcessosSistema /></WithLayout>
+      </Route>
+
+      {/* Visão Geral executiva */}
+      <Route path="/visaogeral">
+        <WithLayout><VisaoGeral /></WithLayout>
+      </Route>
 
       {/* ── GESTÃO ROUTES ────────────────────────────────────────────── */}
       <Route path="/gestao/os-ultimate">
@@ -219,11 +284,15 @@ function Router() {
       <Route path="/gestao/tecnologia">
         <WithLayout><GestaoTecnologia /></WithLayout>
       </Route>
+      <Route path="/gestao/antes-depois">
+        <WithLayout><GestaoAntesDePois /></WithLayout>
+      </Route>
 
       {/* 404 */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
+    </RouteGuard>
   );
 }
 

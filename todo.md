@@ -404,3 +404,156 @@
 - [x] Ações na tabela: Reset (volta para 123456 + marca primeiroAcesso=true), Alterar senha (Dev define nova senha), Ativar/Desativar usuário
 - [x] Dialog "Criar Usuário": nome, cargo, username, nível de acesso — senha inicial 123456
 - [x] Usernames configurados no banco: Dev_thales, gestao_sophia, gestao_francisco, gestao_marcia, gestao_simone, consultor_pedro, consultor_joao, consultor_rony, consultor_antonio
+
+## Proteção de Rotas por Role
+
+- [x] Criar shared/rolePermissions.ts com mapa de permissões (ROUTE_PERMISSIONS + canAccess + ROLE_HOME)
+- [x] Criar RouteGuard.tsx no frontend — intercepta navegação e redireciona se role sem permissão
+- [x] Integrar RouteGuard no App.tsx envolvendo o Switch de rotas
+- [x] Adicionar header x-dap-role no tRPC client (main.tsx) para enviar role ao servidor
+- [x] Criar devProcedure, gestaoProcedure, internalProcedure no server/_core/trpc.ts
+- [x] Proteger procedures usuarios.list/resetSenha/alterarSenha/criarUsuario/toggleAtivo com devProcedure
+- [x] Testar: role gestao recebe FORBIDDEN (403) ao chamar usuarios.list
+- [x] Testar: role dev recebe dados (9 usuários) ao chamar usuarios.list
+
+## Correções de Regras de Negócio — Autenticação (Concluído)
+- [x] Diagnosticar e corrigir login do Dev (colunas faltantes setor/avatar/updatedAt no banco)
+- [x] Reset automático para 123456 após 3 tentativas erradas (sem lockout)
+- [x] Dev não precisa trocar senha no primeiro acesso (primeiroAcesso ignorado para nivelAcessoId=1)
+- [x] Apenas Dev pode cadastrar/alterar/resetar usuários (devProcedure protege)
+- [x] Dicas de username não expostas na tela de login
+
+## Agenda do Mecânico (Concluído)
+- [x] Adicionar mecanicoId, observacoesMecanico, statusMecanico na tabela 12_agendamentos
+- [x] Adicionar mecanicoRefId na tabela 01_colaboradores
+- [x] Atualizar schema Drizzle com novos campos
+- [x] Criar procedures agendamentos.listByMecanico, atribuirMecanico, updateStatusMecanico
+- [x] Adicionar aba Agenda na tela MecanicoView com seletor de data e cards de agendamento
+- [x] Dialog de atualização de status do agendamento pelo mecânico
+
+## Sidebar DEV Reestruturado (Concluído)
+- [x] Grupo DEV: Navegador de Páginas + Painel DEV no topo
+- [x] Submenu colapsável "Gestão" dentro do grupo DEV (acesso rápido a todas as telas de gestão)
+- [x] Submenu colapsável "Pombal" dentro do grupo DEV (acesso rápido a todas as telas operacionais)
+- [x] Submenu colapsável "Mecânico" dentro do grupo DEV (pátio mecânico, agenda, analytics)
+- [x] Item direto "QG IA" no grupo DEV
+- [x] Submenu "Sistema" no grupo DEV (configurações, usuários, integrações, Trello)
+- [x] Submenu "Processos" no grupo DEV (operações, relatórios, campanhas)
+- [x] Item direto "Melhorias" no grupo DEV
+- [x] Grupos GESTÃO e POMBAL mantidos para os outros roles (sem alteração)
+
+## QG IA + Portal Dev IA + Processos (Concluído)
+- [x] Criar página /dev/ia-portal com cards dos 3 agentes Sophia Hub (Sophia, Simone, Ana)
+- [x] Criar página /dev/qgia/perfil-ia com configuração de modelo, temperatura, max tokens e system prompt
+- [x] Criar página /dev/qgia/temperatura-lead com critérios de pontuação e limiares configuráveis
+- [x] Criar página /dev/qgia/distribuicao-leads com regras de distribuição e carga dos consultores
+- [x] Criar página /dev/qgia/historico-pontuacao com tabela de eventos de pontuação por lead
+- [x] Criar página /dev/processos com 4 diagramas Mermaid interativos editáveis e exportáveis
+- [x] Expandir submenu QG IA no sidebar com 5 sub-itens (Portal IA, Perfil IA, Temperatura, Distribuição, Histórico)
+- [x] Atualizar Processos no sidebar para apontar para /dev/processos + sub-item Diagramas
+- [x] Registrar todas as 6 novas rotas no App.tsx
+
+## Novas Funcionalidades — Sidebar Cliente + Perfil IA + Processos + Sininho
+- [ ] Adicionar submenu "Cliente" no sidebar DEV com página /dev/cliente
+- [x] Persistir configs do Perfil IA na tabela system_config (procedure config.getPerfilIA + config.savePerfilIA)
+- [ ] Reestruturar /dev/processos com 3 subseções: Sistema, Local, Regras de Negócio
+- [ ] Criar botão de Atualizações com sininho no sidebar (tabela changelog no banco + badge de não lidos)
+
+## Novas Funcionalidades — Sidebar DEV + IA + Processos + Sininho (Concluído)
+
+- [x] Adicionar submenu Cliente no sidebar DEV + página /dev/cliente
+- [x] Persistir configs do Perfil IA na tabela system_config via trpc.config.get/set
+- [x] Reestruturar /dev/processos com 3 categorias: Sistema, Local, Regras de Negócio
+- [x] Criar tabela 99_changelog no banco
+- [x] Adicionar procedures changelog.list, unreadCount, markRead, markAllRead, create
+- [x] Criar componente ChangelogBell com popover de notificações
+- [x] Adicionar sininho no footer do sidebar (visível para todos os roles)
+
+## Atualizações — Sessão Mar 10 2026
+
+- [x] Tabela 99_changelog criada no banco com 10 entradas reais do histórico do sistema
+- [x] Corrigir tipo lidoPor no schema (never[] → string JSON)
+- [x] Corrigir insert do changelog no routers.ts (lidoPor como JSON string)
+- [x] Reconstruir MecanicoView do zero com conceito "Caminho de Aprendizado" gamificado
+- [x] MecanicoView: trilha visual de etapas com XP, filtro por etapa, cards de OS com status
+- [x] MecanicoView: aba Agenda integrada com agendamentos por mecânico vinculado
+- [x] MecanicoView: barra de XP e sistema de níveis (Iniciante → Mestre)
+- [x] Criar página /dev/sistema com status de integrações em tempo real (Banco, Kommo, Trello, OpenAI, WhatsApp, Webhook)
+- [x] Adicionar "Status & Integrações" no submenu Sistema do sidebar DEV
+- [x] Adicionar procedure usuarios.vincularMecanico (vincula colaborador ao mecânico da tabela 03_mecanicos)
+- [x] Adicionar procedure usuarios.listComMecanico (inclui mecanicoRefId na listagem)
+- [x] Atualizar UsuariosTab no DevPanel: coluna "Mecânico Vinculado" com botão de vinculação
+- [x] Dialog de vinculação: select de mecânicos disponíveis com confirmação
+- [x] Login.tsx: salvar mecanicoRefId no RoleContext ao fazer login
+
+## Fix Rota /admin (Mar 10 2026)
+
+- [x] Adicionar rota /admin que redireciona para /admin/dashboard (corrige 404 no preview)
+
+## Integração Perfil IA → invokeLLM (Mar 10 2026)
+
+- [x] Criar helper llmConfig.ts: getLLMConfig() lê model, temperatura, maxTokens, systemPrompt, modoDebug do banco
+- [x] Cache de 60s no getLLMConfig para evitar query a cada chamada
+- [x] Validações de segurança: temperatura [0,2], maxTokens [256,32768], fallback para defaults
+- [x] invokeLLM atualizado: usa model, temperature e max_tokens do banco (via getLLMConfig)
+- [x] thinking.budget_tokens proporcional ao max_tokens (10%, mín 128, máx 1024)
+- [x] config.setMany agora chama invalidateLLMConfigCache() após salvar
+- [x] Procedure config.getPerfilIA: retorna config ativa que o invokeLLM está usando
+- [x] Página PerfilIA: painel "Configuração Ativa no Servidor" mostra valores em uso
+- [x] Página PerfilIA: após salvar, refetch automático do perfilAtivo (1.5s delay para cache expirar)
+- [x] Vitest: 13 testes para llmConfig passando (42 testes totais, todos passando)
+
+## Mapa de Navegação Admin (Mar 10 2026)
+
+- [x] Criar página /admin/pendencias (lista de pendências do pátio — em vermelho no diagrama = crítico)
+- [x] Criar página /admin/processosPatio (processos do pátio com diagramas mermaid)
+- [x] Criar página /admin/processosSistema (processos do sistema com diagramas mermaid)
+- [x] Atualizar sidebar Admin: adicionar Pendências, Processos (sub-menu Patio + Sistema), AlertTriangle icon
+- [x] Registrar todas as novas rotas no App.tsx
+- [x] Instalar mermaid como dependência
+- [ ] /visaogeral ainda não criada (aguardando definição do conteúdo)
+
+## OS Ultimate Reconstruída (Mar 10 2026)
+
+- [x] KPIs com delta vs mês anterior (faturamento, qtde OS, ticket médio)
+- [x] Alertas críticos em tempo real (OS paradas +48h, aguardando aprovação +24h, prontas sem retirada)
+- [x] Funil de status clicável (filtra tabela ao clicar no status)
+- [x] Mix de serviços com valores reais (Rápido/Médio/Demorado/Projeto) e faturamento por categoria
+- [x] Ranking mecânicos expandível (clica para ver placas trabalhadas), badge "ativo" em execução
+- [x] Tabela com busca full-text (OS, placa, cliente, veículo), filtro por consultor + mecânico + status
+- [x] Coluna Mecânico na tabela de OS
+- [x] Exportação CSV do período filtrado
+- [x] Comparação mês anterior com setas de tendência
+
+## Três Melhorias (Mar 10 2026)
+
+- [ ] Gráfico de evolução mensal (últimos 6 meses) na OS Ultimate
+- [ ] Página /visaogeral — pátio + pendências + agenda do dia (visão executiva)
+- [ ] Página /gestao/antes-depois — comparação KPIs pré/pós implantação do sistema
+
+## Três Melhorias — Mar 10 2026
+
+- [x] Gráfico de evolução mensal na OS Ultimate (recharts, dashboard.financeiro, historicoMensal)
+- [x] Criar página /visaogeral (visão executiva consolidada: pátio + pendências + agenda + metas)
+- [x] Criar página /gestao/antes-depois (10 KPIs antes/depois com cards, radar e barras)
+- [x] Adicionar rotas no App.tsx e links no sidebar (Gestão + POMBAL + Dev)
+- [x] PERFIL_ACESSO atualizado para /gestao/antes-depois e /visaogeral
+
+## Agentes IA — System Prompts e Delegação (Mar 10 2026)
+
+- [ ] Persistir system prompts de Sophia, Simone e Raena no banco (system_config)
+- [ ] Router ia.orquestrar — Sophia analisa mensagem e delega para Simone (sistema) ou Raena (Kommo)
+- [ ] Router ia.simone — agente interno com acesso a OS, agendamentos, faturamento
+- [ ] Router ia.raena — agente Kommo com acesso a leads, pipeline, status
+- [ ] Atualizar IAPortal com chat multi-agente e delegação visível
+- [ ] Página /dev/qgia/perfil-ia: adicionar abas por agente (Sophia, Simone, Raena)
+
+## Agentes IA — Orquestração Sophia → Simone/Raena (Mar 10 2026)
+
+- [x] Persistir system prompts dos 3 agentes no banco (ia.agente.sophia/simone/raena.systemPrompt + temperatura + maxTokens + modelo + ativo)
+- [x] Criar helper getAgentConfig() no llmConfig.ts com cache 60s por agente e fallback para defaults
+- [x] Criar router agentes (list, getConfig, orquestrar, chat) no routers.ts
+- [x] Lógica de orquestração: Sophia usa JSON schema para decidir delegação (sophia | simone | raena)
+- [x] Simone recebe contexto de OS ativas do banco ao ser delegada
+- [x] Reconstruir IAPortal com chat multi-agente, delegação visível (Sophia → Simone/Raena), aba Agentes e aba Fluxo
+- [x] 0 erros TypeScript após todas as correções

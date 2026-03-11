@@ -1,0 +1,14 @@
+{
+  "query": "\nALTER TABLE `01_colaboradores`\n  ADD COLUMN IF NOT EXISTS `mecanicoRefId` INT NULL COMMENT 'FK para 03_mecanicos — usado quando o colaborador é um mecânico';\n\n-- Verificar\nSELECT COLUMN_NAME, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS\nWHERE TABLE_NAME = '01_colaboradores' AND COLUMN_NAME = 'mecanicoRefId';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute \nALTER TABLE `01_colaboradores`\n  ADD COLUMN IF NOT EXISTS `mecanicoRefId` INT NULL COMMENT 'FK para 03_mecanicos — usado quando o colaborador é um mecânico';\n\n-- Verificar\nSELECT COLUMN_NAME, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS\nWHERE TABLE_NAME = '01_colaboradores' AND COLUMN_NAME = 'mecanicoRefId';\n",
+  "rows": [
+    {
+      "COLUMN_NAME": "mecanicoRefId",
+      "COLUMN_TYPE": "int"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tCOLUMN_TYPE\nmecanicoRefId\tint\n",
+  "stderr": "",
+  "execution_time_ms": 593
+}

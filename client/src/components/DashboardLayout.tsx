@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useRole } from "@/contexts/RoleContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ChangelogBell } from "@/components/ChangelogBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,14 @@ import {
   Activity,
   Brain,
   Settings2,
+  Layers,
+  GitBranch,
+  Cpu,
+  Bot,
+  Sliders,
+  Thermometer,
+  User,
+  AlertTriangle,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -99,6 +108,8 @@ const PERFIL_ACESSO: Record<string, string[]> = {
   "/gestao/rh": ["gestor", "admin"],
   "/gestao/operacoes": ["gestor", "admin"],
   "/gestao/tecnologia": ["gestor", "admin"],
+  "/gestao/antes-depois": ["gestor", "admin"],
+  "/visaogeral": ["consultor", "gestor", "admin"],
   // Dev — apenas admin (Thales)
   "/dev": ["admin"],
   "/dev/painel": ["admin"],
@@ -119,54 +130,97 @@ type MenuGroup = {
 
 const menuItems: MenuGroup[] = [
   {
-    group: "POMBAL",
+    group: "Dev",
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
-      { icon: Activity, label: "Visão Geral", path: "/gestao/visao-geral" },
-      { icon: Car, label: "Pátio", path: "/admin/patio" },
-      { icon: CalendarClock, label: "Agenda", path: "/admin/agenda" },
+      // Itens diretos do Dev
+      { icon: Code2, label: "Navegador de Páginas", path: "/dev" },
+      { icon: Settings2, label: "Painel DEV", path: "/dev/painel" },
+      // Submenus modais das outras visões (Dev vê tudo inline)
       {
-        icon: FolderOpen,
-        label: "Cadastros",
-        path: "/_cadastros",
+        icon: BarChart3,
+        label: "Gestão",
+        path: "/_dev_gestao",
         children: [
-          { icon: Users, label: "Clientes", path: "/admin/clientes" },
-          { icon: ClipboardList, label: "Ordens de Serviço", path: "/admin/os" },
+          { icon: FileText, label: "OS Ultimate", path: "/gestao/os-ultimate" },
+          { icon: TrendingUp, label: "Visão Geral", path: "/gestao/visao-geral" },
+          { icon: Wrench, label: "Operacional", path: "/gestao/operacional" },
+          { icon: DollarSign, label: "Financeiro", path: "/gestao/financeiro" },
+          { icon: BarChart3, label: "Produtividade", path: "/gestao/produtividade" },
+          { icon: Users, label: "Colaboradores", path: "/gestao/colaboradores" },
+          { icon: Wrench, label: "Mecânicos", path: "/gestao/mecanicos" },
+          { icon: Target, label: "Metas", path: "/gestao/metas" },
+          { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
+          { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },
+          { icon: UserCog, label: "RH", path: "/gestao/rh" },
+          { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
+          { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
+          { icon: TrendingUp, label: "Antes & Depois", path: "/gestao/antes-depois" },
         ],
       },
       {
-        icon: FileText,
-        label: "Relatórios",
-        path: "/_relatorios",
+        icon: Car,
+        label: "Pombal",
+        path: "/_dev_pombal",
         children: [
+          { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+          { icon: Car, label: "Pátio", path: "/admin/patio" },
+          { icon: CalendarClock, label: "Agenda", path: "/admin/agenda" },
+          { icon: Users, label: "Clientes", path: "/admin/clientes" },
+          { icon: ClipboardList, label: "Ordens de Serviço", path: "/admin/os" },
           { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
           { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
           { icon: CalendarClock, label: "Agenda Mec.", path: "/admin/agenda-mecanicos" },
-          { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
           { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
         ],
       },
       {
-        icon: Brain,
-        label: "QG das IAs",
-        path: "/admin/ia-qg",
+        icon: Wrench,
+        label: "Mecânico",
+        path: "/_dev_mecanico",
+        children: [
+          { icon: Car, label: "Pátio do Mecânico", path: "/mecanico" },
+          { icon: CalendarClock, label: "Agenda Mecânico", path: "/admin/agenda-mecanicos" },
+          { icon: BarChart3, label: "Analytics", path: "/admin/mecanicos/analytics" },
+        ],
       },
+      // Itens diretos adicionais
       {
-        icon: Lightbulb,
-        label: "Melhorias",
-        path: "/gestao/melhorias",
+        icon: Brain,
+        label: "QG IA",
+        path: "/dev/ia-portal",
+        children: [
+          { icon: Bot, label: "Portal IA", path: "/dev/ia-portal" },
+          { icon: Sliders, label: "Perfil IA", path: "/dev/qgia/perfil-ia" },
+          { icon: Thermometer, label: "Temperatura de Lead", path: "/dev/qgia/temperatura-lead" },
+          { icon: GitBranch, label: "Distribuição de Leads", path: "/dev/qgia/distribuicao-leads" },
+          { icon: BarChart3, label: "Histórico de Pontuação", path: "/dev/qgia/historico-pontuacao" },
+        ],
       },
       {
         icon: Monitor,
         label: "Sistema",
-        path: "/_sistema",
+        path: "/_dev_sistema",
         children: [
+          { icon: Activity, label: "Status & Integrações", path: "/dev/sistema" },
           { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
           { icon: UserCog, label: "Usuários", path: "/admin/usuarios" },
-          { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
+          { icon: Zap, label: "Integrações (Legacy)", path: "/admin/integracoes" },
           { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
         ],
       },
+      {
+        icon: GitBranch,
+        label: "Processos",
+        path: "/dev/processos",
+        children: [
+          { icon: GitBranch, label: "Diagramas", path: "/dev/processos" },
+          { icon: Activity, label: "Visão Geral Ops", path: "/gestao/operacoes" },
+          { icon: FileText, label: "Relatórios", path: "/gestao/relatorios" },
+          { icon: Megaphone, label: "Campanhas", path: "/gestao/campanhas" },
+        ],
+      },
+      { icon: Lightbulb, label: "Melhorias", path: "/gestao/melhorias" },
+      { icon: User, label: "Cliente", path: "/dev/cliente" },
     ],
   },
   {
@@ -186,13 +240,68 @@ const menuItems: MenuGroup[] = [
       { icon: UserCog, label: "RH", path: "/gestao/rh" },
       { icon: Cog, label: "Operações", path: "/gestao/operacoes" },
       { icon: Laptop, label: "Tecnologia", path: "/gestao/tecnologia" },
+      { icon: TrendingUp, label: "Antes & Depois", path: "/gestao/antes-depois" },
     ],
   },
   {
-    group: "Dev",
+    group: "POMBAL",
     items: [
-      { icon: Code2, label: "Navegador de Páginas", path: "/dev" },
-      { icon: Settings2, label: "Painel DEV", path: "/dev/painel" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+      { icon: Activity, label: "Visão Geral", path: "/visaogeral" },
+      { icon: Car, label: "Pátio", path: "/admin/patio" },
+      { icon: CalendarClock, label: "Agenda Mec.", path: "/admin/agenda-mecanicos" },
+      { icon: AlertTriangle, label: "Pendências", path: "/admin/pendencias" },
+      { icon: CalendarClock, label: "Agenda", path: "/admin/agenda" },
+      {
+        icon: FolderOpen,
+        label: "Cadastros",
+        path: "/_cadastros",
+        children: [
+          { icon: Users, label: "Clientes", path: "/admin/clientes" },
+          { icon: ClipboardList, label: "Ordens de Serviço", path: "/admin/os" },
+        ],
+      },
+      {
+        icon: FileText,
+        label: "Relatórios",
+        path: "/_relatorios",
+        children: [
+          { icon: DollarSign, label: "Financeiro", path: "/admin/financeiro" },
+          { icon: BarChart3, label: "Produtividade", path: "/admin/produtividade" },
+          { icon: BarChart3, label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics" },
+          { icon: ThumbsUp, label: "Avaliação Diária", path: "/admin/mecanicos/feedback" },
+        ],
+      },
+      {
+        icon: Brain,
+        label: "QG das IAs",
+        path: "/admin/ia-qg",
+      },
+      {
+        icon: Lightbulb,
+        label: "Melhorias",
+        path: "/gestao/melhorias",
+      },
+      {
+        icon: GitBranch,
+        label: "Processos",
+        path: "/_processos",
+        children: [
+          { icon: Car, label: "Processos do Pátio", path: "/admin/processosPatio" },
+          { icon: Monitor, label: "Processos do Sistema", path: "/admin/processosSistema" },
+        ],
+      },
+      {
+        icon: Monitor,
+        label: "Sistema",
+        path: "/_sistema",
+        children: [
+          { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
+          { icon: UserCog, label: "Usuários", path: "/admin/usuarios" },
+          { icon: Zap, label: "Integrações", path: "/admin/integracoes" },
+          { icon: Trello, label: "Migração Trello", path: "/admin/trello-migracao" },
+        ],
+      },
     ],
   },
 ];
@@ -260,12 +369,13 @@ function DashboardLayoutContent({
   // consultor: apenas POMBAL
   // mecanico: apenas POMBAL
   // cliente: nenhum (portal separado)
+  // Grupos visíveis por role — a ordem aqui define a ordem no sidebar
   const GROUPS_BY_ROLE: Record<string, string[]> = {
-    dev: ["POMBAL", "GESTÃO", "Dev"],
-    gestao: ["POMBAL", "GESTÃO"],
-    consultor: ["POMBAL"],
-    mecanico: ["POMBAL"],
-    cliente: [],
+    dev: ["Dev", "GESTÃO", "POMBAL"],      // Dev vê tudo: Dev primeiro, depois GESTÃO, depois POMBAL
+    gestao: ["GESTÃO", "POMBAL"],           // Gestão: apenas GESTÃO e POMBAL, sem Dev
+    consultor: ["POMBAL"],                  // Consultor: apenas POMBAL
+    mecanico: ["POMBAL"],                   // Mecânico: apenas POMBAL
+    cliente: [],                            // Cliente: nenhum (portal separado)
   };
   const allowedGroups = GROUPS_BY_ROLE[perfilAtual] ?? ["POMBAL"];
   const filteredMenuItems = menuItems
@@ -288,6 +398,16 @@ function DashboardLayoutContent({
       }),
     }))
     .filter(group => group.items.length > 0);
+
+  // Track collapsed groups (GESTÃO e POMBAL colapsam, Dev sempre aberto)
+  const COLLAPSIBLE_GROUPS = ["GESTÃO", "POMBAL"];
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    // Por padrão GESTÃO e POMBAL começam expandidos
+    return {};
+  });
+  const toggleGroup = (group: string) => {
+    setCollapsedGroups(prev => ({ ...prev, [group]: !prev[group] }));
+  };
 
   // Track open submenus
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(() => {
@@ -377,14 +497,34 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 overflow-y-auto">
-            {filteredMenuItems.map((group, gi) => (
+            {filteredMenuItems.map((group, gi) => {
+              const isGroupCollapsed = COLLAPSIBLE_GROUPS.includes(group.group) && !!collapsedGroups[group.group];
+              const isCollapsibleGroup = COLLAPSIBLE_GROUPS.includes(group.group);
+              return (
               <div key={group.group}>
                 {gi > 0 && <SidebarSeparator className="mx-2 my-1" />}
                 {!isCollapsed && (
-                  <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                    {group.group}
-                  </p>
+                  isCollapsibleGroup ? (
+                    <button
+                      onClick={() => toggleGroup(group.group)}
+                      className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-accent/30 rounded-md transition-colors group/grp"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 group-hover/grp:text-muted-foreground transition-colors">
+                        {group.group}
+                      </p>
+                      <ChevronRight
+                        className={`h-3 w-3 text-muted-foreground/40 transition-transform duration-200 ${
+                          isGroupCollapsed ? "" : "rotate-90"
+                        }`}
+                      />
+                    </button>
+                  ) : (
+                    <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                      {group.group}
+                    </p>
+                  )
                 )}
+                {!isGroupCollapsed && (
                 <SidebarMenu className="px-2 pb-1">
                   {group.items.map(item => {
                     if (item.children) {
@@ -449,8 +589,10 @@ function DashboardLayoutContent({
                     );
                   })}
                 </SidebarMenu>
+                )}
               </div>
-            ))}
+              );
+            })}
             {/* Quick action */}
             {!isCollapsed && (
               <div className="px-3 pt-2 pb-1">
@@ -467,6 +609,12 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            {/* Sininho de atualizações do sistema */}
+            {!isCollapsed && (
+              <div className="flex items-center justify-end px-1 pb-1">
+                <ChangelogBell />
+              </div>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">

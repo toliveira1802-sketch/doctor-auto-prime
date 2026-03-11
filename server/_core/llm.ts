@@ -1,4 +1,5 @@
 import { ENV } from "./env";
+import { getLLMConfig } from "./llmConfig";
 
 export type Role = "system" | "user" | "assistant" | "tool" | "function";
 
@@ -277,11 +278,26 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     output_schema,
     responseFormat,
     response_format,
+    maxTokens,
+    max_tokens,
   } = params;
 
+  // Carrega configs do Perfil IA do banco (com cache de 60s)
+  const llmCfg = await getLLMConfig();
+
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model: llmCfg.model,
     messages: messages.map(normalizeMessage),
+    temperature: llmCfg.temperature,
+  };
+
+  // max_tokens: parâmetro explícito tem prioridade sobre a config do banco
+  const resolvedMaxTokens = maxTokens ?? max_tokens ?? llmCfg.maxTokens;
+  payload.max_tokens = resolvedMaxTokens;
+
+  // Thinking budget proporcional ao max_tokens (mín 128, máx 1024)
+  payload.thinking = {
+    budget_tokens: Math.min(1024, Math.max(128, Math.floor(resolvedMaxTokens * 0.1))),
   };
 
   if (tools && tools.length > 0) {
@@ -294,11 +310,6 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   );
   if (normalizedToolChoice) {
     payload.tool_choice = normalizedToolChoice;
-  }
-
-  payload.max_tokens = 32768
-  payload.thinking = {
-    "budget_tokens": 128
   }
 
   const normalizedResponseFormat = normalizeResponseFormat({

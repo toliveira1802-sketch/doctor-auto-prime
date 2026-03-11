@@ -1,7 +1,7 @@
 /**
- * Local Authentication Routes
- * Login por seleção de colaborador (sem senha) — modo teste.
- * Cria o mesmo JWT session cookie que o fluxo OAuth.
+ * Local Authentication Routes — Doctor Auto Prime
+ * Handles profile-based login with bcrypt password hashing,
+ * login attempt limiting (5 attempts → lock), and session management.
  */
 import type { Express, Request, Response } from "express";
 import { getDb } from "./db";
@@ -11,190 +11,66 @@ import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import * as db from "./db";
+import {
+  verifyPassword,
+  hashPassword,
+  isDefaultPassword,
+  isBcryptHash,
+  getHashedDefaultPassword,
+} from "./passwordUtils";
 
-const PERFIL_LABELS: Record<string, string> = {
-  admin: "Administrador",
-  gestor: "Gestão",
-  consultor: "Consultor",
-  mecanico: "Mecânico",
-};
+const MAX_FAILED_ATTEMPTS = 3; // Após 3 erros, reset automático para 123456
+const LOCK_DURATION_MS = 15 * 60 * 1000; // mantido para compatibilidade
 
-// Mapeamento nivelAcessoId → perfil do sistema
-function getPerfil(nivelAcessoId: number): string {
-  if (nivelAcessoId === 1) return "admin";
-  if (nivelAcessoId === 2) return "gestor";
-  if (nivelAcessoId === 3) return "consultor";
-  if (nivelAcessoId === 4) return "mecanico";
-  return "consultor";
+// Mapeamento nivelAcessoId → role do sistema
+function getRoleFromNivel(nivelAcessoId: number): string {
+  const map: Record<number, string> = {
+    1: "dev",
+    2: "gestao",
+    3: "consultor",
+    4: "mecanico",
+    5: "cliente",
+    6: "mecanico", // Terceirizado → mecânico
+  };
+  return map[nivelAcessoId] ?? "consultor";
 }
 
-// Mapeamento perfil → rota de redirect
-function getRedirectPath(perfil: string): string {
-  if (perfil === "admin") return "/admin/dashboard";
-  if (perfil === "gestor") return "/gestao/visao-geral";
-  if (perfil === "mecanico") return "/mecanico";
-  return "/admin/dashboard"; // consultor
+// Mapeamento role → rota de redirect
+function getRedirectPath(role: string): string {
+  const map: Record<string, string> = {
+    dev: "/dev/painel",
+    gestao: "/gestao/os-ultimate",
+    consultor: "/admin/dashboard",
+    mecanico: "/mecanico",
+    cliente: "/cliente",
+  };
+  return map[role] ?? "/admin/dashboard";
+}
+
+// Mapeamento role → nivelAcessoId esperado
+function getNivelFromRole(role: string): number[] {
+  const map: Record<string, number[]> = {
+    dev: [1],
+    gestao: [2],
+    consultor: [3],
+    mecanico: [4, 6],
+  };
+  return map[role] ?? [];
 }
 
 export function registerLocalAuthRoutes(app: Express) {
-  // POST /api/auth/local-login — aceita { colaboradorId } (sem senha)
+  /**
+   * POST /api/auth/local-login
+   * Main login endpoint: username + password + selected profile
+   * Validates credentials, checks role match, handles lockout.
+   */
   app.post("/api/auth/local-login", async (req: Request, res: Response) => {
-    const { colaboradorId } = req.body as { colaboradorId?: number };
-
-    if (!colaboradorId) {
-      res.status(400).json({ error: "Selecione um colaborador" });
-      return;
-    }
-
-    try {
-      const drizzle = await getDb();
-      if (!drizzle) {
-        res.status(500).json({ error: "Banco de dados indisponível" });
-        return;
-      }
-
-      // Busca colaborador ativo pelo id
-      const result = await drizzle
-        .select()
-        .from(colaboradores)
-        .where(
-          and(
-            eq(colaboradores.id, colaboradorId),
-            eq(colaboradores.ativo, true)
-          )
-        )
-        .limit(1);
-
-      if (result.length === 0) {
-        res.status(401).json({ error: "Colaborador não encontrado ou inativo" });
-        return;
-      }
-
-      const colab = result[0];
-      const perfil = getPerfil(colab.nivelAcessoId ?? 3);
-      const redirectPath = getRedirectPath(perfil);
-
-      // openId único para o colaborador
-      const openId = `local_${colab.id}`;
-
-      // Upsert no users table para manter consistência
-      const role = perfil === "admin" ? "admin" : "user";
-      await db.upsertUser({
-        openId,
-        name: colab.nome,
-        email: colab.email ?? null,
-        loginMethod: "local",
-        role,
-        lastSignedIn: new Date(),
-      });
-
-      // Cria sessão JWT (mesmo mecanismo do OAuth)
-      const sessionToken = await sdk.createSessionToken(openId, {
-        name: colab.nome,
-        expiresInMs: ONE_YEAR_MS,
-      });
-
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      res.json({
-        success: true,
-        nome: colab.nome,
-        perfil,
-        redirectPath,
-      });
-    } catch (error) {
-      console.error("[LocalAuth] Login failed", error);
-      res.status(500).json({ error: "Erro interno ao fazer login" });
-    }
-  });
-
-  // Senhas por perfil (nivelAcessoId → pin)
-  const PERFIL_PINS: Record<number, string> = {
-    1: "1234", // Administrador
-    2: "1234", // Gestão
-    3: "1234", // Consultor
-    4: "1234", // Mecânico
-  };
-
-  // POST /api/auth/local-login-perfil — aceita { nivelAcessoId, pin } e autentica como perfil genérico
-  app.post("/api/auth/local-login-perfil", async (req: Request, res: Response) => {
-    const { nivelAcessoId, redirectPath: clientRedirect, pin } = req.body as {
-      nivelAcessoId?: number;
-      redirectPath?: string;
-      pin?: string;
+    const { username, senha, perfil, lembrar } = req.body as {
+      username?: string;
+      senha?: string;
+      perfil?: string;
+      lembrar?: boolean;
     };
-
-    if (!nivelAcessoId) {
-      res.status(400).json({ error: "Selecione um perfil" });
-      return;
-    }
-
-    // Valida PIN do perfil
-    const senhaCorreta = PERFIL_PINS[nivelAcessoId];
-    if (senhaCorreta && pin !== senhaCorreta) {
-      res.status(401).json({ error: "Senha incorreta" });
-      return;
-    }
-
-    try {
-      const drizzle = await getDb();
-      if (!drizzle) {
-        res.status(500).json({ error: "Banco de dados indisponível" });
-        return;
-      }
-
-      // Busca o primeiro colaborador ativo daquele nível
-      const result = await drizzle
-        .select()
-        .from(colaboradores)
-        .where(
-          and(
-            eq(colaboradores.nivelAcessoId, nivelAcessoId),
-            eq(colaboradores.ativo, true)
-          )
-        )
-        .limit(1);
-
-      if (result.length === 0) {
-        res.status(401).json({ error: "Nenhum colaborador ativo neste perfil" });
-        return;
-      }
-
-      const colab = result[0];
-      const perfil = getPerfil(colab.nivelAcessoId ?? 3);
-      const redirectPath = clientRedirect ?? getRedirectPath(perfil);
-
-      const openId = `local_perfil_${nivelAcessoId}`;
-      const role = perfil === "admin" ? "admin" : "user";
-
-      await db.upsertUser({
-        openId,
-        name: PERFIL_LABELS[perfil] ?? perfil,
-        email: null,
-        loginMethod: "local",
-        role,
-        lastSignedIn: new Date(),
-      });
-
-      const sessionToken = await sdk.createSessionToken(openId, {
-        name: PERFIL_LABELS[perfil] ?? perfil,
-        expiresInMs: ONE_YEAR_MS,
-      });
-
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      res.json({ success: true, perfil, redirectPath });
-    } catch (error) {
-      console.error("[LocalAuth] Perfil login failed", error);
-      res.status(500).json({ error: "Erro interno ao fazer login" });
-    }
-  });
-
-  // POST /api/auth/local-login-username — login com username + senha (Doctor_Sophia, Doctor_Pedro, Doctor_Joao)
-  app.post("/api/auth/local-login-username", async (req: Request, res: Response) => {
-    const { username, senha } = req.body as { username?: string; senha?: string };
 
     if (!username || !senha) {
       res.status(400).json({ error: "Informe usuário e senha" });
@@ -208,12 +84,11 @@ export function registerLocalAuthRoutes(app: Express) {
         return;
       }
 
-      // Busca pelo username (case-insensitive) e ativo
+      // Busca pelo username (case-insensitive)
       const result = await drizzle
         .select()
         .from(colaboradores)
-        .where(eq(colaboradores.ativo, true))
-        .limit(20);
+        .limit(50);
 
       const colab = result.find(
         (c) => c.username?.toLowerCase() === username.toLowerCase()
@@ -224,23 +99,263 @@ export function registerLocalAuthRoutes(app: Express) {
         return;
       }
 
-      // Valida senha (plain text por enquanto)
-      if (colab.senha !== senha) {
-        res.status(401).json({ error: "Senha incorreta" });
+      if (!colab.ativo) {
+        res.status(401).json({ error: "Usuário inativo. Entre em contato com o administrador." });
         return;
       }
 
-      const perfil = getPerfil(colab.nivelAcessoId ?? 3);
-      const redirectPath = getRedirectPath(perfil);
+      // Verify password (supports both plain-text legacy and bcrypt)
+      const storedPassword = colab.senha ?? "123456";
+      const passwordValid = await verifyPassword(senha, storedPassword);
+
+      if (!passwordValid) {
+        const newAttempts = (colab.failedAttempts ?? 0) + 1;
+        if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+          // Regra: após 3 erros consecutivos, reset automático para 123456 + marca primeiroAcesso
+          const hashedDefault = await getHashedDefaultPassword();
+          await drizzle
+            .update(colaboradores)
+            .set({ senha: hashedDefault, primeiroAcesso: true, failedAttempts: 0, lockedUntil: null })
+            .where(eq(colaboradores.id, colab.id));
+          res.status(401).json({
+            error: "Senha resetada para 123456 após 3 tentativas erradas. Use a senha padrão e troque no primeiro acesso.",
+            resetToDefault: true,
+          });
+        } else {
+          await drizzle
+            .update(colaboradores)
+            .set({ failedAttempts: newAttempts })
+            .where(eq(colaboradores.id, colab.id));
+          const remaining = MAX_FAILED_ATTEMPTS - newAttempts;
+          res.status(401).json({
+            error: `Senha incorreta. ${remaining} tentativa(s) restante(s) antes do reset automático para 123456.`,
+            attemptsRemaining: remaining,
+          });
+        }
+        return;
+      }
+
+      // Password correct — reset failed attempts
+      await drizzle
+        .update(colaboradores)
+        .set({ failedAttempts: 0, lockedUntil: null })
+        .where(eq(colaboradores.id, colab.id));
+
+      // If password is plain-text, migrate to bcrypt silently
+      if (!isBcryptHash(storedPassword)) {
+        const hashed = await hashPassword(storedPassword);
+        await drizzle
+          .update(colaboradores)
+          .set({ senha: hashed })
+          .where(eq(colaboradores.id, colab.id));
+      }
+
+      // Determine role
+      const role = getRoleFromNivel(colab.nivelAcessoId ?? 3);
+
+      // Validate that the selected profile matches the user's role
+      // Dev can access any profile; others must match
+      if (perfil && role !== "dev") {
+        const allowedNiveis = getNivelFromRole(perfil);
+        if (allowedNiveis.length > 0 && !allowedNiveis.includes(colab.nivelAcessoId ?? 3)) {
+          res.status(403).json({
+            error: `Seu usuário não tem permissão para o perfil "${perfil}". Seu perfil é "${role}".`,
+          });
+          return;
+        }
+      }
+
+      const redirectPath = getRedirectPath(perfil && role === "dev" ? perfil : role);
+
+      // Check if first access (default password) — Dev nunca precisa trocar senha
+      const isFirstAccess = colab.primeiroAcesso === true && role !== "dev";
+
+      // Create session
       const openId = `local_${colab.id}`;
-      const role = perfil === "admin" ? "admin" : "user";
+      const userRole = role === "dev" ? "admin" : "user";
 
       await db.upsertUser({
         openId,
         name: colab.nome,
         email: colab.email ?? null,
         loginMethod: "local",
-        role,
+        role: userRole,
+        lastSignedIn: new Date(),
+      });
+
+      const sessionToken = await sdk.createSessionToken(openId, {
+        name: colab.nome,
+        expiresInMs: ONE_YEAR_MS,
+      });
+
+      const cookieOptions = getSessionCookieOptions(req);
+      // "Lembrar de mim" → session doesn't expire (ONE_YEAR_MS)
+      // Without → session cookie (expires when browser closes)
+      const maxAge = lembrar ? ONE_YEAR_MS : undefined;
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge });
+
+      res.json({
+        success: true,
+        nome: colab.nome,
+        role: perfil && role === "dev" ? perfil : role,
+        redirectPath,
+        primeiroAcesso: isFirstAccess,
+        colaboradorId: colab.id,
+        mecanicoRefId: colab.mecanicoRefId ?? null,
+        login: colab.username ?? username,
+      });
+    } catch (error) {
+      console.error("[LocalAuth] Login failed", error);
+      res.status(500).json({ error: "Erro interno ao fazer login" });
+    }
+  });
+
+  /**
+   * POST /api/auth/change-password
+   * Change password (first access or voluntary).
+   * Accepts: { colaboradorId, novaSenha }
+   * Hashes with bcrypt before storing.
+   */
+  app.post("/api/auth/change-password", async (req: Request, res: Response) => {
+    const { colaboradorId, novaSenha } = req.body as {
+      colaboradorId?: number;
+      novaSenha?: string;
+    };
+
+    if (!colaboradorId || !novaSenha || novaSenha.length < 8) {
+      res.status(400).json({
+        error: "Dados inválidos. A nova senha deve ter no mínimo 8 caracteres.",
+      });
+      return;
+    }
+
+    try {
+      const drizzle = await getDb();
+      if (!drizzle) {
+        res.status(500).json({ error: "Banco de dados indisponível" });
+        return;
+      }
+
+      const hashedPassword = await hashPassword(novaSenha);
+
+      await drizzle
+        .update(colaboradores)
+        .set({
+          senha: hashedPassword,
+          primeiroAcesso: false,
+          failedAttempts: 0,
+          lockedUntil: null,
+        })
+        .where(eq(colaboradores.id, colaboradorId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[LocalAuth] Change password failed", error);
+      res.status(500).json({ error: "Erro interno ao trocar senha" });
+    }
+  });
+
+  /**
+   * POST /api/auth/local-logout
+   * Clears the session cookie.
+   */
+  app.post("/api/auth/local-logout", (req: Request, res: Response) => {
+    const cookieOptions = getSessionCookieOptions(req);
+    res.clearCookie(COOKIE_NAME, { ...cookieOptions });
+    res.json({ success: true });
+  });
+
+  // ─── LEGACY ENDPOINTS (kept for backward compatibility) ───────────────────
+
+  /**
+   * POST /api/auth/local-login-perfil — legacy profile PIN login
+   * Redirects to the new unified login flow.
+   */
+  app.post("/api/auth/local-login-perfil", async (req: Request, res: Response) => {
+    res.status(410).json({
+      error: "Este endpoint foi descontinuado. Use /api/auth/local-login.",
+    });
+  });
+
+  /**
+   * POST /api/auth/local-login-username — legacy username+password login
+   * Now redirects to the new unified endpoint.
+   */
+  app.post("/api/auth/local-login-username", async (req: Request, res: Response) => {
+    // Forward to the new unified login
+    const { username, senha } = req.body as { username?: string; senha?: string };
+    if (!username || !senha) {
+      res.status(400).json({ error: "Informe usuário e senha" });
+      return;
+    }
+
+    try {
+      const drizzle = await getDb();
+      if (!drizzle) {
+        res.status(500).json({ error: "Banco de dados indisponível" });
+        return;
+      }
+
+      const result = await drizzle
+        .select()
+        .from(colaboradores)
+        .where(eq(colaboradores.ativo, true))
+        .limit(50);
+
+      const colab = result.find(
+        (c) => c.username?.toLowerCase() === username.toLowerCase()
+      );
+
+      if (!colab) {
+        res.status(401).json({ error: "Usuário não encontrado" });
+        return;
+      }
+
+      // Check lock
+      if (colab.lockedUntil && new Date(colab.lockedUntil) > new Date()) {
+        const minutesLeft = Math.ceil(
+          (new Date(colab.lockedUntil).getTime() - Date.now()) / 60000
+        );
+        res.status(423).json({
+          error: `Conta bloqueada. Tente em ${minutesLeft} minuto(s).`,
+          locked: true,
+        });
+        return;
+      }
+
+      const storedPassword = colab.senha ?? "123456";
+      const passwordValid = await verifyPassword(senha, storedPassword);
+
+      if (!passwordValid) {
+        const newAttempts = (colab.failedAttempts ?? 0) + 1;
+        const updateData: Record<string, any> = { failedAttempts: newAttempts };
+        if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+          updateData.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
+        }
+        await drizzle.update(colaboradores).set(updateData).where(eq(colaboradores.id, colab.id));
+        res.status(401).json({ error: "Senha incorreta" });
+        return;
+      }
+
+      // Reset attempts
+      await drizzle.update(colaboradores).set({ failedAttempts: 0, lockedUntil: null }).where(eq(colaboradores.id, colab.id));
+
+      // Migrate plain-text password
+      if (!isBcryptHash(storedPassword)) {
+        const hashed = await hashPassword(storedPassword);
+        await drizzle.update(colaboradores).set({ senha: hashed }).where(eq(colaboradores.id, colab.id));
+      }
+
+      const role = getRoleFromNivel(colab.nivelAcessoId ?? 3);
+      const redirectPath = getRedirectPath(role);
+      const openId = `local_${colab.id}`;
+
+      await db.upsertUser({
+        openId,
+        name: colab.nome,
+        email: colab.email ?? null,
+        loginMethod: "local",
+        role: role === "dev" ? "admin" : "user",
         lastSignedIn: new Date(),
       });
 
@@ -255,49 +370,14 @@ export function registerLocalAuthRoutes(app: Express) {
       res.json({
         success: true,
         nome: colab.nome,
-        perfil,
+        perfil: role,
         redirectPath,
         primeiroAcesso: colab.primeiroAcesso === true,
         colaboradorId: colab.id,
       });
     } catch (error) {
-      console.error("[LocalAuth] Username login failed", error);
+      console.error("[LocalAuth] Legacy username login failed", error);
       res.status(500).json({ error: "Erro interno ao fazer login" });
     }
-  });
-
-  // POST /api/auth/change-password — troca de senha obrigatória no 1º acesso
-  app.post("/api/auth/change-password", async (req: Request, res: Response) => {
-    const { colaboradorId, novaSenha } = req.body as { colaboradorId?: number; novaSenha?: string };
-
-    if (!colaboradorId || !novaSenha || novaSenha.length < 4) {
-      res.status(400).json({ error: "Dados inválidos. Senha mínima de 4 caracteres." });
-      return;
-    }
-
-    try {
-      const drizzle = await getDb();
-      if (!drizzle) {
-        res.status(500).json({ error: "Banco de dados indisponível" });
-        return;
-      }
-
-      await drizzle
-        .update(colaboradores)
-        .set({ senha: novaSenha, primeiroAcesso: false })
-        .where(eq(colaboradores.id, colaboradorId));
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("[LocalAuth] Change password failed", error);
-      res.status(500).json({ error: "Erro interno ao trocar senha" });
-    }
-  });
-
-  // POST /api/auth/local-logout
-  app.post("/api/auth/local-logout", (req: Request, res: Response) => {
-    const cookieOptions = getSessionCookieOptions(req);
-    res.clearCookie(COOKIE_NAME, { ...cookieOptions });
-    res.json({ success: true });
   });
 }

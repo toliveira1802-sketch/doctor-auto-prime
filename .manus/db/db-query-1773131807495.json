@@ -1,0 +1,127 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME;",
+  "rows": [
+    {
+      "TABLE_NAME": "00_empresas"
+    },
+    {
+      "TABLE_NAME": "01_colaboradores"
+    },
+    {
+      "TABLE_NAME": "02_nivelDeAcesso"
+    },
+    {
+      "TABLE_NAME": "03_mecanicos"
+    },
+    {
+      "TABLE_NAME": "04_lista_status"
+    },
+    {
+      "TABLE_NAME": "05_pendencias"
+    },
+    {
+      "TABLE_NAME": "06_recursos"
+    },
+    {
+      "TABLE_NAME": "07_clientes"
+    },
+    {
+      "TABLE_NAME": "08_veiculos"
+    },
+    {
+      "TABLE_NAME": "09_ordens_servico"
+    },
+    {
+      "TABLE_NAME": "10_ordens_servico_historico"
+    },
+    {
+      "TABLE_NAME": "11_ordens_servico_itens"
+    },
+    {
+      "TABLE_NAME": "12_agendamentos"
+    },
+    {
+      "TABLE_NAME": "13_mecanico_feedback"
+    },
+    {
+      "TABLE_NAME": "14_os_anexos"
+    },
+    {
+      "TABLE_NAME": "15_kommo_tokens"
+    },
+    {
+      "TABLE_NAME": "16_kommo_leads"
+    },
+    {
+      "TABLE_NAME": "17_melhorias"
+    },
+    {
+      "TABLE_NAME": "18_trello_sync_log"
+    },
+    {
+      "TABLE_NAME": "19_trello_card_overrides"
+    },
+    {
+      "TABLE_NAME": "20_oficina_vagas"
+    },
+    {
+      "TABLE_NAME": "21_lead_scores"
+    },
+    {
+      "TABLE_NAME": "22_lead_score_history"
+    },
+    {
+      "TABLE_NAME": "23_system_logs"
+    },
+    {
+      "TABLE_NAME": "95_faturamento"
+    },
+    {
+      "TABLE_NAME": "97_analise_promocoes"
+    },
+    {
+      "TABLE_NAME": "98_servicos_catalogo"
+    },
+    {
+      "TABLE_NAME": "99_changelog"
+    },
+    {
+      "TABLE_NAME": "99_crm"
+    },
+    {
+      "TABLE_NAME": "__drizzle_migrations"
+    },
+    {
+      "TABLE_NAME": "analise_promocoes"
+    },
+    {
+      "TABLE_NAME": "crm"
+    },
+    {
+      "TABLE_NAME": "faturamento"
+    },
+    {
+      "TABLE_NAME": "niveis_acesso"
+    },
+    {
+      "TABLE_NAME": "os_historico"
+    },
+    {
+      "TABLE_NAME": "pendencias"
+    },
+    {
+      "TABLE_NAME": "system_config"
+    },
+    {
+      "TABLE_NAME": "system_logs"
+    },
+    {
+      "TABLE_NAME": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\n00_empresas\n01_colaboradores\n02_nivelDeAcesso\n03_mecanicos\n04_lista_status\n05_pendencias\n06_recursos\n07_clientes\n08_veiculos\n09_ordens_servico\n10_ordens_servico_historico\n11_ordens_servico_itens\n12_agendamentos\n13_mecanico_feedback\n14_os_anexos\n15_kommo_tokens\n16_kommo_leads\n17_melhorias\n18_trello_sync_log\n19_trello_card_overrides\n20_oficina_vagas\n21_lead_scores\n22_lead_score_history\n23_system_logs\n95_faturamento\n97_analise_promocoes\n98_servicos_catalogo\n99_changelog\n99_crm\n__drizzle_migrations\nanalise_promocoes\ncrm\nfaturamento\nniveis_acesso\nos_historico\npendencias\nsystem_config\nsystem_logs\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 378
+}

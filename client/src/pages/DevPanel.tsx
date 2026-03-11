@@ -14,8 +14,9 @@ import {
   Webhook, MessageSquare, Bot, BarChart3, Shield, Server, ScrollText,
   Filter, Eraser, Info, ChevronDown, ChevronRight, Users, Lock, Unlock,
   UserCheck, Wrench, ShoppingBag, Crown, Key, RotateCcw, UserPlus, Pencil,
-  Power, PowerOff
+  Power, PowerOff, Map, ExternalLink
 } from "lucide-react";
+import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -256,6 +257,7 @@ export default function DevPanel() {
           <TabsTrigger value="logs" className="gap-1"><ScrollText className="w-3.5 h-3.5" />Logs</TabsTrigger>
           <TabsTrigger value="acesso" className="gap-1"><Shield className="w-3.5 h-3.5" />Controle de Acesso</TabsTrigger>
           <TabsTrigger value="usuarios" className="gap-1"><Users className="w-3.5 h-3.5" />Usuários</TabsTrigger>
+          <TabsTrigger value="mapa" className="gap-1"><Map className="w-3.5 h-3.5" />Mapa de Páginas</TabsTrigger>
         </TabsList>
 
         {/* ─── FEATURE FLAGS ─────────────────────────────────────────────────── */}
@@ -753,16 +755,20 @@ export default function DevPanel() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* ─── USUÁRIOS ──────────────────────────────────────────────────────────── */}
         <TabsContent value="usuarios" className="mt-4 space-y-4">
           <UsuariosTab />
+        </TabsContent>
+
+        {/* ─── MAPA DE PÁGINAS ───────────────────────────────────────────────────────────────────────── */}
+        <TabsContent value="mapa" className="mt-4 space-y-4">
+          <MapaPaginasTab />
         </TabsContent>
 
       </Tabs>
     </div>
   );
 }
+
 
 // ─── USUARIOS TAB ─────────────────────────────────────────────────────────────
 const NIVEL_LABEL: Record<number, { label: string; cor: string }> = {
@@ -775,11 +781,15 @@ const NIVEL_LABEL: Record<number, { label: string; cor: string }> = {
 };
 
 function UsuariosTab() {
-  const { data: usuarios = [], refetch } = trpc.usuarios.list.useQuery();
+  const { data: usuarios = [], refetch } = trpc.usuarios.listComMecanico.useQuery();
   const resetSenha = trpc.usuarios.resetSenha.useMutation({ onSuccess: () => { refetch(); toast.success("Senha resetada para 123456!"); } });
   const alterarSenha = trpc.usuarios.alterarSenha.useMutation({ onSuccess: () => { setDialogAlterar(null); refetch(); toast.success("Senha alterada com sucesso!"); } });
   const criarUsuario = trpc.usuarios.criarUsuario.useMutation({ onSuccess: () => { setDialogCriar(false); refetch(); toast.success("Usuário criado!"); } });
   const toggleAtivo = trpc.usuarios.toggleAtivo.useMutation({ onSuccess: () => { refetch(); toast.success("Status atualizado!"); } });
+  const vincularMecanico = trpc.usuarios.vincularMecanico.useMutation({ onSuccess: () => { refetch(); toast.success("Mecânico vinculado!"); setDialogVincular(null); } });
+
+  // Busca lista de mecânicos para o select de vinculação
+  const { data: mecanicosDisponiveis = [] } = trpc.mecanicos.list.useQuery();
 
   const [dialogAlterar, setDialogAlterar] = useState<{ id: number; nome: string } | null>(null);
   const [novaSenha, setNovaSenha] = useState("");
@@ -789,6 +799,8 @@ function UsuariosTab() {
   const [novoCargo, setNovoCargo] = useState("");
   const [novoUsername, setNovoUsername] = useState("");
   const [novoNivel, setNovoNivel] = useState(3);
+  const [dialogVincular, setDialogVincular] = useState<{ id: number; nome: string; mecanicoRefId: number | null } | null>(null);
+  const [mecanicoSelecionado, setMecanicoSelecionado] = useState<string>("nenhum");
 
   const handleAlterar = () => {
     if (!dialogAlterar || !novaSenha.trim()) return;
@@ -818,6 +830,7 @@ function UsuariosTab() {
                   <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Nome</th>
                   <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Username (login)</th>
                   <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Nível / Role</th>
+                  <th className="text-left text-zinc-400 text-xs font-semibold px-4 py-3">Mecânico Vinculado</th>
                   <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">Senha Padrão</th>
                   <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">1º Acesso</th>
                   <th className="text-center text-zinc-400 text-xs font-semibold px-4 py-3">Status</th>
@@ -839,6 +852,34 @@ function UsuariosTab() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-medium ${nivel.cor}`}>{nivel.label}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.nivelAcessoId === 4 ? (
+                          u.mecanicoRefId ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-amber-300 font-medium">
+                                {mecanicosDisponiveis.find((m: any) => m.id === u.mecanicoRefId)?.nome ?? `ID ${u.mecanicoRefId}`}
+                              </span>
+                              <button
+                                onClick={() => { setDialogVincular({ id: u.id, nome: u.nome, mecanicoRefId: u.mecanicoRefId ?? null }); setMecanicoSelecionado(String(u.mecanicoRefId ?? "nenhum")); }}
+                                className="text-zinc-500 hover:text-amber-400 transition-colors"
+                                title="Alterar vinculação"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setDialogVincular({ id: u.id, nome: u.nome, mecanicoRefId: null }); setMecanicoSelecionado("nenhum"); }}
+                              className="flex items-center gap-1 text-xs text-zinc-500 hover:text-amber-400 transition-colors border border-dashed border-zinc-700 hover:border-amber-500/50 px-2 py-0.5 rounded"
+                            >
+                              <Wrench className="w-3 h-3" />
+                              Vincular
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-xs text-zinc-600">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {senhaEhPadrao
@@ -961,6 +1002,63 @@ function UsuariosTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog: Vincular Mecânico */}
+      <Dialog open={!!dialogVincular} onOpenChange={(o) => !o && setDialogVincular(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-amber-400" />
+              Vincular Mecânico — {dialogVincular?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-zinc-400 text-sm">
+              Selecione o mecânico da tabela <code className="text-amber-400 text-xs">03_mecanicos</code> que corresponde a este usuário.
+              Isso permite que a agenda e as OS apareçam corretamente na tela do mecânico.
+            </p>
+            <div>
+              <Label className="text-zinc-400 text-sm">Mecânico</Label>
+              <Select value={mecanicoSelecionado} onValueChange={setMecanicoSelecionado}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1">
+                  <SelectValue placeholder="Selecione o mecânico" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectItem value="nenhum">— Nenhum (desvincular) —</SelectItem>
+                  {mecanicosDisponiveis.map((m: any) => (
+                    <SelectItem key={m.id} value={String(m.id)}>
+                      {m.nome} {m.especialidade ? `· ${m.especialidade}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {mecanicoSelecionado !== "nenhum" && (
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-xs text-amber-300">
+                  O usuário <strong>{dialogVincular?.nome}</strong> verá na aba Agenda apenas os agendamentos atribuídos ao mecânico selecionado.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogVincular(null)}>Cancelar</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700"
+              onClick={() => {
+                if (!dialogVincular) return;
+                vincularMecanico.mutate({
+                  colaboradorId: dialogVincular.id,
+                  mecanicoRefId: mecanicoSelecionado === "nenhum" ? null : Number(mecanicoSelecionado),
+                });
+              }}
+              disabled={vincularMecanico.isPending}
+            >
+              {vincularMecanico.isPending ? "Salvando..." : "Confirmar Vinculação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog: Criar Usuário */}
       <Dialog open={dialogCriar} onOpenChange={setDialogCriar}>
         <DialogContent className="bg-zinc-900 border-zinc-700 text-white">
@@ -1013,6 +1111,204 @@ function UsuariosTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ─── MAPA DE PÁGINAS TAB ──────────────────────────────────────────────────────
+type PageEntry = {
+  label: string;
+  path: string;
+  grupo: string;
+  roles: string[];
+  descricao?: string;
+  tabelas?: string[];
+};
+
+const TODAS_PAGINAS: PageEntry[] = [
+  // ── DEV ────────────────────────────────────────────────────────────────────────────────────
+  { grupo: "Dev", label: "Navegador de Páginas", path: "/dev", roles: ["dev"], descricao: "Lista todas as páginas do sistema com links diretos", tabelas: [] },
+  { grupo: "Dev", label: "Painel DEV", path: "/dev/painel", roles: ["dev"], descricao: "Feature flags, integrações, banco, logs, usuários, mapa de páginas", tabelas: ["01_colaboradores", "system_config", "23_system_logs"] },
+
+  // ── GESTÃO ────────────────────────────────────────────────────────────────────────────
+  { grupo: "Gestão", label: "OS Ultimate", path: "/gestao/os-ultimate", roles: ["dev", "gestao"], descricao: "Painel gerencial completo de ordens de serviço com funil e ranking", tabelas: ["09_ordens_servico", "01_colaboradores", "03_mecanicos"] },
+  { grupo: "Gestão", label: "Visão Geral", path: "/gestao/visao-geral", roles: ["dev", "gestao"], descricao: "KPIs estratégicos consolidados", tabelas: ["09_ordens_servico", "12_agendamentos", "95_faturamento", "system_config", "03_mecanicos"] },
+  { grupo: "Gestão", label: "Operacional", path: "/gestao/operacional", roles: ["dev", "gestao"], descricao: "OS ativas em tempo real, prontas para entrega, aguardando aprovação", tabelas: ["09_ordens_servico"] },
+  { grupo: "Gestão", label: "Financeiro", path: "/gestao/financeiro", roles: ["dev", "gestao"], descricao: "Faturamento vs meta, mix de serviços", tabelas: ["95_faturamento", "09_ordens_servico", "system_config"] },
+  { grupo: "Gestão", label: "Produtividade", path: "/gestao/produtividade", roles: ["dev", "gestao"], descricao: "Ranking de mecânicos com score de qualidade", tabelas: ["03_mecanicos", "09_ordens_servico", "system_config"] },
+  { grupo: "Gestão", label: "Colaboradores", path: "/gestao/colaboradores", roles: ["dev", "gestao"], descricao: "Equipe administrativa com perfis", tabelas: ["01_colaboradores"] },
+  { grupo: "Gestão", label: "Mecânicos", path: "/gestao/mecanicos", roles: ["dev", "gestao"], descricao: "Equipe técnica com grau, especialidade e score", tabelas: ["03_mecanicos"] },
+  { grupo: "Gestão", label: "Metas", path: "/gestao/metas", roles: ["dev", "gestao"], descricao: "Configuração e acompanhamento de metas", tabelas: ["system_config", "95_faturamento", "09_ordens_servico", "01_colaboradores"] },
+  { grupo: "Gestão", label: "Relatórios", path: "/gestao/relatorios", roles: ["dev", "gestao"], descricao: "Relatórios gerenciais consolidados por período", tabelas: ["95_faturamento", "09_ordens_servico", "system_config", "03_mecanicos"] },
+  { grupo: "Gestão", label: "Melhorias", path: "/gestao/melhorias", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Board de sugestões com votos e status", tabelas: ["17_melhorias"] },
+  { grupo: "Gestão", label: "Campanhas", path: "/gestao/campanhas", roles: ["dev", "gestao"], descricao: "ROI por canal, funil de conversão, insights automáticos", tabelas: ["95_faturamento", "09_ordens_servico"] },
+  { grupo: "Gestão", label: "RH", path: "/gestao/rh", roles: ["dev", "gestao"], descricao: "Equipe mecânicos e colaboradores admin", tabelas: ["01_colaboradores", "03_mecanicos", "13_mecanico_feedback"] },
+  { grupo: "Gestão", label: "Operações", path: "/gestao/operacoes", roles: ["dev", "gestao"], descricao: "Distribuição OS, carga por mecânico, agendamentos", tabelas: ["12_agendamentos", "09_ordens_servico", "05_pendencias"] },
+  { grupo: "Gestão", label: "Tecnologia", path: "/gestao/tecnologia", roles: ["dev", "gestao"], descricao: "Status integrações, stack e roadmap 2026-2028", tabelas: ["15_kommo_tokens", "17_melhorias"] },
+
+  // ── POMBAL (Admin) ──────────────────────────────────────────────────────────────────────────
+  { grupo: "POMBAL", label: "Dashboard", path: "/admin/dashboard", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "KPIs principais: pátio, agendamentos, faturamento, ticket médio", tabelas: ["09_ordens_servico", "12_agendamentos", "95_faturamento", "system_config", "05_pendencias"] },
+  { grupo: "POMBAL", label: "Pátio Kanban", path: "/admin/patio", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Kanban drag-and-drop + mapa da oficina", tabelas: ["09_ordens_servico", "07_clientes", "03_mecanicos", "08_veiculos"] },
+  { grupo: "POMBAL", label: "Agenda", path: "/admin/agenda", roles: ["dev", "gestao", "consultor", "mecanico"], descricao: "Agenda de mecânicos por horário", tabelas: ["12_agendamentos", "07_clientes", "03_mecanicos", "08_veiculos", "01_colaboradores"] },
+  { grupo: "POMBAL", label: "Nova OS", path: "/admin/nova-os", roles: ["dev", "gestao", "consultor"], descricao: "Fluxo completo de abertura de OS", tabelas: ["09_ordens_servico", "07_clientes", "08_veiculos", "03_mecanicos", "01_colaboradores", "06_recursos"] },
+  { grupo: "POMBAL", label: "Ordens de Serviço", path: "/admin/os", roles: ["dev", "gestao", "consultor"], descricao: "Lista de OS com filtros por status e consultor", tabelas: ["09_ordens_servico", "07_clientes"] },
+  { grupo: "POMBAL", label: "Clientes", path: "/admin/clientes", roles: ["dev", "gestao", "consultor"], descricao: "CRM: lista de clientes com histórico de OS e interações", tabelas: ["07_clientes"] },
+  { grupo: "POMBAL", label: "Financeiro", path: "/admin/financeiro", roles: ["dev", "gestao"], descricao: "Faturamento mensal, ticket médio, histórico 6 meses", tabelas: ["95_faturamento", "09_ordens_servico", "system_config"] },
+  { grupo: "POMBAL", label: "Produtividade", path: "/admin/produtividade", roles: ["dev", "gestao"], descricao: "Ranking de mecânicos com gráfico de barras", tabelas: ["03_mecanicos", "09_ordens_servico", "system_config"] },
+  { grupo: "POMBAL", label: "Agenda Mecânicos", path: "/admin/agenda-mecanicos", roles: ["dev", "gestao"], descricao: "Visão de agenda por mecânico", tabelas: ["12_agendamentos", "03_mecanicos", "09_ordens_servico"] },
+  { grupo: "POMBAL", label: "Mecânicos Analytics", path: "/admin/mecanicos/analytics", roles: ["dev", "gestao"], descricao: "Analytics detalhado por mecânico", tabelas: ["03_mecanicos", "09_ordens_servico"] },
+  { grupo: "POMBAL", label: "Avaliação Diária", path: "/admin/mecanicos/feedback", roles: ["dev", "gestao"], descricao: "Feedback e avaliação diária dos mecânicos", tabelas: ["13_mecanico_feedback", "03_mecanicos"] },
+  { grupo: "POMBAL", label: "QG das IAs", path: "/admin/ia-qg", roles: ["dev", "gestao", "consultor"], descricao: "Central de agentes IA: Ana, Lead Scoring, Reativação", tabelas: ["21_lead_scores", "22_lead_score_history", "16_kommo_leads"] },
+  { grupo: "POMBAL", label: "Configurações", path: "/admin/configuracoes", roles: ["dev", "gestao"], descricao: "Metas financeiras, metas por consultor, dados da empresa", tabelas: ["system_config", "01_colaboradores"] },
+  { grupo: "POMBAL", label: "Usuários", path: "/admin/usuarios", roles: ["dev"], descricao: "Gerenciamento de usuários do sistema", tabelas: ["01_colaboradores", "02_nivelDeAcesso"] },
+  { grupo: "POMBAL", label: "Integrações", path: "/admin/integracoes", roles: ["dev"], descricao: "Status e configuração de integrações externas", tabelas: ["system_config"] },
+  { grupo: "POMBAL", label: "Migração Trello", path: "/admin/trello-migracao", roles: ["dev", "gestao"], descricao: "Sincronização de cards Trello e geração de planilha", tabelas: ["18_trello_sync_log", "19_trello_card_overrides", "07_clientes", "09_ordens_servico", "08_veiculos"] },
+
+  // ── OUTROS ────────────────────────────────────────────────────────────────────────────────────
+  { grupo: "Acesso", label: "Selecionar Perfil", path: "/selecionar-perfil", roles: ["público"], descricao: "Tela de login — seleção de role + username/senha", tabelas: ["01_colaboradores"] },
+  { grupo: "Acesso", label: "Trocar Senha", path: "/trocar-senha", roles: ["todos"], descricao: "Troca de senha obrigatória no primeiro acesso", tabelas: ["01_colaboradores"] },
+  { grupo: "Acesso", label: "Mecânico", path: "/mecanico", roles: ["mecanico"], descricao: "Visão simplificada para mecânicos", tabelas: ["09_ordens_servico", "07_clientes", "03_mecanicos", "08_veiculos"] },
+];
+
+const GRUPO_COR: Record<string, string> = {
+  "Dev": "text-violet-400 bg-violet-500/10 border-violet-500/20",
+  "Gestão": "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  "POMBAL": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+  "Acesso": "text-zinc-400 bg-zinc-500/10 border-zinc-500/20",
+};
+
+const ROLE_COR: Record<string, string> = {
+  "dev": "bg-violet-500/20 text-violet-300 border-violet-500/30",
+  "gestao": "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  "consultor": "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+  "mecanico": "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  "público": "bg-zinc-500/20 text-zinc-300 border-zinc-500/30",
+  "todos": "bg-zinc-500/20 text-zinc-300 border-zinc-500/30",
+};
+
+function MapaPaginasTab() {
+  const [, navigate] = useLocation();
+  const [filtroGrupo, setFiltroGrupo] = useState<string>("todos");
+  const [busca, setBusca] = useState("");
+
+  const grupos = ["todos", "Dev", "Gestão", "POMBAL", "Acesso"];
+
+  const paginasFiltradas = TODAS_PAGINAS.filter((p) => {
+    const matchGrupo = filtroGrupo === "todos" || p.grupo === filtroGrupo;
+    const matchBusca = busca === "" ||
+      p.label.toLowerCase().includes(busca.toLowerCase()) ||
+      p.path.toLowerCase().includes(busca.toLowerCase()) ||
+      (p.descricao ?? "").toLowerCase().includes(busca.toLowerCase());
+    return matchGrupo && matchBusca;
+  });
+
+  const porGrupo = grupos.filter(g => g !== "todos").reduce<Record<string, PageEntry[]>>((acc, g) => {
+    acc[g] = paginasFiltradas.filter(p => p.grupo === g);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <p className="text-zinc-400 text-sm flex-1">
+          <span className="text-white font-semibold">{TODAS_PAGINAS.length} páginas</span> registradas no sistema. Clique em qualquer linha para navegar diretamente.
+        </p>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Buscar página..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="bg-zinc-800 border-zinc-700 text-white text-xs h-8 w-48"
+          />
+          <div className="flex gap-1">
+            {grupos.map((g) => (
+              <button
+                key={g}
+                onClick={() => setFiltroGrupo(g)}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors border ${
+                  filtroGrupo === g
+                    ? g === "todos" ? "bg-zinc-700 text-white border-zinc-600" : GRUPO_COR[g] + " border"
+                    : "text-zinc-500 border-zinc-800 hover:text-zinc-300"
+                }`}
+              >
+                {g === "todos" ? `Todos (${TODAS_PAGINAS.length})` : `${g} (${TODAS_PAGINAS.filter(p => p.grupo === g).length})`}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {(filtroGrupo === "todos" ? grupos.filter(g => g !== "todos") : [filtroGrupo]).map((grupo) => {
+        const paginas = porGrupo[grupo] ?? paginasFiltradas.filter(p => p.grupo === grupo);
+        if (paginas.length === 0) return null;
+        return (
+          <Card key={grupo} className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className={`text-sm font-semibold flex items-center gap-2 ${GRUPO_COR[grupo]?.split(" ")[0] ?? "text-zinc-300"}`}>
+                <span className={`px-2 py-0.5 rounded text-xs border ${GRUPO_COR[grupo] ?? ""}`}>{grupo}</span>
+                <span className="text-zinc-500 font-normal">{paginas.length} página{paginas.length !== 1 ? "s" : ""}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left text-zinc-500 text-xs font-semibold px-4 py-2">Página</th>
+                    <th className="text-left text-zinc-500 text-xs font-semibold px-4 py-2">Rota</th>
+                    <th className="text-left text-zinc-500 text-xs font-semibold px-4 py-2">Descrição</th>
+                    <th className="text-left text-zinc-500 text-xs font-semibold px-4 py-2">Roles</th>
+                    <th className="text-center text-zinc-500 text-xs font-semibold px-4 py-2">Abrir</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {paginas.map((p) => (
+                    <tr
+                      key={p.path}
+                      className="hover:bg-zinc-800/40 transition-colors cursor-pointer"
+                      onClick={() => navigate(p.path)}
+                    >
+                      <td className="px-4 py-2.5">
+                        <span className="text-white text-sm font-medium">{p.label}</span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <code className="text-violet-300 text-xs bg-zinc-800 px-2 py-0.5 rounded">{p.path}</code>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-zinc-400 text-xs">{p.descricao ?? "—"}</span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {p.roles.map((r) => (
+                            <span key={r} className={`text-xs px-1.5 py-0.5 rounded border ${ROLE_COR[r] ?? "bg-zinc-700 text-zinc-300 border-zinc-600"}`}>
+                              {r}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(p.path); }}
+                          className="text-zinc-500 hover:text-violet-400 transition-colors"
+                          title={`Ir para ${p.path}`}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {paginasFiltradas.length === 0 && (
+        <div className="text-center py-12 text-zinc-500">
+          <Map className="w-8 h-8 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">Nenhuma página encontrada para "{busca}"</p>
+        </div>
+      )}
     </div>
   );
 }

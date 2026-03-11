@@ -1,0 +1,127 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3dWo49LZM7B1Gvy.e54432474310 --database S6kXiUs3wP8DTXUNAceZmN --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "00_empresas"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "01_colaboradores"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "02_nivelDeAcesso"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "03_mecanicos"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "04_lista_status"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "05_pendencias"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "06_recursos"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "07_clientes"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "08_veiculos"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "09_ordens_servico"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "10_ordens_servico_historico"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "11_ordens_servico_itens"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "12_agendamentos"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "13_mecanico_feedback"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "14_os_anexos"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "15_kommo_tokens"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "16_kommo_leads"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "17_melhorias"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "18_trello_sync_log"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "19_trello_card_overrides"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "20_oficina_vagas"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "21_lead_scores"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "22_lead_score_history"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "23_system_logs"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "95_faturamento"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "97_analise_promocoes"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "98_servicos_catalogo"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "99_changelog"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "99_crm"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "analise_promocoes"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "crm"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "faturamento"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "niveis_acesso"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "os_historico"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "pendencias"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "system_config"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "system_logs"
+    },
+    {
+      "Tables_in_S6kXiUs3wP8DTXUNAceZmN": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_S6kXiUs3wP8DTXUNAceZmN\n00_empresas\n01_colaboradores\n02_nivelDeAcesso\n03_mecanicos\n04_lista_status\n05_pendencias\n06_recursos\n07_clientes\n08_veiculos\n09_ordens_servico\n10_ordens_servico_historico\n11_ordens_servico_itens\n12_agendamentos\n13_mecanico_feedback\n14_os_anexos\n15_kommo_tokens\n16_kommo_leads\n17_melhorias\n18_trello_sync_log\n19_trello_card_overrides\n20_oficina_vagas\n21_lead_scores\n22_lead_score_history\n23_system_logs\n95_faturamento\n97_analise_promocoes\n98_servicos_catalogo\n99_changelog\n99_crm\n__drizzle_migrations\nanalise_promocoes\ncrm\nfaturamento\nniveis_acesso\nos_historico\npendencias\nsystem_config\nsystem_logs\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 412
+}

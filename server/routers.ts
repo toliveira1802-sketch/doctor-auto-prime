@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { and, desc, eq, gte, like, lte, ne, sql } from "drizzle-orm";
 import { z } from "zod";
+import { verifyPassword, hashPassword, isBcryptHash, getHashedDefaultPassword } from "./passwordUtils";
 import {
   agendamentos,
   clientes,
@@ -28,13 +29,15 @@ import {
   leadScores,
   leadScoreHistory,
   systemLogs,
+  changelog,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router, devProcedure, gestaoProcedure, internalProcedure } from "./_core/trpc";
 import { storagePut } from "./storage";
+import { invalidateLLMConfigCache, getLLMConfig, LLM_DEFAULTS, getAgentConfig } from "./_core/llmConfig";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function getMonthRange(mes?: number, ano?: number) {
@@ -61,43 +64,62 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
-    // Login local por role — autentica pelo banco de dados
+    // Login local por role — autentica pelo banco de dados (com bcrypt)
     roleLogin: publicProcedure
-      .input(z.object({ login: z.string(), senha: z.string() }))
+      .input(z.object({ login: z.string(), senha: z.string(), perfil: z.string().optional() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
 
-        // Busca colaborador pelo username (case-sensitive)
-        const [colab] = await db
-          .select({ id: colaboradores.id, nome: colaboradores.nome, username: colaboradores.username, senha: colaboradores.senha, primeiroAcesso: colaboradores.primeiroAcesso, nivelAcessoId: colaboradores.nivelAcessoId, ativo: colaboradores.ativo })
+        // Busca colaborador pelo username (case-insensitive)
+        const allColabs = await db
+          .select()
           .from(colaboradores)
-          .where(eq(colaboradores.username, input.login))
-          .limit(1);
+          .limit(50);
+        const colab = allColabs.find(
+          (c) => c.username?.toLowerCase() === input.login.toLowerCase()
+        );
 
         if (!colab || !colab.ativo) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário não encontrado ou inativo" });
         }
-        if (colab.senha !== input.senha) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha incorreta" });
+
+        // Verify password (bcrypt or plain-text legacy)
+        const storedPassword = colab.senha ?? "123456";
+        const passwordValid = await verifyPassword(input.senha, storedPassword);
+
+        if (!passwordValid) {
+          const newAttempts = (colab.failedAttempts ?? 0) + 1;
+          if (newAttempts >= 3) {
+            // Regra: após 3 erros consecutivos, reset automático para 123456 + marca primeiroAcesso
+            const hashedDefault = await getHashedDefaultPassword();
+            await db.update(colaboradores)
+              .set({ senha: hashedDefault, primeiroAcesso: true, failedAttempts: 0, lockedUntil: null })
+              .where(eq(colaboradores.id, colab.id));
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Senha resetada para 123456 após 3 tentativas erradas. Use a senha padrão e troque no primeiro acesso."
+            });
+          }
+          await db.update(colaboradores)
+            .set({ failedAttempts: newAttempts })
+            .where(eq(colaboradores.id, colab.id));
+          const remaining = 3 - newAttempts;
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: `Senha incorreta. ${remaining} tentativa(s) restante(s) antes do reset automático para 123456.`
+          });
         }
 
-        // Mapeia nivelAcessoId → role do sistema
-        const nivelToRole: Record<number, string> = {
-          1: "dev",      // Direção
-          2: "gestao",   // Gestão
-          3: "consultor", // Consultor Técnico
-          4: "mecanico", // Mecânico
-          5: "cliente",  // Cliente
-        };
-        // nivelAcessoId do banco: 1=Direção(10), 2=Gestão(8), 3=Consultor(5), 4=Mecânico(2), 5=Cliente(1)
+        // Login bem-sucedido: resetar contador de tentativas e migrar plain-text para bcrypt
+        const updateOnSuccess: Record<string, unknown> = { failedAttempts: 0, lockedUntil: null };
+        if (!isBcryptHash(storedPassword)) {
+          updateOnSuccess.senha = await hashPassword(storedPassword);
+        }
+        await db.update(colaboradores).set(updateOnSuccess).where(eq(colaboradores.id, colab.id));
+
         const nivelToRoleByDbId: Record<number, string> = {
-          1: "dev",
-          2: "gestao",
-          3: "consultor",
-          4: "mecanico",
-          5: "cliente",
-          6: "mecanico", // Terceirizado → mecânico
+          1: "dev", 2: "gestao", 3: "consultor", 4: "mecanico", 5: "cliente", 6: "mecanico",
         };
         const role = nivelToRoleByDbId[colab.nivelAcessoId ?? 5] ?? "consultor";
 
@@ -106,6 +128,7 @@ export const appRouter = router({
           nome: colab.nome,
           login: colab.username ?? input.login,
           colaboradorId: colab.id,
+          mecanicoRefId: colab.mecanicoRefId ?? null,
           primeiroAcesso: colab.primeiroAcesso ?? false,
         };
       }),
@@ -113,7 +136,7 @@ export const appRouter = router({
 
   // ─── USUÁRIOS (gerenciamento pelo Dev) ────────────────────────────────────
   usuarios: router({
-    list: publicProcedure.query(async () => {
+    list: devProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
       const rows = await db
@@ -132,30 +155,32 @@ export const appRouter = router({
       return rows;
     }),
 
-    resetSenha: publicProcedure
+    resetSenha: devProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const hashedDefault = await getHashedDefaultPassword();
         await db.update(colaboradores)
-          .set({ senha: "123456", primeiroAcesso: true })
+          .set({ senha: hashedDefault, primeiroAcesso: true, failedAttempts: 0, lockedUntil: null })
           .where(eq(colaboradores.id, input.id));
         return { success: true };
       }),
 
-    alterarSenha: publicProcedure
-      .input(z.object({ id: z.number(), novaSenha: z.string().min(4) }))
+    alterarSenha: devProcedure
+      .input(z.object({ id: z.number(), novaSenha: z.string().min(8) }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const hashed = await hashPassword(input.novaSenha);
         await db.update(colaboradores)
-          .set({ senha: input.novaSenha, primeiroAcesso: false })
+          .set({ senha: hashed, primeiroAcesso: false })
           .where(eq(colaboradores.id, input.id));
         return { success: true };
       }),
 
     trocarSenhaPropria: publicProcedure
-      .input(z.object({ colaboradorId: z.number(), senhaAtual: z.string(), novaSenha: z.string().min(4) }))
+      .input(z.object({ colaboradorId: z.number(), senhaAtual: z.string(), novaSenha: z.string().min(8) }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
@@ -165,47 +190,55 @@ export const appRouter = router({
           .where(eq(colaboradores.id, input.colaboradorId))
           .limit(1);
         if (!colab) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
-        if (colab.senha !== input.senhaAtual) {
+        const storedPassword = colab.senha ?? "123456";
+        const valid = await verifyPassword(input.senhaAtual, storedPassword);
+        if (!valid) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha atual incorreta" });
         }
+        const hashed = await hashPassword(input.novaSenha);
         await db.update(colaboradores)
-          .set({ senha: input.novaSenha, primeiroAcesso: false })
+          .set({ senha: hashed, primeiroAcesso: false })
           .where(eq(colaboradores.id, input.colaboradorId));
         return { success: true };
       }),
 
-    criarUsuario: publicProcedure
+    criarUsuario: devProcedure
       .input(z.object({
         nome: z.string().min(2),
         cargo: z.string().optional(),
+        setor: z.string().optional(),
         username: z.string().min(3),
+        telefone: z.string().optional(),
         nivelAcessoId: z.number().default(3),
         empresaId: z.number().default(1),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        // Verifica se username já existe
         const [existing] = await db
           .select({ id: colaboradores.id })
           .from(colaboradores)
           .where(eq(colaboradores.username, input.username))
           .limit(1);
         if (existing) throw new TRPCError({ code: "CONFLICT", message: "Username já está em uso" });
+        const hashedDefault = await getHashedDefaultPassword();
         const result = await db.insert(colaboradores).values({
           nome: input.nome,
           cargo: input.cargo,
+          setor: input.setor,
           username: input.username,
-          senha: "123456",
+          telefone: input.telefone,
+          senha: hashedDefault,
           primeiroAcesso: true,
           nivelAcessoId: input.nivelAcessoId,
           empresaId: input.empresaId,
           ativo: true,
+          failedAttempts: 0,
         });
         return { id: Number((result as any).insertId), success: true };
       }),
 
-    toggleAtivo: publicProcedure
+    toggleAtivo: devProcedure
       .input(z.object({ id: z.number(), ativo: z.boolean() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -215,6 +248,39 @@ export const appRouter = router({
           .where(eq(colaboradores.id, input.id));
         return { success: true };
       }),
+
+    // Vincula um colaborador mecânico ao registro em 03_mecanicos
+    vincularMecanico: devProcedure
+      .input(z.object({ colaboradorId: z.number(), mecanicoRefId: z.number().nullable() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await db.update(colaboradores)
+          .set({ mecanicoRefId: input.mecanicoRefId })
+          .where(eq(colaboradores.id, input.colaboradorId));
+        return { success: true };
+      }),
+
+    // Lista colaboradores com mecanicoRefId incluído
+    listComMecanico: devProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select({
+          id: colaboradores.id,
+          nome: colaboradores.nome,
+          cargo: colaboradores.cargo,
+          username: colaboradores.username,
+          senha: colaboradores.senha,
+          primeiroAcesso: colaboradores.primeiroAcesso,
+          nivelAcessoId: colaboradores.nivelAcessoId,
+          ativo: colaboradores.ativo,
+          mecanicoRefId: colaboradores.mecanicoRefId,
+        })
+        .from(colaboradores)
+        .orderBy(colaboradores.nivelAcessoId, colaboradores.nome);
+      return rows;
+    }),
   }),
 
   // ─── DASHBOARD KPIs ────────────────────────────────────────────────────────
@@ -1299,6 +1365,64 @@ export const appRouter = router({
         await db.update(agendamentos).set({ status: input.status }).where(eq(agendamentos.id, input.id));
         return { success: true };
       }),
+
+    // Lista agendamentos de um mecânico específico por data
+    listByMecanico: protectedProcedure
+      .input(z.object({
+        mecanicoId: z.number(),
+        data: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const targetDate = input.data ?? new Date().toISOString().split("T")[0];
+        const rows = await db
+          .select({ ag: agendamentos, cliente: clientes, veiculo: veiculos })
+          .from(agendamentos)
+          .leftJoin(clientes, eq(agendamentos.clienteId, clientes.id))
+          .leftJoin(veiculos, eq(agendamentos.veiculoId, veiculos.id))
+          .where(and(
+            eq(agendamentos.mecanicoId, input.mecanicoId),
+            sql`${agendamentos.dataAgendamento} = ${targetDate}`,
+          ))
+          .orderBy(agendamentos.horaAgendamento);
+        return rows.map((r) => ({
+          ...r.ag,
+          clienteNome: r.cliente?.nomeCompleto ?? "—",
+          clienteTelefone: r.cliente?.telefone ?? "—",
+          veiculoPlaca: r.veiculo?.placa ?? "—",
+          veiculoModelo: r.veiculo ? `${r.veiculo.marca ?? ""} ${r.veiculo.modelo ?? ""}`.trim() : "—",
+        }));
+      }),
+
+    atribuirMecanico: protectedProcedure
+      .input(z.object({ id: z.number(), mecanicoId: z.number().nullable() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(agendamentos)
+          .set({ mecanicoId: input.mecanicoId })
+          .where(eq(agendamentos.id, input.id));
+        return { success: true };
+      }),
+
+    updateStatusMecanico: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        statusMecanico: z.enum(["pendente", "confirmado", "concluido"]),
+        observacoesMecanico: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(agendamentos)
+          .set({
+            statusMecanico: input.statusMecanico,
+            ...(input.observacoesMecanico !== undefined && { observacoesMecanico: input.observacoesMecanico }),
+          })
+          .where(eq(agendamentos.id, input.id));
+        return { success: true };
+      }),
   }),
 
   // ─── CRM ───────────────────────────────────────────────────────────────────
@@ -1500,8 +1624,23 @@ export const appRouter = router({
             .values({ chave: item.chave, valor: item.valor })
             .onDuplicateKeyUpdate({ set: { valor: item.valor } });
         }
+        // Invalida o cache do LLM para que a próxima chamada use os novos valores
+        invalidateLLMConfigCache();
         return { success: true, updated: input.length };
       }),
+
+    // Retorna as configs do Perfil IA com os valores atuais (banco ou defaults)
+    getPerfilIA: devProcedure.query(async () => {
+      const cfg = await getLLMConfig();
+      return {
+        modelo: cfg.model,
+        temperatura: cfg.temperature,
+        maxTokens: cfg.maxTokens,
+        systemPrompt: cfg.systemPrompt,
+        modoDebug: cfg.modoDebug,
+        defaults: LLM_DEFAULTS,
+      };
+    }),
   }),
 
   // ─── OS ANEXOS (MÍDIA) ───────────────────────────────────────────────────────
@@ -2307,6 +2446,238 @@ Retorne APENAS JSON válido:
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         await db.update(melhorias).set({ status: input.status }).where(eq(melhorias.id, input.id));
         return { success: true };
+      }),
+  }),
+
+  // ─── CHANGELOG (sininho de atualizações) ────────────────────────────────────────────────────
+  changelog: router({
+    list: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(changelog).orderBy(desc(changelog.createdAt)).limit(50);
+    }),
+
+    unreadCount: publicProcedure
+      .input(z.object({ colaboradorId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { count: 0 };
+        const rows = await db.select({ lidoPor: changelog.lidoPor, id: changelog.id }).from(changelog).orderBy(desc(changelog.createdAt)).limit(50);
+        const unread = rows.filter(r => {
+          const lidos: number[] = JSON.parse(r.lidoPor ?? "[]");
+          return !lidos.includes(input.colaboradorId);
+        });
+        return { count: unread.length };
+      }),
+
+    markRead: publicProcedure
+      .input(z.object({ id: z.number(), colaboradorId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [row] = await db.select({ lidoPor: changelog.lidoPor }).from(changelog).where(eq(changelog.id, input.id)).limit(1);
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+        const lidos: number[] = JSON.parse(row.lidoPor ?? "[]");
+        if (!lidos.includes(input.colaboradorId)) {
+          lidos.push(input.colaboradorId);
+          await db.update(changelog).set({ lidoPor: JSON.stringify(lidos) }).where(eq(changelog.id, input.id));
+        }
+        return { success: true };
+      }),
+
+    markAllRead: publicProcedure
+      .input(z.object({ colaboradorId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const rows = await db.select({ id: changelog.id, lidoPor: changelog.lidoPor }).from(changelog);
+        for (const row of rows) {
+          const lidos: number[] = JSON.parse(row.lidoPor ?? "[]");
+          if (!lidos.includes(input.colaboradorId)) {
+            lidos.push(input.colaboradorId);
+            await db.update(changelog).set({ lidoPor: JSON.stringify(lidos) }).where(eq(changelog.id, row.id));
+          }
+        }
+        return { success: true };
+      }),
+
+    create: devProcedure
+      .input(z.object({
+        titulo: z.string().min(3),
+        descricao: z.string().min(5),
+        tipo: z.enum(["feature", "fix", "improvement", "breaking"]).default("feature"),
+        versao: z.string().default("1.0.0"),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const result = await db.insert(changelog).values({
+          titulo: input.titulo,
+          descricao: input.descricao,
+          tipo: input.tipo,
+          versao: input.versao,
+          autor: "Dev_thales",
+          lidoPor: "[]",
+          createdAt: Date.now(),
+        });
+        return { id: Number((result as any).insertId), success: true };
+      }),
+  }),
+
+  // ─── AGENTES IA (Sophia → Simone | Raena) ─────────────────────────────────────────────────
+  agentes: router({
+    // Retorna as configs de todos os agentes (para o IAPortal)
+    list: devProcedure.query(async () => {
+      const agentIds = ["sophia", "simone", "raena"];
+      const configs = await Promise.all(
+        agentIds.map(async (id) => {
+          const cfg = await getAgentConfig(id);
+          return { id, ...cfg };
+        })
+      );
+      return configs;
+    }),
+
+    // Retorna config de um agente específico
+    getConfig: devProcedure
+      .input(z.object({ agentId: z.enum(["sophia", "simone", "raena"]) }))
+      .query(async ({ input }) => {
+        return getAgentConfig(input.agentId);
+      }),
+
+    // Orquestração: Sophia analisa a mensagem e decide para quem delegar
+    orquestrar: protectedProcedure
+      .input(z.object({
+        mensagem: z.string().min(1).max(2000),
+        historico: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).optional().default([]),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const sophiaCfg = await getAgentConfig("sophia");
+
+        // Sophia decide para quem delegar
+        const sophiaResp = await invokeLLM({
+          messages: [
+            { role: "system", content: sophiaCfg.systemPrompt },
+            ...input.historico.map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string })),
+            { role: "user", content: input.mensagem },
+          ],
+          max_tokens: sophiaCfg.maxTokens,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "delegacao",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  agente: { type: "string", enum: ["sophia", "simone", "raena"] },
+                  motivo: { type: "string" },
+                  mensagem: { type: "string" },
+                },
+                required: ["agente", "motivo", "mensagem"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        let delegacao: { agente: string; motivo: string; mensagem: string };
+        try {
+          const raw = (sophiaResp.choices?.[0]?.message?.content as string) ?? "{}";
+          delegacao = JSON.parse(raw);
+        } catch {
+          delegacao = { agente: "sophia", motivo: "Erro ao parsear JSON", mensagem: (sophiaResp.choices?.[0]?.message?.content as string) ?? "" };
+        }
+
+        // Se Sophia delegou para outro agente, executa o agente destino
+        if (delegacao.agente !== "sophia") {
+          const agenteCfg = await getAgentConfig(delegacao.agente);
+
+          // Contexto adicional para Simone (dados do sistema)
+          let contextoPatch = "";
+          if (delegacao.agente === "simone") {
+            const db = await getDb();
+            if (db) {
+              const osAtivas = await db
+                .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa })
+                .from(ordensServico)
+                .where(ne(ordensServico.status, "Entregue"))
+                .limit(20);
+              contextoPatch = `\n\nDADOS DO SISTEMA (OS ativas agora):\n${JSON.stringify(osAtivas, null, 2)}`;
+            }
+          }
+
+          const agenteResp = await invokeLLM({
+            messages: [
+              { role: "system", content: agenteCfg.systemPrompt + contextoPatch },
+              ...input.historico.map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string })),
+              { role: "user", content: delegacao.mensagem || input.mensagem },
+            ],
+            max_tokens: agenteCfg.maxTokens,
+          });
+
+          return {
+            agente: delegacao.agente as "sophia" | "simone" | "raena",
+            motivo: delegacao.motivo,
+            resposta: agenteResp.choices?.[0]?.message?.content ?? "",
+            delegado: true,
+          };
+        }
+
+        // Sophia respondeu diretamente
+        return {
+          agente: "sophia" as const,
+          motivo: delegacao.motivo,
+          resposta: delegacao.mensagem,
+          delegado: false,
+        };
+      }),
+
+    // Chat direto com um agente específico (sem orquestração)
+    chat: protectedProcedure
+      .input(z.object({
+        agentId: z.enum(["sophia", "simone", "raena"]),
+        mensagem: z.string().min(1).max(2000),
+        historico: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).optional().default([]),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const cfg = await getAgentConfig(input.agentId);
+
+        // Contexto adicional para Simone
+        let contextoPatch = "";
+        if (input.agentId === "simone") {
+          const db = await getDb();
+          if (db) {
+            const osAtivas = await db
+              .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa, totalOrcamento: ordensServico.totalOrcamento })
+              .from(ordensServico)
+              .where(ne(ordensServico.status, "Entregue"))
+              .limit(20);
+            contextoPatch = `\n\nDADOS DO SISTEMA (OS ativas agora):\n${JSON.stringify(osAtivas, null, 2)}`;
+          }
+        }
+
+        const resp = await invokeLLM({
+          messages: [
+            { role: "system", content: cfg.systemPrompt + contextoPatch },
+            ...input.historico.map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string })),
+            { role: "user", content: input.mensagem },
+          ],
+          max_tokens: cfg.maxTokens,
+        });
+
+        return {
+          agente: input.agentId,
+          resposta: resp.choices?.[0]?.message?.content ?? "",
+        };
       }),
   }),
 });

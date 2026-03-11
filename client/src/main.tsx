@@ -46,11 +46,27 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Lê o role ativo do localStorage para enviar ao servidor como header
+function getActiveRole(): string {
+  try {
+    const saved = localStorage.getItem("dap_role_session");
+    if (saved) {
+      const info = JSON.parse(saved);
+      return info.role ?? "";
+    }
+  } catch {}
+  return "";
+}
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
+      headers() {
+        const role = getActiveRole();
+        return role ? { "x-dap-role": role } : {};
+      },
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),
