@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
+import PageTour from "./components/PageTour";
 
 // Legacy pages (still accessible)
 import Home from "./pages/Home";
@@ -233,6 +234,7 @@ function App() {
         <TooltipProvider>
           <Toaster richColors position="top-right" />
           <Router />
+          <PageTour />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
