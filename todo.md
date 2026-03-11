@@ -557,3 +557,11 @@
 - [x] Simone recebe contexto de OS ativas do banco ao ser delegada
 - [x] Reconstruir IAPortal com chat multi-agente, delegação visível (Sophia → Simone/Raena), aba Agentes e aba Fluxo
 - [x] 0 erros TypeScript após todas as correções
+
+## Raena — Contexto Kommo em Tempo Real (Mar 10 2026)
+
+- [x] Auditar integração Kommo existente (kommo.ts, kommoRoutes.ts, kommoAgent.ts)
+- [x] Criar helper getRaenaContext.ts com cache 60s, busca API Kommo + fallback banco local
+- [x] Injetar contexto de leads Kommo na procedure agentes.orquestrar e agentes.chat quando Raena é delegada
+- [x] Retornar kommoContext (source + leadCount) no payload da procedure orquestrar
+- [x] Atualizar IAPortal: badge verde animado "Kommo API · N leads" quando Raena responde com dados reais

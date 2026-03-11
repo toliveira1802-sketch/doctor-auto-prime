@@ -25,6 +25,7 @@ interface ChatMessage {
   delegado?: boolean;
   motivo?: string;
   timestamp: Date;
+  kommoContext?: { source: string; leadCount: number }; // contexto Kommo injetado
 }
 
 // ─── Configurações visuais dos agentes ───────────────────────────────────────
@@ -144,6 +145,20 @@ function ChatBubble({ msg }: { msg: ChatMessage }) {
             <span className="opacity-60">· {msg.motivo}</span>
           </div>
         )}
+        {/* Badge Kommo Context — aparece quando Raena responde com dados reais */}
+        {msg.agente === "raena" && msg.kommoContext && (
+          <div className="flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full border"
+            style={{ borderColor: AGENT_VISUAL.raena.border, background: AGENT_VISUAL.raena.bg, color: AGENT_VISUAL.raena.color }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="font-mono font-bold">
+              {msg.kommoContext.source === "kommo_api"
+                ? `Kommo API · ${msg.kommoContext.leadCount} leads`
+                : msg.kommoContext.source === "db_cache"
+                ? "Banco local (cache)"
+                : "Contexto indisponível"}
+            </span>
+          </div>
+        )}
 
         <div className={`rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
           isUser
@@ -198,6 +213,7 @@ export default function IAPortal() {
           delegado: data.delegado,
           motivo: data.motivo,
           timestamp: new Date(),
+          kommoContext: data.kommoContext as { source: string; leadCount: number } | undefined,
         },
       ]);
       setActiveAgent(null);

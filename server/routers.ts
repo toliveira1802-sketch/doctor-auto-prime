@@ -2603,12 +2603,16 @@ Retorne APENAS JSON válido:
             const db = await getDb();
             if (db) {
               const osAtivas = await db
-                .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa })
+                .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa, totalOrcamento: ordensServico.totalOrcamento, mecanicoId: ordensServico.mecanicoId })
                 .from(ordensServico)
                 .where(ne(ordensServico.status, "Entregue"))
                 .limit(20);
               contextoPatch = `\n\nDADOS DO SISTEMA (OS ativas agora):\n${JSON.stringify(osAtivas, null, 2)}`;
             }
+          } else if (delegacao.agente === "raena") {
+            const { getRaenaContext } = await import("./getRaenaContext");
+            const raenaCtx = await getRaenaContext();
+            contextoPatch = `\n\n${raenaCtx.context}\n\nFonte dos dados: ${raenaCtx.source === "kommo_api" ? "Kommo API (tempo real)" : raenaCtx.source === "db_cache" ? "Banco local (cache)" : "Indisponível"}`;
           }
 
           const agenteResp = await invokeLLM({
@@ -2620,11 +2624,19 @@ Retorne APENAS JSON válido:
             max_tokens: agenteCfg.maxTokens,
           });
 
+          // Incluir metadados de contexto Kommo quando Raena responde
+          let kommoContextMeta: { source: string; leadCount: number } | undefined;
+          if (delegacao.agente === "raena") {
+            const { getRaenaContext } = await import("./getRaenaContext");
+            const raenaCtx = await getRaenaContext();
+            kommoContextMeta = { source: raenaCtx.source, leadCount: raenaCtx.leadCount };
+          }
           return {
             agente: delegacao.agente as "sophia" | "simone" | "raena",
             motivo: delegacao.motivo,
             resposta: agenteResp.choices?.[0]?.message?.content ?? "",
             delegado: true,
+            kommoContext: kommoContextMeta,
           };
         }
 
@@ -2651,18 +2663,22 @@ Retorne APENAS JSON válido:
         const { invokeLLM } = await import("./_core/llm");
         const cfg = await getAgentConfig(input.agentId);
 
-        // Contexto adicional para Simone
+        // Contexto adicional por agente
         let contextoPatch = "";
         if (input.agentId === "simone") {
           const db = await getDb();
           if (db) {
             const osAtivas = await db
-              .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa, totalOrcamento: ordensServico.totalOrcamento })
+              .select({ id: ordensServico.id, status: ordensServico.status, placa: ordensServico.placa, totalOrcamento: ordensServico.totalOrcamento, mecanicoId: ordensServico.mecanicoId })
               .from(ordensServico)
               .where(ne(ordensServico.status, "Entregue"))
               .limit(20);
             contextoPatch = `\n\nDADOS DO SISTEMA (OS ativas agora):\n${JSON.stringify(osAtivas, null, 2)}`;
           }
+        } else if (input.agentId === "raena") {
+          const { getRaenaContext } = await import("./getRaenaContext");
+          const raenaCtx = await getRaenaContext();
+          contextoPatch = `\n\n${raenaCtx.context}\n\nFonte dos dados: ${raenaCtx.source === "kommo_api" ? "Kommo API (tempo real)" : raenaCtx.source === "db_cache" ? "Banco local (cache)" : "Indisponível"}`;
         }
 
         const resp = await invokeLLM({
