@@ -126,8 +126,8 @@ const MODULES: SystemModule[] = [
     status: "online",
     routes: [
       { label: "Visão Mecânico",    path: "/mecanico",                   icon: Wrench },
-      { label: "Analytics",         path: "/admin/mechanic-analytics",   icon: BarChart3 },
-      { label: "Feedback",          path: "/admin/mechanic-feedback",    icon: Star },
+      { label: "Analytics",         path: "/admin/mecanicos/analytics",   icon: BarChart3 },
+      { label: "Feedback",          path: "/admin/mecanicos/feedback",    icon: Star },
       { label: "Agenda Mecânicos",  path: "/admin/agenda-mecanicos",     icon: ClipboardList },
     ],
     stats: [
@@ -195,7 +195,7 @@ const MODULES: SystemModule[] = [
     status: "online",
     routes: [
       { label: "Portal Cliente",   path: "/dev/cliente",   icon: UserCircle },
-      { label: "CRM",              path: "/admin/crm",     icon: MessageSquare },
+      { label: "CRM",              path: "/admin/clientes",     icon: MessageSquare },
       { label: "Clientes",         path: "/admin/clientes", icon: Users },
       { label: "Detalhe Cliente",  path: "/admin/clientes", icon: Eye },
     ],
