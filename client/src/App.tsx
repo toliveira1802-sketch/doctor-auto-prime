@@ -65,6 +65,7 @@ import DistribuicaoLeads from "./pages/dev/qgia/DistribuicaoLeads";
 import HistoricoPontuacao from "./pages/dev/qgia/HistoricoPontuacao";
 import ClientePortal from "./pages/dev/ClientePortal";
 import Sistema from "./pages/dev/Sistema";
+import DevSystemOficina from "./pages/dev/DevSystemOficina";
 import VisaoGeral from "./pages/VisaoGeral";
 import GestaoAntesDePois from "./pages/gestao/GestaoAntesDePois";
 
@@ -156,6 +157,9 @@ function Router() {
       </Route>
       <Route path="/dev/sistema">
         <WithLayout><Sistema /></WithLayout>
+      </Route>
+      <Route path="/dev/system-oficina">
+        <WithLayout><DevSystemOficina /></WithLayout>
       </Route>
 
       {/* ── ADMIN ROUTES ─────────────────────────────────────────────── */}
