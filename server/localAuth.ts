@@ -380,4 +380,36 @@ export function registerLocalAuthRoutes(app: Express) {
       res.status(500).json({ error: "Erro interno ao fazer login" });
     }
   });
+
+  /**
+   * POST /api/auth/dev-reset
+   * Envia link de reset de senha para o email do dev via Supabase Auth.
+   */
+  app.post("/api/auth/dev-reset", async (_req: Request, res: Response) => {
+    const DEV_EMAIL = "toliveira1802@gmail.com";
+    const SUPABASE_URL = process.env.SUPABASE_URL ?? "https://acuufrgoyjwzlyhopaus.supabase.co";
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY ?? "";
+
+    if (!SUPABASE_ANON_KEY) {
+      res.status(500).json({ error: "Configuração incompleta" });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email: DEV_EMAIL }),
+      });
+
+      if (!response.ok) {
+        res.status(500).json({ error: "Erro ao enviar email" });
+        return;
+      }
+
+      res.json({ success: true });
+    } catch {
+      res.status(500).json({ error: "Erro interno" });
+    }
+  });
 }

@@ -9,6 +9,7 @@ import PageTour from "./components/PageTour";
 
 // Legacy pages (still accessible)
 import Home from "./pages/Home";
+import Landing from "./pages/Landing";
 import Dev from "./pages/Dev";
 import DevPanel from "./pages/DevPanel";
 
@@ -102,30 +103,8 @@ function Router() {
         <MecanicoView />
       </Route>
 
-      {/* Root: redireciona para seleção de perfil ou para o destino do role ativo */}
-      <Route path="/">
-        {() => {
-          const roleSession = localStorage.getItem("dap_role_session");
-          if (roleSession) {
-            try {
-              const info = JSON.parse(roleSession);
-              const redirectMap: Record<string, string> = {
-                dev: "/dev/painel",
-                gestao: "/gestao/os-ultimate",
-                consultor: "/admin/dashboard",
-                mecanico: "/mecanico",
-                cliente: "/cliente",
-              };
-              window.location.replace(redirectMap[info.role] ?? "/selecionar-perfil");
-            } catch {
-              window.location.replace("/selecionar-perfil");
-            }
-          } else {
-            window.location.replace("/selecionar-perfil");
-          }
-          return null;
-        }}
-      </Route>
+      {/* Root: Landing page com acesso ao sistema e acesso dev */}
+      <Route path="/" component={Landing} />
 
       {/* Dev navigator */}
       <Route path="/dev">
